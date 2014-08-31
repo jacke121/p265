@@ -21,6 +21,9 @@ class BitStreamBuffer:
 
         self.log = open("trace.txt", 'w')
     
+    def report_position(self):
+        print >>self.log, "Bit stream position: byte_idx = %d, bit_idx = %d, line = %d, colum = %d" % (self.byte_idx, self.bit_idx, (self.byte_idx / 16)+ 1, (self.byte_idx % 16 ) + 1)
+
     def reset(self):
         self.bit_idx = 0
         self.byte_idx = 0
@@ -43,6 +46,7 @@ class BitStreamBuffer:
             byte2 = self.get_byte(self.byte_idx - 2) if self.byte_idx >= 2 else 0xff
             self.byte_idx += 1
             if (byte2==0x00 and byte1==0x00 and byte0==0x01):
+                self.bit_idx = 0
                 break
             watch_dog_counter += 1
             if (watch_dog_counter == 1024):
