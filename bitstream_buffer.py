@@ -11,79 +11,127 @@ class BitStreamBuffer:
             self.bytes = bit_stream
         else:
             raise "Error: either a file name or a list object must be supplied"
-        
+
+        self.byte_idx = 0
+        self.bit_idx = 0
         self.length = len(self.bytes)
-        self.bit_idx = 0 
-        self.byte_idx = 0 # points to the current byte being processed
+
+        self.log = open("trace.txt", 'w')
     
     def reset(self):
         self.bit_idx = 0
         self.byte_idx = 0
 
-    def get_byte(self, idx):
-        if (idx < self.length):
-            return self.bytes[idx]
-        else:
-            print "Error: indexing a position exceeding bit stream length"
-            exit(1)
-
     def print_buf(self, idx, len):
         for i in range(idx, idx+len):
-            print "0x%02x" % self.get_byte(i)
+            print "0x%02x" % self.bytes[i]
     
-    def spare_bits(self):
-        mask = (1 << (8 - self.bit_idx)) - 1
-        bits =  mask & self.get_byte(self.byte_idx)
-        return bits
+    def get_byte(self, idx):
+        if idx > self.length:
+            raise "Error: out of range."
+        else:
+            return self.bytes[idx]
 
+    def search_start_code(self):
+        watch_dog_counter = 0
+        while True:
+            byte0 = self.get_byte(self.byte_idx)
+            byte1 = self.get_byte(self.byte_idx - 1) if self.byte_idx >= 2 else 0xff
+            byte2 = self.get_byte(self.byte_idx - 2) if self.byte_idx >= 2 else 0xff
+            self.byte_idx += 1
+            if (byte2==0x00 and byte1==0x00 and byte0==0x01):
+                break
+            watch_dog_counter += 1
+            if (watch_dog_counter == 1024):
+                raise "Error: can not find start code after 1024 bytes were searched, stopped."
+    
+    def read_bits(self, n):
+        spare_bits_cnt = 8 - self.bit_idx
+
+        if (8-self.bit_idx) > n:
+            mask = (1 << (8 - self.bit_idx)) - 1
+            bits = mask & self.bytes[self.byte_idx]
+            bits = bits >> (8- self.bit_idx - n)
+            self.bit_idx += n
+            return bits
+        elif (8-self.bit_idx) == n:
+            mask = (1 << (8 - self.bit_idx)) - 1
+            bits = mask & self.bytes[self.byte_idx]
+            self.byte_idx += 1
+            self.bit_idx = 0
+            byte0 = self.bytes[self.byte_idx]
+            byte1 = self.bytes[self.byte_idx - 1]
+            byte2 = self.bytes[self.byte_idx - 2]
+            if byte2==0x00 and byte1==0x00 and byte0==0x03:
+                self.byte_idx += 1
+        else:
+            mask = (1 << (8 - self.bit_idx)) - 1
+            bits = mask & self.bytes[self.byte_idx]
+            self.byte_idx += 1
+            self.bit_idx = 0
+            byte0 = self.bytes[self.byte_idx]
+            byte1 = self.bytes[self.byte_idx - 1]
+            byte2 = self.bytes[self.byte_idx - 2]
+            if byte2==0x00 and byte1==0x00 and byte0==0x03:
+                self.byte_idx += 1
+            
+            bit_cnt = spare_bits_cnt
+            while bit_cnt < n:
+                bits = (bits << 8) | self.bytes[self.byte_idx]
+                bit_cnt += 8
+                self.byte_idx += 1
+                self.bit_idx = 0
+                byte0 = self.bytes[self.byte_idx]
+                byte1 = self.bytes[self.byte_idx - 1]
+                byte2 = self.bytes[self.byte_idx - 2]
+                if byte2==0x00 and byte1==0x00 and byte0==0x03:
+                    self.byte_idx += 1
+
+            if ((bit_cnt - n) > 0):
+                self.bit_idx = (8 - (bit_cnt - n)) % 8
+                self.byte_idx -= 1
+                byte0 = self.bytes[self.byte_idx]
+                byte1 = self.bytes[self.byte_idx - 1]
+                byte2 = self.bytes[self.byte_idx - 2]
+                if byte2==0x00 and byte1==0x00 and byte0==0x03:
+                    self.byte_idx -= 1
+                
+            bits = bits >> (bit_cnt - n)
+
+        return bits
+    
     def next_bits(self, n):
         saved_byte_idx = self.byte_idx
         saved_bit_idx = self.bit_idx
+
         bits = self.read_bits(n)
+
         self.byte_idx = saved_byte_idx
         self.bit_idx = saved_bit_idx
 
         return bits
 
-    def read_bits(self, n):
-        spare_bits_cnt = 8 - self.bit_idx
-
-        if spare_bits_cnt > n:
-            bits = self.spare_bits() >> (spare_bits_cnt - n)
-            self.bit_idx += n
-        elif spare_bits_cnt == n:
-            bits = self.spare_bits()
-            self.byte_idx += 1
-            self.bit_idx = 0
-        else:
-            bits = self.spare_bits()
-            bit_cnt = spare_bits_cnt
-            self.byte_idx += 1
-            self.bit_idx = 0
-            while bit_cnt < n:
-                bits = (bits << 8) | self.get_byte(self.byte_idx)
-                bit_cnt += 8
-                self.byte_idx += 1
-                self.bit_idx = 0
-            spare_bits_cnt = bit_cnt - n
-            if (spare_bits_cnt > 0):
-                self.bit_idx = (8 - spare_bits_cnt) % 8
-                self.byte_idx -= 1
-            bits = bits >> spare_bits_cnt
-
+    def f(self, n, name):
+        bits = self.read_bits(n)
+        print >>self.log, "%s = %d" % (name, bits)
         return bits
-            
+
+    def u(self, n, name):
+        bits = self.read_bits(n)
+        print >>self.log, "%s = %d" % (name, bits)
+        return bits
+           
 if __name__ == '__main__':
     def check(actual, expected, id):
         if (expected == actual): 
             print "[%d] PASS act=0x%x exp=0x%x" % (id, actual, expected)
         else:
             print "[%d] ***FAIL*** act=0x%x exp=0x%x" % (id, actual, expected)
-            exit(1)
 
-    bsb = BitStreamBuffer([0x78, 0x25, 0x32, 0x12, 0x88])
+    bsb = BitStreamBuffer([0x78, 0x25, 0x32, 0x12, 0x88, 0x21])
     bsb.print_buf(0, 4)
 
+    print "======== Testing read_bits() =========="
     check(bsb.read_bits(16), 0x7825, 0)
     check(bsb.read_bits(3), 0b001, 1)
     check(bsb.read_bits(2), 0b10, 2)
@@ -93,8 +141,8 @@ if __name__ == '__main__':
     check(bsb.read_bits(4), 0b0001, 6)
     check(bsb.read_bits(3), 0b000, 7)
 
+    print "======== Testing next_bits() =========="
     bsb.reset()
-
     check(bsb.read_bits(16), 0x7825, 8)
     check(bsb.next_bits(16), 0x3212, 9)
     check(bsb.read_bits(3), 0b001, 10)
@@ -105,5 +153,23 @@ if __name__ == '__main__':
     check(bsb.read_bits(5), 0b00101, 15)
     check(bsb.read_bits(4), 0b0001, 16)
     check(bsb.read_bits(3), 0b000, 17)
+
+    print "======== Testing read_bits() with 0x000003 =========="
+    bsb = BitStreamBuffer([0x78, 0x00, 0x00, 0x03, 0x82, 0x12, 0x88, 0x21])
+    bsb.print_buf(0, 4)
+    bsb.reset()
+    check(bsb.read_bits(24), 0x780000, 18)
+    check(bsb.read_bits(8), 0x82, 19)
+    bsb.reset()
+    check(bsb.read_bits(23), 0x780000 >> 1, 19)
+    check(bsb.read_bits(5), 0b01000, 20)
+    check(bsb.read_bits(5), 0b00100, 21)
+    check(bsb.read_bits(15), 0x1288, 22)
+
+    print "======== Testing search_start_code() =========="
+    bsb = BitStreamBuffer([0x00, 0x00, 0x01, 0x03, 0x82, 0x12, 0x88])
+    bsb.search_start_code()
+    check(bsb.byte_idx, 3, 23)
+    check(bsb.bit_idx, 0, 24)
 
     print "Cong! All checking passed."
