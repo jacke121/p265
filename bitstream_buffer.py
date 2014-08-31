@@ -1,3 +1,5 @@
+import math
+
 #TODO: use get_byte() instead of directly accessing bytes list
 class BitStreamBuffer:
     def __init__(self, bit_stream = None):
@@ -121,7 +123,29 @@ class BitStreamBuffer:
         bits = self.read_bits(n)
         print >>self.log, "%s = %d" % (name, bits)
         return bits
-           
+
+    def se(self, name):
+        k = self.ue()
+        code_num = ((-1)**k) * int(math.ceil(float(k)/2))
+        print >>self.log, "%s = %d" % (name, code_num)
+        return code_num
+   
+    def ue(self, name):
+        leading_zero_bits = 0
+        while self.read_bits(1) == 0:
+            leading_zero_bits += 1
+
+        code_num = 2**leading_zero_bits - 1 + self.read_bits(leading_zero_bits)    
+        print >>self.log, "%s = %d" % (name, code_num)
+
+        return code_num
+
+    def more_rbsp_data(self):
+        raise "Not implemeted yet"
+
+    def rbsp_trailing_bits(self):
+        raise "Not implemeted yet"
+
 if __name__ == '__main__':
     def check(actual, expected, id):
         if (expected == actual): 
