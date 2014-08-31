@@ -1,3 +1,4 @@
+#TODO: use get_byte() instead of directly accessing bytes list
 class BitStreamBuffer:
     def __init__(self, bit_stream = None):
         self.bytes = []
