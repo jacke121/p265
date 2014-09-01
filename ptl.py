@@ -18,11 +18,11 @@ class ProfileTierLevel:
         self.general_reserved_zero_44bits = self.bs.u(32, "general_reserved_zero_44bits") << 12 | self.bs.u(12, "general_reserved_zero_44bits")
         self.general_level_idc = self.bs.u(8, "general_level_idc")
 
-        self.gsub_layer_profile_present_flag = []
-        self.gsub_layer_level_present_flag = []
+        self.sub_layer_profile_present_flag = []
+        self.sub_layer_level_present_flag = []
         for i in range(vps_max_sub_layers_minus1):
-            self.gsub_layer_profile_present_flag.append(self.bs.u(1, "sub_layer_profile_present_flag[%d]" % i))
-            self.gsub_layer_level_present_flag.append(self.bs.u(1, "sub_layer_level_present_flag[%d]" % i))
+            self.sub_layer_profile_present_flag.append(self.bs.u(1, "sub_layer_profile_present_flag[%d]" % i))
+            self.sub_layer_level_present_flag.append(self.bs.u(1, "sub_layer_level_present_flag[%d]" % i))
         
         self.reserved_zero_2bits = []
         if vps_max_sub_layers_minus1 > 0:
