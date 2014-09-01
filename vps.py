@@ -61,5 +61,10 @@ class Vps:
         self.vps_extension_flag = self.bs.u(1, "vps_extension_flag") 
 
         #TODO rbsp trailing bytes
+        '''
+        if self.vps_extensio_flag:
+            while self.bs.more_rbsp_data():
+                self.vps_extension_data_flag = self.bs.u(1, "")
 
-
+        self.bs.rbsp_trailing_bits()
+        '''
