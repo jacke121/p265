@@ -1,7 +1,7 @@
 import math
 import ptl
 import sld
-import short_term_ref_pic_set
+import st_rps
 
 class VuiParameters:
     def __init__(self, bs):
@@ -87,7 +87,7 @@ class Sps:
         self.num_short_term_ref_pic_sets = self.bs.ue("num_short_term_ref_pic_sets")
         self.short_term_ref_pic_set = [0] * self.num_short_term_ref_pic_sets
         for i in range(0, self.num_short_term_ref_pic_sets):
-            self.short_term_ref_pic_set[i] = short_term_ref_pic_set.ShortTermRefPicSet(self.bs)
+            self.short_term_ref_pic_set[i] = st_rps.ShortTermRefPicSet(self.bs)
             self.short_term_ref_pic_set[i].parse(i, self.num_short_term_ref_pic_sets)
 
         self.long_term_ref_pics_present_flag = self.bs.u(1, "long_term_ref_pics_present_flag")

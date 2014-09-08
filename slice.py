@@ -1,5 +1,5 @@
 import math
-import short_term_ref_pic_set
+import st_rps
 
 class SliceHeader:
     def __init__(self, bs, naluh, vps, sps, pps):
@@ -8,7 +8,7 @@ class SliceHeader:
         self.vps = vps
         self.sps = sps
         self.pps = pps
-        self.short_term_ref_pic_set = short_term_ref_pic_set.ShortTermRefPicSet(bs)
+        self.short_term_ref_pic_set = st_rps.ShortTermRefPicSet(bs)
 
         self.B_SLICE = 0
         self.P_SLICE = 1
