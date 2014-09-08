@@ -31,6 +31,13 @@ class BitStreamBuffer:
     def print_buf(self, idx, len):
         for i in range(idx, idx+len):
             print "0x%02x" % self.bytes[i]
+
+    def byte_alignment(self):
+        if self.bit_idx==0:
+            return
+        else:
+            self.byte_idx += 1
+            self.bit_idx = 0
     
     def get_byte(self, idx):
         if idx > self.length:
@@ -129,18 +136,19 @@ class BitStreamBuffer:
         return bits
 
     def se(self, name):
-        k = self.ue()
+        k = self.ue(name, True)
         code_num = ((-1)**k) * int(math.ceil(float(k)/2))
         print >>self.log, "%s = %d" % (name, code_num)
         return code_num
    
-    def ue(self, name):
+    def ue(self, name, no_print = False):
         leading_zero_bits = 0
         while self.read_bits(1) == 0:
             leading_zero_bits += 1
 
         code_num = 2**leading_zero_bits - 1 + self.read_bits(leading_zero_bits)    
-        print >>self.log, "%s = %d" % (name, code_num)
+        if not no_print:
+            print >>self.log, "%s = %d" % (name, code_num)
 
         return code_num
 

@@ -1,6 +1,7 @@
 import bsb
 import vps
 import sps
+import pps
 import nalu
 
 class BitStreamDecoder:
@@ -22,9 +23,15 @@ class BitStreamDecoder:
             elif nalu_type == 33:
                 self.nalu.sps.parse()
                 self.bs.report_position()
-                raise "TODO"
+            elif nalu_type == 34:
+                self.nalu.pps.parse()
+                self.bs.report_position()
+            elif nalu_type == 19:
+                self.nalu.slice.parse()
+                self.bs.report_position()
             else:
-                raise "Error: unimplemeted NALU type."
+                print "Error: unimplemeted NALU type = %d." % nalu_type
+                raise "Intensional raise"
 
 if __name__ == "__main__":
     bs = bsb.BitStreamBuffer("str.bin")
