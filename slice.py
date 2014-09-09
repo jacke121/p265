@@ -35,6 +35,13 @@ class SliceHeader:
                 self.slice_reserved_flag[i] = self.bs.u(1, "slice_reserved_flag[%d]" % i)
             self.slice_type = self.bs.ue("slice_type")
 
+            #if slice_header.slice_type == slice_header.I_SLICE:
+            #    self.init_type = 0
+            #elif slice_header.slice_type == slice_header.P_SLICE:
+            #    self.init_type = slice_header.cabac_init_flag ? 2 : 1
+            #else slice_header.slice_type == slice_header.B_SLICE:
+            #    self.init_type = slice_header.cabac_init_flag ? 1 : 2
+
             if self.pps.output_flag_present_flag:
                 self.pic_output_flag = self.bs.u(1, "pic_output_flag")
 
@@ -149,11 +156,19 @@ class SliceHeader:
 
         self.bs.byte_alignment()
 
+class SliceData:
+    def __init__(self, bs):
+        pass
+    
+#    def init_context_models(self):
+#        for i in range(1):
+#            self.sao_merge_flag_context_model
 
 class SliceSegment:
     def __init__(self, bs, naluh, vps, sps, pps):
         self.bs = bs
         self.slice_header = SliceHeader(bs, naluh, vps, sps, pps)
+        self.slice_data = SliceData(bs)
 
     def parse(self):
         self.slice_header.parse()

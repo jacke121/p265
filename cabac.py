@@ -1,53 +1,283 @@
-class InitValueTables:
+class CabacTables:
     def __init__(self):
-        self.sao_merge_left-up_flag = [153, 153, 153] #[3] Table 9-5
-        self.sao_type_idx_luma-chroma_flag = [200, 185, 160] #[3] Table 9-6
-        self.split_cu_flag = [[139, 141, 157], [107, 139, 126], [107, 139, 126]] #[3][3] Table 9-7
-        self.cu_transquant_bypass_flag = [154, 154, 154] #[3] Table 9-8
-        self.cu_skip_flag = [[197, 185, 201], [197, 185, 201]] #[2][3] Table 9-9
-        self.pred_mode_flag = [149, 134] #[2] Table 9-10
-        self.part_mode = [184, 154, 139,  154, 154, 154,  139, 154, 154] #[9] Table 9-11
-        self.prev_intra_luma_pred_flag = [184, 154, 183] #[3] Table 9-12
-        self.intra_chroma_pred_mode = [63, 152, 152] #[3] Table 9-13
-        self.rqt_root_cbf = [79] #[1] Table 9-14
-        self.merge_flag = [110, 154] #[2] Table 9-15
-        self.merge_idx = [122, 137] #[2] Table 9-16
-        self.inter_pred_idc = [95, 79, 63, 31, 31, 95, 79, 63, 31, 31] #[10] Table 9-17
-        self.ref_idx_l0-l1 = [153, 153, 153, 153] #[4] Table 9-18
-        self.mvp_l0-l1_flag = [168, 168] #[1] Table 9-19
-        self.split_transform_flag = [153, 138, 138,  124, 138, 94,  224, 167, 122] #[9] Table 9-20 
-        self.cbf_luma = [111, 141, 153, 111, 153, 111] #[6] Table 9-21
-        self.cbf_chroma = [94, 138, 182, 154, 149, 107, 167, 154, 149, 92, 167, 154] #[12] Table 9-22
-        self.abs_mvd_greater0-greater1_flag = [140, 198, 169, 198] #[4] Table 9-23
-        self.cu_qp_delta_abs = [154, 154, 154, 154, 154, 154] #[6] Table 9-24
-        self.transform_skip_flag = [139, 139, 139, 139, 139, 139] #[2] Table 9-25
-        self.last_sig_coeff_x_prefix = [
-            110, 110, 124, 125, 140, 153, 125, 127, 140, 109, 111, 143, 127, 111,  79, 108, 123,  63, 
-            125, 110,  94, 110,  95,  79, 125, 111, 110,  78, 110, 111, 111,  95,  94, 108, 123, 108, 
-            125, 110, 124, 110,  95,  94, 125, 111, 111,  79, 125, 126, 111, 111,  79, 108, 123,  93] #[54] Table 9-26
-        self.last_sig_coeff_y_prefix = [
-            110, 110, 124, 125, 140, 153, 125, 127, 140, 109, 111, 143, 127, 111,  79, 108, 123,  63, 
-            125, 110,  94, 110,  95,  79, 125, 111, 110,  78, 110, 111, 111,  95,  94, 108, 123, 108, 
-            125, 110, 124, 110,  95,  94, 125, 111, 111,  79, 125, 126, 111, 111,  79, 108, 123,  93] #[54] Table 9-27
-        self.coded_sub_block_flag = [91, 171, 134, 141, 121, 140, 61, 154, 121, 140, 61, 154] #[12] Table 9-28
-        self.sig_coeff_flag = [
-           [111, 111, 125, 110, 110,  94, 124, 108, 124, 107, 125, 141, 179, 153, 125, 107,
-            125, 141, 179, 153, 125, 107, 125, 141, 179, 153, 125, 140, 139, 182, 182, 152,
-            136, 152, 136, 153, 136, 139, 111, 136, 139, 111],
-           [155, 154, 139, 153, 139, 123, 123,  63, 153, 166, 183, 140, 136, 153, 154, 166,
-            183, 140, 136, 153, 154, 166, 183, 140, 136, 153, 154, 170, 153, 123, 123, 107,
-            121, 107, 121, 167, 151, 183, 140, 151, 183, 140],
-           [170, 154, 139, 153, 139, 123, 123,  63, 124, 166, 183, 140, 136, 153, 154, 166,
-            183, 140, 136, 153, 154, 166, 183, 140, 136, 153, 154, 170, 153, 138, 138, 122,
-            121, 122, 121, 167, 151, 183, 140, 151, 183, 140]] #[3][42] Table 9-29
-        self.coeff_abs_level_greater1_flag = [
-            140,  92, 137, 138, 140, 152, 138, 139, 153,  74, 149,  92, 139, 107, 122, 152, 
-            140, 179, 166, 182, 140, 227, 122, 197, 154, 196, 196, 167, 154, 152, 167, 182, 
-            182, 134, 149, 136, 153, 121, 136, 137, 169, 194, 166, 167, 154, 167, 137, 182, 
-            154, 196, 167, 167, 154, 152, 167, 182, 182, 134, 149, 136, 153, 121, 136, 122, 
-            169, 208, 166, 167, 154, 152, 167, 182] #[72] Table 9-30
-        self.coeff_abs_level_greater2_flag = [
-            138, 153, 136, 167, 152, 152, 107, 167,  91, 
-            122, 107, 167, 107, 167,  91, 107, 107,  16] #[18] Table 9-31
+        self.setup_init_value_tables()
+        self.setup_lps_range_table()
+        self.setup_next_state_mps_table()
+        self.setup_next_state_lps_table()
+    
+    def setup_init_value_tables(self):
+        self.init_value_sao_merge_left-up_flag = [153, 153, 153] #[3] Table 9-5
+        self.init_value_sao_type_idx_luma-chroma_flag = [200, 185, 160] #[3] Table 9-6
+        self.init_value_split_cu_flag = [[139, 141, 157], [107, 139, 126], [107, 139, 126]] #[3][3] Table 9-7
+        self.init_value_cu_transquant_bypass_flag = [154, 154, 154] #[3] Table 9-8
+        self.init_value_cu_skip_flag = [[197, 185, 201], [197, 185, 201]] #[2][3] Table 9-9
+        self.init_value_pred_mode_flag = [149, 134] #[2] Table 9-10
+        self.init_value_part_mode = [184, 154, 139,  154, 154, 154,  139, 154, 154] #[9] Table 9-11
+        self.init_value_prev_intra_luma_pred_flag = [184, 154, 183] #[3] Table 9-12
+        self.init_value_intra_chroma_pred_mode = [63, 152, 152] #[3] Table 9-13
+        self.init_value_rqt_root_cbf = [79] #[1] Table 9-14
+        self.init_value_merge_flag = [110, 154] #[2] Table 9-15
+        self.init_value_merge_idx = [122, 137] #[2] Table 9-16
+        self.init_value_inter_pred_idc = [95, 79, 63, 31, 31, 95, 79, 63, 31, 31] #[10] Table 9-17
+        self.init_value_ref_idx_l0-l1 = [153, 153, 153, 153] #[4] Table 9-18
+        self.init_value_mvp_l0-l1_flag = [168, 168] #[1] Table 9-19
+        self.init_value_split_transform_flag = [153, 138, 138,  124, 138, 94,  224, 167, 122] #[9] Table 9-20 
+        self.init_value_cbf_luma = [111, 141, 153, 111, 153, 111] #[6] Table 9-21
+        self.init_value_cbf_chroma = [94, 138, 182, 154, 149, 107, 167, 154, 149, 92, 167, 154] #[12] Table 9-22
+        self.init_value_abs_mvd_greater0-greater1_flag = [140, 198, 169, 198] #[4] Table 9-23
+        self.init_value_cu_qp_delta_abs = [154, 154, 154, 154, 154, 154] #[6] Table 9-24
+        self.init_value_transform_skip_flag = [139, 139, 139, 139, 139, 139] #[2] Table 9-25
+        self.init_value_last_sig_coeff_x_prefix = 
+            [
+                110, 110, 124, 125, 140, 153, 125, 127, 140, 109, 111, 143, 127, 111,  79, 108, 123,  63, 
+                125, 110,  94, 110,  95,  79, 125, 111, 110,  78, 110, 111, 111,  95,  94, 108, 123, 108, 
+                125, 110, 124, 110,  95,  94, 125, 111, 111,  79, 125, 126, 111, 111,  79, 108, 123,  93
+            ] #[54] Table 9-26
+        self.init_value_last_sig_coeff_y_prefix = 
+            [
+                110, 110, 124, 125, 140, 153, 125, 127, 140, 109, 111, 143, 127, 111,  79, 108, 123,  63, 
+                125, 110,  94, 110,  95,  79, 125, 111, 110,  78, 110, 111, 111,  95,  94, 108, 123, 108, 
+                125, 110, 124, 110,  95,  94, 125, 111, 111,  79, 125, 126, 111, 111,  79, 108, 123,  93
+            ] #[54] Table 9-27
+        self.init_value_coded_sub_block_flag = [91, 171, 134, 141, 121, 140, 61, 154, 121, 140, 61, 154] #[12] Table 9-28
+        self.init_value_sig_coeff_flag = 
+            [
+                [
+                    111, 111, 125, 110, 110,  94, 124, 108, 124, 107, 125, 141, 179, 153, 125, 107,
+                    125, 141, 179, 153, 125, 107, 125, 141, 179, 153, 125, 140, 139, 182, 182, 152,
+                    136, 152, 136, 153, 136, 139, 111, 136, 139, 111
+                ],
+                [
+                    155, 154, 139, 153, 139, 123, 123,  63, 153, 166, 183, 140, 136, 153, 154, 166,
+                    183, 140, 136, 153, 154, 166, 183, 140, 136, 153, 154, 170, 153, 123, 123, 107,
+                    121, 107, 121, 167, 151, 183, 140, 151, 183, 140
+                ],
+                [
+                    170, 154, 139, 153, 139, 123, 123,  63, 124, 166, 183, 140, 136, 153, 154, 166,
+                    183, 140, 136, 153, 154, 166, 183, 140, 136, 153, 154, 170, 153, 138, 138, 122,
+                    121, 122, 121, 167, 151, 183, 140, 151, 183, 140
+                ]
+            ] #[3][42] Table 9-29
+        self.init_value_coeff_abs_level_greater1_flag = 
+            [
+                140,  92, 137, 138, 140, 152, 138, 139, 153,  74, 149,  92, 139, 107, 122, 152, 
+                140, 179, 166, 182, 140, 227, 122, 197, 154, 196, 196, 167, 154, 152, 167, 182, 
+                182, 134, 149, 136, 153, 121, 136, 137, 169, 194, 166, 167, 154, 167, 137, 182, 
+                154, 196, 167, 167, 154, 152, 167, 182, 182, 134, 149, 136, 153, 121, 136, 122, 
+                169, 208, 166, 167, 154, 152, 167, 182
+            ] #[72] Table 9-30
+        self.init_value_coeff_abs_level_greater2_flag = 
+            [
+                138, 153, 136, 167, 152, 152, 107, 167,  91, 
+                122, 107, 167, 107, 167,  91, 107, 107,  16i
+            ] #[18] Table 9-31
+
+    def setup_lps_range_table(self):
+        self.lps_range_table = # [64][4]
+            [
+                [128, 176, 208, 240],
+                [128, 167, 197, 227],
+                [128, 158, 187, 216],
+                [123, 150, 178, 205],
+                [116, 142, 169, 195],
+                [111, 135, 160, 185],
+                [105, 128, 152, 175],
+                [100, 122, 144, 166],
+                [ 95, 116, 137, 158],
+                [ 90, 110, 130, 150],
+                [ 85, 104, 123, 142],
+                [ 81,  99, 117, 135],
+                [ 77,  94, 111, 128],
+                [ 73,  89, 105, 122],
+                [ 69,  85, 100, 116],
+                [ 66,  80,  95, 110],
+                [ 62,  76,  90, 104],
+                [ 59,  72,  86,  99],
+                [ 56,  69,  81,  94],
+                [ 53,  65,  77,  89],
+                [ 51,  62,  73,  85],
+                [ 48,  59,  69,  80],
+                [ 46,  56,  66,  76],
+                [ 43,  53,  63,  72],
+                [ 41,  50,  59,  69],
+                [ 39,  48,  56,  65],
+                [ 37,  45,  54,  62],
+                [ 35,  43,  51,  59],
+                [ 33,  41,  48,  56],
+                [ 32,  39,  46,  53],
+                [ 30,  37,  43,  50],
+                [ 29,  35,  41,  48],
+                [ 27,  33,  39,  45],
+                [ 26,  31,  37,  43],
+                [ 24,  30,  35,  41],
+                [ 23,  28,  33,  39],
+                [ 22,  27,  32,  37],
+                [ 21,  26,  30,  35],
+                [ 20,  24,  29,  33],
+                [ 19,  23,  27,  31],
+                [ 18,  22,  26,  30],
+                [ 17,  21,  25,  28],
+                [ 16,  20,  23,  27],
+                [ 15,  19,  22,  25],
+                [ 14,  18,  21,  24],
+                [ 14,  17,  20,  23],
+                [ 13,  16,  19,  22],
+                [ 12,  15,  18,  21],
+                [ 12,  14,  17,  20],
+                [ 11,  14,  16,  19],
+                [ 11,  13,  15,  18],
+                [ 10,  12,  15,  17],
+                [ 10,  12,  14,  16],
+                [  9,  11,  13,  15],
+                [  9,  11,  12,  14],
+                [  8,  10,  12,  14],
+                [  8,   9,  11,  13],
+                [  7,   9,  11,  12],
+                [  7,   9,  10,  12],
+                [  7,   8,  10,  11],
+                [  6,   8,   9,  11],
+                [  6,   7,   9,  10],
+                [  6,   7,   8,   9],
+                [  2,   2,   2,   2]
+            ]
+
+    def setup_next_state_mps_table(self):
+        self.next_state_mps_table = #[64]
+            [
+                1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,
+                17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,
+                33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,
+                49,50,51,52,53,54,55,56,57,58,59,60,61,62,62,63
+            ]
+
+    def setup_next_state_lps_table(self):
+        self.next_state_lps_table = #[64]
+            [
+                0,0,1,2,2,4,4,5,6,7,8,9,9,11,11,12,
+                13,13,15,15,16,16,18,18,19,19,21,21,22,22,23,24,
+                24,25,26,26,27,27,28,29,29,30,30,30,31,32,32,33,
+                33,33,34,34,35,35,35,36,36,36,37,37,37,38,38,63
+            ]
+
+class ContextModel:
+    def __init__(self):
+        self.val_mps = 0
+        self.p_state_idx = 0
 
 
+class Cabac:
+    def __init__(self, bs):
+        self.bs = bs
+        self.context_model = [0] * 256 # TODO: make the size be precise
+        for i in range(256):
+            self.context_model[i] = ContextModel()
+        self.init_type = 0
+        self.tables = CabacTables()
+
+    def clip3(self, min, max, value):
+        if val > max:
+            result = max
+        elif val < min:
+            result = min
+        else:
+            result = val
+        
+        return result
+
+    def initialization_process(self, ctx_idx, init_value, slice_header):
+        slope_idx = init_value >> 4;
+        offset_idx = init_value & 0xF;
+        m = slope_idx * 5 - 45;
+        n = (offset_idx << 3) - 16;
+        pre_ctx_state = self.clip3(1, 126, ((m * self.clip3(0, 51, slice_header.slice_qp_y)) >> 4) + n);
+        
+        self.context_model[ctx_idx].val_mps = (pre_ctx_state <= 63) ? 0 : 1;
+        self.context_model[ctx_idx].p_state_idx = self.context_model[ctx_idx].val_mps ? (pre_ctx_state - 64) : (63 - pre_ctx_state);
+
+        if not (self.context_model[ctx_idx].p_state_idx <= 62):
+            raise "Unexpected probability state."
+
+            #if slice_header.slice_type == slice_header.I_SLICE:
+            #    self.init_type = 0
+            #elif slice_header.slice_type == slice_header.P_SLICE:
+            #    self.init_type = slice_header.cabac_init_flag ? 2 : 1
+            #else slice_header.slice_type == slice_header.B_SLICE:
+            #    self.init_type = slice_header.cabac_init_flag ? 1 : 2
+
+    def storage_process(self):
+        pass
+
+    def synchronization_process(self):
+        pass
+
+    def initialization_process_arithmetic_decoding_engine(self):
+        self.ivl_curr_range = 510
+        self.ivl_offset = self.bs.read_bits(9)
+        
+        if self.ivl_offset == 510 or self.ivl_offset == 511:
+            raise "Unimplemented interval offset."
+
+    def decode_bin(self, ctx_table, ctx_idx, bypass_flag):
+        if bypass_flag == 1:
+            self.decode_bypass()
+        elif ctx_table ==0 and ctx_idx == 0:
+            self.decode_terminate()
+        else:
+            self.decode_decision()
+
+    def decode_decision(self, ctx_idx):
+        q_range_idx = (self.ivl_curr_range >> 6) & 3
+        ivl_lps_range = self.tables.lps_range_table[p_state_idx][q_range_idx]
+
+        self.ivl_curr_range = self.ivl_curr_range - ivl_lps_range
+        if ivl_offset >= self.ivl_curr_range:
+            bin_val = 1 - self.context_model[ctx_idx].val_mps
+            self.ivl_offset -= self.ivl_curr_range
+            self.ivl_curr_range = ivl_lps_range
+        else:
+            bin_val = self.context_model[ctx_idx].val_mps
+            
+        self.state_transition_process(bin_val)
+        self.renormalization_process()
+
+        return bin_val
+
+    def state_transition_process(self, ctx_idx, bin_val):
+        if bin_val == self.context_model[ctx_idx].val_mps:
+            self.context_model[ctx_idx].p_state_idx = self.tables.next_state_mps_table[self.context_model[ctx_idx].p_state_idx]
+        else:
+            if self.context_model[ctx_idx].p_state_idx == 0:
+                self.context_model[ctx_idx].val_mps = 1 - self.context_model[ctx_idx].val_mps
+            self.context_model[ctx_idx].p_state_idx = self.tables.next_state_lps_table[self.context_model[ctx_idx].p_state_idx]
+
+    def renormalization_process(self):
+        if self.ivl_curr_range < 256:
+            self.ivl_curr_range <<= 1
+            self.ivl_offset <<= 1
+            self.ivl_offset |= self.bs.read_bits(1)
+
+    def decode_bypass(self):
+        self.ivl_offset <<= 1
+        self.ivl_offset |= self.bs.read_bits(1)
+
+        if self.ivl_offset >= self.ivl_curr_range:
+            bin_val = 1
+            self.ivl_offset -= self.ivl_curr_range
+        else:
+            bin_val = 0
+        
+        if self.ivl_offset >= self.ivl_curr_range:
+            raise "Unexpected interval offset."
+
+        return bin_val
+
+    def decode_terminate(self):
+        self.ivl_curr_range -= 2
+        if self.ivl_offset >= self.ivl_curr_range:
+            bin_val = 1
+        else:
+            bin_val = 0
+            self.renomalization_process()
+
+        return bin_val
+    
