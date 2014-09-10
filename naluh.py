@@ -1,7 +1,3 @@
-import vps
-import sps
-import pps
-
 class NaluHeader:
     def __init__(self, bs):
         self.bs = bs
