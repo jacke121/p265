@@ -1,20 +1,22 @@
 import math
 import st_rps
+import cabac
 
 class SliceHeader:
-    def __init__(self, bs, naluh, vps, sps, pps):
+    def __init__(self, bs, naluh, vps, sps, pps, img):
         self.bs = bs
         self.naluh = naluh
-        self.vps = vps
-        self.sps = sps
-        self.pps = pps
+        self.vps_set = vps
+        self.sps_set = sps
+        self.pps_set = pps
+        self.img = img
         self.short_term_ref_pic_set = st_rps.ShortTermRefPicSet(bs)
 
         self.B_SLICE = 0
         self.P_SLICE = 1
         self.I_SLICE = 2
 
-    def parse(self):
+    def decode(self):
         print >>self.bs.log, "============= Slice Header ============="
 
         self.first_slice_segment_in_pic_flag = self.bs.u(1, "first_slice_segment_in_pic_flag")
@@ -22,6 +24,9 @@ class SliceHeader:
             self.no_output_of_prior_pics_flag = self.bs.u(1, "no_output_of_prior_pics_flag")
 
         self.slice_pic_parameter_set_id = self.bs.ue("slice_pic_parameter_set_id")
+        self.pps = self.pps_set[self.slice_pic_parameter_set_id]
+        self.sps = self.sps_set[self.pps.pps_seq_parameter_set_id]
+        self.vps = self.vps_set[self.sps.sps_video_parameter_set_id]
 
         self.dependent_slice_segment_flag = 0
         if not self.first_slice_segment_in_pic_flag:
@@ -129,9 +134,14 @@ class SliceHeader:
                 self.five_minus_max_num_merge_cand = self.bs.ue("five_minus_max_num_merge_cand")
 
             self.slice_qp_delta = self.bs.se("slice_qp_delta")
+            self.slice_qp_y = self.slice_qp_delta + self.pps.init_qp_minus26 + 26
+
             if self.pps.pps_slice_chroma_qp_offsets_present_flag:
                 self.slice_cb_qp_offset = self.bs.se("slice_cb_qp_offset")
                 self.slice_cr_qp_offset = self.bs.se("slice_cr_qp_offset")
+            else:
+                self.slice_cb_qp_offset = 0 
+                self.slice_cr_qp_offset = 0 
 
             self.deblocking_filter_override_flag = 0
             if self.pps.deblocking_filter_override_enabled_flag:
@@ -157,27 +167,33 @@ class SliceHeader:
         self.bs.byte_alignment()
 
 class SliceData:
-    def __init__(self, bs, slice_header):
-        pass
+    def __init__(self, bs, naluh, vps, sps, pps, slice_header, img):
+        self.bs = bs
+        self.naluh = naluh
+        self.vps = vps
+        self.sps = sps
+        self.pps = pps
+        self.slice_header = slice_header
+        self.img = img
+        self.cabac = cabac.Cabac(bs)
 
-    def parse(self, img):
-        if not slice_header.dependent_slice_segment_flag:
-            self.cabac.initialize_context_modes(slice_header)
+    def decode(self):
+        if not self.slice_header.dependent_slice_segment_flag:
+            self.cabac.initialize_context_models(self.slice_header)
 
         while True:
-            self.parse_coding_tree_unit(img)
+            self.parse_coding_tree_unit()
             raise "Intentional Stop."
 
-    def parse_coding_tree_unit(self, img):
+    def parse_coding_tree_unit(self):
         pass
 
 class SliceSegment:
-    def __init__(self, bs, naluh, vps, sps, pps):
+    def __init__(self, bs, naluh, vps, sps, pps, img):
         self.bs = bs
-        self.cabac = cabac.Cabac(bs)
-        self.slice_header = SliceHeader(bs, naluh, vps, sps, pps)
-        self.slice_data = SliceData(bs, slice_header)
+        self.slice_header = SliceHeader(bs, naluh, vps, sps, pps, img)
+        self.slice_data = SliceData(bs, naluh, vps, sps, pps, self.slice_header, img)
 
-    def parse(self, img):
-        self.slice_header.parse()
-        self.slice_data.parse(img)
+    def decode(self):
+        self.slice_header.decode()
+        self.slice_data.decode()
