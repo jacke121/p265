@@ -168,11 +168,16 @@ class ContextModel:
 class Cabac:
     def __init__(self, bs):
         self.bs = bs
-        self.context_model = [0] * 256 # TODO: make the size be precise
-        for i in range(256):
-            self.context_model[i] = ContextModel()
-        self.init_type = 0
         self.tables = CabacTables()
+        self.init_value_tables = self.tables.init_value_tables
+
+        self.context_model = {} # TODO: make the size be precise
+        for i in self.init_value_tables.keys():
+            self.context_models[i] = []
+            for j in len(self.init_value_tables[i]):
+                self.context_models[i].append(ContextModel())
+
+        self.init_type = 0
 
     def clip3(self, min, max, value):
         if val > max:
@@ -184,17 +189,18 @@ class Cabac:
         
         return result
 
-    def initialization_process(self, ctx_idx, init_value, slice_header):
+    def initialization_process(self, ctx_table, ctx_idx, slice_header):
+        init_value = self.init_value_tables[ctx_table][ctx_idx]
         slope_idx = init_value >> 4;
         offset_idx = init_value & 0xF;
         m = slope_idx * 5 - 45;
         n = (offset_idx << 3) - 16;
         pre_ctx_state = self.clip3(1, 126, ((m * self.clip3(0, 51, slice_header.slice_qp_y)) >> 4) + n);
         
-        self.context_model[ctx_idx].val_mps = (pre_ctx_state <= 63) ? 0 : 1;
-        self.context_model[ctx_idx].p_state_idx = self.context_model[ctx_idx].val_mps ? (pre_ctx_state - 64) : (63 - pre_ctx_state);
+        self.context_models[ctx_table][ctx_idx].val_mps = (pre_ctx_state <= 63) ? 0 : 1;
+        self.context_models[ctx_table][ctx_idx].p_state_idx = self.context_models[ctx_table][ctx_idx].val_mps ? (pre_ctx_state - 64) : (63 - pre_ctx_state);
 
-        if not (self.context_model[ctx_idx].p_state_idx <= 62):
+        if not (self.context_models[ctx_table][ctx_idx].p_state_idx <= 62):
             raise "Unexpected probability state."
 
             #if slice_header.slice_type == slice_header.I_SLICE:
@@ -203,6 +209,11 @@ class Cabac:
             #    self.init_type = slice_header.cabac_init_flag ? 2 : 1
             #else slice_header.slice_type == slice_header.B_SLICE:
             #    self.init_type = slice_header.cabac_init_flag ? 1 : 2
+
+    def initialize_context_models(self, slice_header):
+        for i in self.init_value_tables.keys():
+            for j in len(self.init_value_tables[key]):
+                self.initialization_process(i, j, slice_header)
 
     def storage_process(self):
         pass
@@ -220,35 +231,35 @@ class Cabac:
     def decode_bin(self, ctx_table, ctx_idx, bypass_flag):
         if bypass_flag == 1:
             self.decode_bypass()
-        elif ctx_table ==0 and ctx_idx == 0:
+        elif ctx_table == 0 and ctx_idx == 0:
             self.decode_terminate()
         else:
-            self.decode_decision()
+            self.decode_decision(ctx_table, ctx_idx)
 
-    def decode_decision(self, ctx_idx):
+    def decode_decision(self, ctx_table, ctx_idx):
         q_range_idx = (self.ivl_curr_range >> 6) & 3
-        ivl_lps_range = self.tables.lps_range_table[p_state_idx][q_range_idx]
+        ivl_lps_range = self.tables.lps_range_table[self.context_models[ctx_table][ctx_idx].p_state_idx][q_range_idx]
 
         self.ivl_curr_range = self.ivl_curr_range - ivl_lps_range
         if ivl_offset >= self.ivl_curr_range:
-            bin_val = 1 - self.context_model[ctx_idx].val_mps
+            bin_val = 1 - self.context_models[ctx_table][ctx_idx].val_mps
             self.ivl_offset -= self.ivl_curr_range
             self.ivl_curr_range = ivl_lps_range
         else:
-            bin_val = self.context_model[ctx_idx].val_mps
+            bin_val = self.context_models[ctx_table][ctx_idx].val_mps
             
         self.state_transition_process(bin_val)
         self.renormalization_process()
 
         return bin_val
 
-    def state_transition_process(self, ctx_idx, bin_val):
-        if bin_val == self.context_model[ctx_idx].val_mps:
-            self.context_model[ctx_idx].p_state_idx = self.tables.next_state_mps_table[self.context_model[ctx_idx].p_state_idx]
+    def state_transition_process(self, ctx_table, ctx_idx, bin_val):
+        if bin_val == self.context_models[ctx_table][ctx_idx].val_mps:
+            self.context_models[ctx_table][ctx_idx].p_state_idx = self.tables.next_state_mps_table[self.context_models[ctx_table][ctx_idx].p_state_idx]
         else:
-            if self.context_model[ctx_idx].p_state_idx == 0:
-                self.context_model[ctx_idx].val_mps = 1 - self.context_model[ctx_idx].val_mps
-            self.context_model[ctx_idx].p_state_idx = self.tables.next_state_lps_table[self.context_model[ctx_idx].p_state_idx]
+            if self.context_models[ctx_table][ctx_idx].p_state_idx == 0:
+                self.context_models[ctx_table][ctx_idx].val_mps = 1 - self.context_models[ctx_table][ctx_idx].val_mps
+            self.context_models[ctx_table][ctx_idx].p_state_idx = self.tables.next_state_lps_table[self.context_models[ctx_table][ctx_idx].p_state_idx]
 
     def renormalization_process(self):
         if self.ivl_curr_range < 256:
