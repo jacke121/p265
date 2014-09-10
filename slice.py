@@ -157,18 +157,27 @@ class SliceHeader:
         self.bs.byte_alignment()
 
 class SliceData:
-    def __init__(self, bs):
+    def __init__(self, bs, slice_header):
         pass
-    
-#    def init_context_models(self):
-#        for i in range(1):
-#            self.sao_merge_flag_context_model
+
+    def parse(self, img):
+        if not slice_header.dependent_slice_segment_flag:
+            self.cabac.initialize_context_modes(slice_header)
+
+        while True:
+            self.parse_coding_tree_unit(img)
+            raise "Intentional Stop."
+
+    def parse_coding_tree_unit(self, img):
+        pass
 
 class SliceSegment:
     def __init__(self, bs, naluh, vps, sps, pps):
         self.bs = bs
+        self.cabac = cabac.Cabac(bs)
         self.slice_header = SliceHeader(bs, naluh, vps, sps, pps)
-        self.slice_data = SliceData(bs)
+        self.slice_data = SliceData(bs, slice_header)
 
-    def parse(self):
+    def parse(self, img):
         self.slice_header.parse()
+        self.slice_data.parse(img)

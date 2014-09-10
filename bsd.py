@@ -3,11 +3,12 @@ import vps
 import sps
 import pps
 import nalu
-
+import image
 class BitStreamDecoder:
     def __init__(self, bs):
         self.bs = bs
         self.nalu = nalu.Nalu(bs)
+        self.img = Imgage()
 
     def parse(self):
         while True:
@@ -27,7 +28,7 @@ class BitStreamDecoder:
                 self.nalu.pps.parse()
                 self.bs.report_position()
             elif nalu_type == 19:
-                self.nalu.slice.parse()
+                self.nalu.slice.parse(self.img)
                 self.bs.report_position()
             else:
                 print "Error: unimplemeted NALU type = %d." % nalu_type
