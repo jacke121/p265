@@ -122,8 +122,8 @@ class Sps:
         #raise "TODO @ SPS"
 
     def determin_picture_size_parameters(self):
-        min_cb_log2_size_y = self.log2_min_luma_coding_block_size_minus3 + 3
-        ctb_log2_size_y = min_cb_log2_size_y + self.log2_diff_max_min_luma_coding_block_size
+        self.min_cb_log2_size_y = self.log2_min_luma_coding_block_size_minus3 + 3
+        self.ctb_log2_size_y = min_cb_log2_size_y + self.log2_diff_max_min_luma_coding_block_size
         min_cb_size_y = 1 << min_cb_log2_size_y
         ctb_size_y = 1 << ctb_log2_size_y
 
