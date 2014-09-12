@@ -124,14 +124,14 @@ class Sps:
     def determin_picture_size_parameters(self):
         self.min_cb_log2_size_y = self.log2_min_luma_coding_block_size_minus3 + 3
         self.ctb_log2_size_y = min_cb_log2_size_y + self.log2_diff_max_min_luma_coding_block_size
-        min_cb_size_y = 1 << min_cb_log2_size_y
-        ctb_size_y = 1 << ctb_log2_size_y
+        self.min_cb_size_y = 1 << min_cb_log2_size_y
+        self.ctb_size_y = 1 << ctb_log2_size_y
 
-        pic_width_in_min_cbs_y = self.pic_width_in_luma_samples / min_cb_size_y
-        self.pic_width_in_ctbs_y = math.ceil(float(self.pic_height_in_luma_samples) / ctb_size_y)
+        pic_width_in_min_cbs_y = self.pic_width_in_luma_samples / self.min_cb_size_y
+        self.pic_width_in_ctbs_y = math.ceil(float(self.pic_height_in_luma_samples) / self.ctb_size_y)
 
-        pic_height_in_min_cbs_y = self.pic_height_in_luma_samples / min_cb_size_y
-        self.pic_height_in_ctbs_y = math.ceil(float(self.pic_height_in_luma_samples) / ctb_size_y)
+        pic_height_in_min_cbs_y = self.pic_height_in_luma_samples / self.min_cb_size_y
+        self.pic_height_in_ctbs_y = math.ceil(float(self.pic_height_in_luma_samples) / self.ctb_size_y)
 
         pic_size_in_min_cbs_y = pic_width_in_min_cbs_y * pic_height_in_min_cbs_y
         self.pic_size_in_ctbs_y = self.pic_width_in_ctbs_y * self.pic_height_in_ctbs_y
