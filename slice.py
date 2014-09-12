@@ -166,6 +166,8 @@ class SliceHeader:
 
         self.bs.byte_alignment()
 
+
+
 class SliceData:
     def __init__(self, bs, naluh, vps, sps, pps, slice_header, img):
         self.bs = bs
@@ -176,7 +178,8 @@ class SliceData:
         self.slice_header = slice_header
         self.img = img
         self.cabac = cabac.Cabac(bs)
-        self.ctbs = [{}] * 2048 # TODO make the size precise
+        self.ctbs = {}
+        self.ctb = Ctb()
 
     def decode(self):
         if not self.slice_header.dependent_slice_segment_flag:
@@ -219,7 +222,10 @@ class SliceData:
         return ctb_y * self.sps.pic_width_in_ctbs_y + ctb_x;
 
     def get_slice_addr_rs_from_ctb_addr_rs(self, ctb_addr_rs):
-        return self.ctbs[ctb_addr_rs]["slice_addr"]
+        if self.ctbs.has_key(ctb_addr_rs):
+            return self.ctbs[ctb_addr_rs]["slice_addr"]
+        else:
+            return -1
 
     def check_ctb_availability(self, x_current, y_current, x_neighbor, y_neighbor):
         if x_neighbor < 0 or y_neighbor < 0: return 0
@@ -231,15 +237,16 @@ class SliceData:
         neighbor_ctb_addr_rs = self.get_ctb_addr_rs_from_luma_position(x_neighbor, y_neighbor);
 
         # TODO: check if this is correct (6.4.1)
-        if self.get_slice_addr_rs_from_ctb_addr_rs(self, current_ctb_addr_rs) !=\
-           self.get_slice_addr_rs_from_ctb_addr_rs(self, neighbor_ctb_addr_rs):
+        if self.get_slice_addr_rs_from_ctb_addr_rs(neighbor_ctb_addr_rs) == -1
             return 0
 
+        if self.pps.tiles_enabled_flag:
+            raise "Unsupported yet."
         # check if both CTBs are in the same tile.
-        if (img->pps.TileIdRS[current_ctbAddrRS] !=
-            img->pps.TileIdRS[neighbor_ctbAddrRS]) {
-            return 0;
-        }
+        #if (img->pps.TileIdRS[current_ctbAddrRS] !=
+        #    img->pps.TileIdRS[neighbor_ctbAddrRS]) {
+        #    return 0;
+        #}
 
         return 1
 
