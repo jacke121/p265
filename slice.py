@@ -1,6 +1,7 @@
 import math
 import st_rps
 import cabac
+import ctb
 
 class SliceHeader:
     def __init__(self, bs, naluh, vps, sps, pps, img):
@@ -29,6 +30,7 @@ class SliceHeader:
         self.vps = self.vps_set[self.sps.sps_video_parameter_set_id]
 
         self.dependent_slice_segment_flag = 0
+        self.slice_segment_address = 0
         if not self.first_slice_segment_in_pic_flag:
             if self.pps.dependent_slice_segments_enabled_flag:
                 self.dependent_slice_segment_flag = self.bs.u(1, "dependent_slice_segment_flag")
@@ -169,36 +171,37 @@ class SliceHeader:
 
 
 class SliceData:
-    def __init__(self, bs, naluh, vps, sps, pps, slice_header, img):
+    def __init__(self, bs, naluh, slice_header, img):
         self.bs = bs
         self.naluh = naluh
-        self.vps = vps
-        self.sps = sps
-        self.pps = pps
         self.slice_header = slice_header
         self.img = img
         self.cabac = cabac.Cabac(bs)
         self.ctbs = {}
-        self.ctb = Ctb()
 
     def decode(self):
+        self.vps = self.slice_header.vps
+        self.sps = self.slice_header.sps
+        self.pps = self.slice_header.pps
+
         if not self.slice_header.dependent_slice_segment_flag:
             self.cabac.initialize_context_models(self.slice_header)
+
+        self.ctb_addr_rs = self.slice_header.slice_segment_address
 
         while True:
             self.parse_coding_tree_unit()
             raise "Intentional Stop."
 
     def parse_coding_tree_unit(self):
-        self.ctb_addr_rs = self.slice_header.slice_segment_address #TODO: true if first ctb of slice
-
-        self.ctb[self.ctb_addr_rs]["slice_addr"] = [self.slice_header.slice_segment_address]
-
         self.x_ctb = self.ctb_addr_rs % self.sps.pic_width_in_ctbs_y
         self.y_ctb = self.ctb_addr_rs / self.sps.pic_width_in_ctbs_y
 
         self.x_ctb_pixels = self.x_ctb << self.sps.ctb_log2_size_y
         self.y_ctb_pixels = self.y_ctb << self.sps.ctb_log2_size_y
+
+        self.ctb = ctb.Ctb(self.x_ctb_pixels, self.y_ctb_pixels, self.sps)
+        self.ctb.slice_addr = self.slice_header.slice_segment_address
 
         if self.slice_header.slice_sao_luma_flag or self.slice_header.slice_sao_chroma_flag:
             raise "Unsupported yet."
@@ -215,7 +218,7 @@ class SliceData:
 
         pass
 
-    def get_ctb_addr_rs_from_luma_position(self, x, y):
+    def get_ctb_addr(self, x, y):
         ctb_x = x >> self.sps.log2_ctb_size_y;
         ctb_y = y >> self.sps.log2_ctb_size_y;
     
@@ -237,7 +240,7 @@ class SliceData:
         neighbor_ctb_addr_rs = self.get_ctb_addr_rs_from_luma_position(x_neighbor, y_neighbor);
 
         # TODO: check if this is correct (6.4.1)
-        if self.get_slice_addr_rs_from_ctb_addr_rs(neighbor_ctb_addr_rs) == -1
+        if self.get_slice_addr_rs_from_ctb_addr_rs(neighbor_ctb_addr_rs) == -1:
             return 0
 
         if self.pps.tiles_enabled_flag:
@@ -250,11 +253,34 @@ class SliceData:
 
         return 1
 
+    def set_cqt_depth(self, x, y, log2size, depth):
+        ctb_addr = self.get_ctb_addr(x, y)
+        return self.ctbs[ctb_addr].set_cqt_addr(x, y, log2size, depth)
+
+    def get_cqt_depth(self, x, y):
+        ctb_addr = self.get_ctb_addr(x, y)
+        return self.ctbs[ctb_addr].get_cqt_addr(x, y)
+
+    def decode_split_cu_flag(self, x0, y0, cqt_depth):
+        availableL = self.check_availability(x0, y0, x0-1, y0)
+        availableA = self.check_availability(x0, y0, x0, y0-1)
+
+        condL = condA = 0
+        if availableL and self.get_cqt_depth(x0-1, y0) > cqt_depth: condL = 1
+        if availableA and self.get_cqt_depth(x0, y0-1) > cqt_depth: condA = 1
+
+        context_offset= condL + condA
+        context_idx = context_offset
+
+        bit = self.cabac.decode_bin("split_cu_flag", context_idx, 0)
+        return bit
+
+
 class SliceSegment:
     def __init__(self, bs, naluh, vps, sps, pps, img):
         self.bs = bs
         self.slice_header = SliceHeader(bs, naluh, vps, sps, pps, img)
-        self.slice_data = SliceData(bs, naluh, vps, sps, pps, self.slice_header, img)
+        self.slice_data = SliceData(bs, naluh, self.slice_header, img)
 
     def decode(self):
         self.slice_header.decode()

@@ -41,7 +41,11 @@ class Ctb:
         (x_cb, y_cb) = self.get_min_cb_coordinate(x_pixel, y_pixel)
         return x_cb + y_cb * self.sps.pic_width_in_min_cbs_y
 
-    def set_cqt_depth(self, x, y, log2_cb_size, cqt_depth):
+    def get_cqt_depth(self, x, y):
+        addr = self.get_min_cb_addr(x, y)
+        return self.min_cbs[addr].cqt_depth
+
+    def set_cqt_depth(self, x, y, log2_size, cqt_depth):
         #if x < self.x_ctb_pixels or y < self.y_ctb_pixels:
         #    raise "(%d, %d) is not a valid coordinate for ctb_addr = %d" % (x, y, self.addr)
         
@@ -49,7 +53,7 @@ class Ctb:
         y_cb = y >> self.sps.min_cb_log2_size_y
         print "x_cb, y_cb = ", (x_cb, y_cb)
 
-        width = 1 << (log2_cb_size - self.sps.min_cb_log2_size_y)
+        width = 1 << (log2_size - self.sps.min_cb_log2_size_y)
         print "width = ", width
 
         for j in range(y_cb, y_cb+width):
