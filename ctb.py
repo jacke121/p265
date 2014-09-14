@@ -4,51 +4,57 @@ class Cb:
         self.cqt_depth = 0
         self.addr = 0
 
+class SaoInfo:
+    def __init__(self):
+        self.sao_type_idx = [0] * 3 # 0:y, 1:cb, 2:cr
+
 class Ctb:
-    def __init__(self, x_pixel, y_pixel, sps):
+    def __init__(self, addr, sps):
         self.sps = sps
+
         self.slice_addr = 0
+        self.addr = addr # CTB address in raster scan
         
-        self.x_pixel = x_pixel
-        self.y_pixel = y_pixel
+        # CTB coordinate
+        self.x_ctb = self.addr % self.sps.pic_width_in_ctbs_y
+        self.y_ctb = self.addr / self.sps.pic_width_in_ctbs_y
+        
+        # CTB coordinate in luma pixels
+        self.x_ctb_pixel = self.x_ctb << self.sps.ctb_log2_size_y
+        self.y_ctb_pixel = self.y_ctb << self.sps.ctb_log2_size_y
 
-        self.x_ctb = self.x_pixel >> self.sps.ctb_log2_size_y
-        self.y_ctb = self.y_pixel >> self.sps.ctb_log2_size_y
+        self.sao_info = SaoInfo()
 
-        self.addr = self.x_ctb + self.y_ctb * self.sps.pic_width_in_ctbs_y
-
-        self.init_min_cbs()
+        self.init_mincbs()
 
         self.dump()
 
-    def init_min_cbs(self):
-        self.min_cbs = {}
+    def init_mincbs(self):
+        # All the coding blocks (in minimum CB size) contained in the current CTB
+        self.mincbs= {}
 
-        (x_cb, y_cb) = self.get_min_cb_coordinate(self.x_pixel, self.y_pixel)
+        (x_cb, y_cb) = self.get_mincb_coordinate(self.x_ctb_pixel, self.y_ctb_pixel)
         width = 1 << (self.sps.ctb_log2_size_y - self.sps.min_cb_log2_size_y)
 
         for j in range(y_cb, y_cb+width):
             for i in range(x_cb, x_cb+width):
-                min_cb_addr = i + j * self.sps.pic_width_in_min_cbs_y
-                self.min_cbs[min_cb_addr] = Cb()
+                mincb_addr = i + j * self.sps.pic_width_in_min_cbs_y
+                self.mincbs[mincb_addr] = Cb()
 
-    def get_min_cb_coordinate(self, x_pixel, y_pixel):
+    def get_mincb_coordinate(self, x_pixel, y_pixel):
         x_cb = x_pixel >> self.sps.min_cb_log2_size_y
         y_cb = y_pixel >> self.sps.min_cb_log2_size_y
         return (x_cb, y_cb)
 
-    def get_min_cb_addr(self, x_pixel, y_pixel):
+    def get_mincb_addr(self, x_pixel, y_pixel):
         (x_cb, y_cb) = self.get_min_cb_coordinate(x_pixel, y_pixel)
         return x_cb + y_cb * self.sps.pic_width_in_min_cbs_y
 
     def get_cqt_depth(self, x, y):
         addr = self.get_min_cb_addr(x, y)
-        return self.min_cbs[addr].cqt_depth
+        return self.mincbs[addr].cqt_depth
 
     def set_cqt_depth(self, x, y, log2_size, cqt_depth):
-        #if x < self.x_ctb_pixels or y < self.y_ctb_pixels:
-        #    raise "(%d, %d) is not a valid coordinate for ctb_addr = %d" % (x, y, self.addr)
-        
         x_cb = x >> self.sps.min_cb_log2_size_y
         y_cb = y >> self.sps.min_cb_log2_size_y
         print "x_cb, y_cb = ", (x_cb, y_cb)
@@ -60,7 +66,7 @@ class Ctb:
             for i in range(x_cb, x_cb+width):
                 min_cb_addr = i + j * self.sps.pic_width_in_min_cbs_y
                 print "%02x " % min_cb_addr,
-                self.min_cbs[min_cb_addr].cqt_depth = cqt_depth  
+                self.mincbs[min_cb_addr].cqt_depth = cqt_depth  
             print ""
 
 
@@ -90,7 +96,7 @@ if __name__ == "__main__":
             self.pic_height_in_ctbs_y = self.pic_width_in_ctbs_y
             self.pic_height_in_min_cbs_y = self.pic_width_in_min_cbs_y
 
-    ctb1 = Ctb(64, 64, Sps(2, 16, 6, 3))
+    ctb1 = Ctb(addr=3, sps=Sps(2, 16, 6, 3))
     if ctb1.addr != 3: raise 
 
     ctb1.set_cqt_depth(64, 64, 5, 1)
