@@ -6,14 +6,18 @@ import pps
 import slice
 import image
 
+MAX_VPS_COUNT = 16
+MAX_SPS_COUNT = 32
+MAX_PPS_COUNT = 256
+
 class P265:
-    def __init__(self, bit_stream = "str.bin"):
+    def __init__(self, bs = "str.bin"):
         self.img = image.Image()
-        self.bs = bsb.BitStreamBuffer(bit_stream)
+        self.bs = bsb.BitStreamBuffer(bs)
         self.naluh = naluh.NaluHeader(self.bs)
-        self.vps = [0] * 256 # TODO: make the size precise
-        self.sps = [0] * 256
-        self.pps = [0] * 256
+        self.vps = [0] * MAX_VPS_COUNT
+        self.sps = [0] * MAX_SPS_COUNT
+        self.pps = [0] * MAX_PPS_COUNT
         self.slice = slice.SliceSegment(self.bs, self.naluh, self.vps, self.sps, self.pps, self.img)
 
     def decode_nal_units(self):
