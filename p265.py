@@ -6,59 +6,32 @@ import pps
 import slice
 import image
 
-MAX_VPS_COUNT = 16
-MAX_SPS_COUNT = 32
-MAX_PPS_COUNT = 256
+class P265
+	def __init__(self, bs= "str.bin"):
+		self.ctx = ctx.Context(bs)
+		self.bs = self.ctx.bs
+		self.nalu = nalu.Nalu()
 
-class P265:
-    def __init__(self, bs = "str.bin"):
-        self.img = image.Image()
-        self.bs = bsb.BitStreamBuffer(bs)
-        self.naluh = naluh.NaluHeader(self.bs)
-        self.vps = [0] * MAX_VPS_COUNT
-        self.sps = [0] * MAX_SPS_COUNT
-        self.pps = [0] * MAX_PPS_COUNT
-        self.slice = slice.SliceSegment(self.bs, self.naluh, self.vps, self.sps, self.pps, self.img)
-
-    def decode_nal_units(self):
+    def decode(self):
         while True:
             self.bs.search_start_code()
             self.bs.report_position()
 
-            self.naluh.decode()
-            nalu_type = self.naluh.nal_unit_type
+			naluh = self.nalu.decode_naluh()
+			nalu_type = naluh.nalu_type
 
             if nalu_type == 32:
-                self.decode_vps()
+                self.nalu.decode_vps()
             elif nalu_type == 33:
-                self.decode_sps()
+                self.nalu.decode_sps()
             elif nalu_type == 34:
-                self.decode_pps()
+                self.nalu.decode_pps()
             elif nalu_type == 19:
-                self.decode_slice()
+                self.nalu.decode_slice_seg()
             else:
                 print "Error: unimplemeted NALU type = %d." % nalu_type
                 raise "Intensional raise"
-    
-    def decode_slice(self):
-        self.slice.decode()
-
-    def decode_vps(self):
-        v = vps.Vps(self.bs)
-        v.parse()
-        self.vps[v.vps_video_parameter_set_id] = v
-
-    def decode_sps(self):
-        s = sps.Sps(self.bs)
-        s.parse()
-        self.sps[s.sps_seq_parameter_set_id] = s
-
-    def decode_pps(self):
-        p = pps.Pps(self.bs)
-        p.parse()
-        self.pps[p.pps_pic_parameter_set_id] = p
-
 
 if __name__ == "__main__":
     p265 = P265("str.bin")
-    p265.decode_nal_units()
+    p265.decode()

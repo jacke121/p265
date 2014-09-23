@@ -11,16 +11,22 @@ class VuiParameters:
         raise "Not implemented yet"
 
 class Sps:
-    def __init__(self, bs):
-        self.bs = bs
+    def __init__(self, ctx):
+		self.ctx = ctx
+        self.bs = self.ctx.bs
         self.profile_tier_level = ptl.ProfileTierLevel(bs)
         self.scaling_list_data = sld.ScalingListData(bs)
         self.vui_parameters = VuiParameters(bs)
+
+	def activate_vps(self):
+		self.ctx.vps = self.ctx.vps_list[self.sps_video_parameter_set_id]
 
     def parse(self):
         print >>self.bs.log, "============= Sequence Parameter Set ============="
 
         self.sps_video_parameter_set_id = self.bs.u(4, "sps_video_parameter_set_id")
+		self.activate_vps()
+
         self.sps_max_sub_layers_minus1 = self.bs.u(3, "sps_max_sub_layers_minus1")
         self.sps_temporal_id_nesting_flag = self.bs.u(1, "sps_temporal_id_nesting_flag")
 

@@ -1,4 +1,10 @@
+import ctb
+
 class Image:
     def __init__(self):
-        self.ctb_addr = 0
+		self.slice_hdrs = [] 
+		self.ctb = None
+		self.ctbs = None
+
+	
 

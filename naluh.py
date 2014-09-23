@@ -60,3 +60,37 @@ class NaluHeader:
         self.nuh_layer_id = self.bs.u(6, "nuh_layer_id")
         self.nuh_temporal_id_plus1 = self.bs.u(3, "nuh_temporal_id_plus1")
 
+class Nalu:
+    def __init__(self, ctx):
+        self.bs = self.ctx.bs
+		self.img = self.ctx.img
+
+        self.vps_list = self.ctx.vps_list
+        self.sps_list = self.ctx.sps_list
+        self.pps_list = self.ctx.pps_list
+
+        self.slice_seg = slice.SliceSegment(self.ctx)
+
+	def decode_naluh(self):
+        naluh = naluh.NaluHeader(self.bs)
+        naluh.decode()
+		return naluh
+
+    def decode_slice_seg(self):
+        self.slice_seg.decode()
+
+    def decode_vps(self):
+        v = vps.Vps(self.bs)
+        v.parse()
+        self.vps_list[v.vps_video_parameter_set_id] = v
+
+    def decode_sps(self):
+        s = sps.Sps(self.bs)
+        s.parse()
+        self.sps_list[s.sps_seq_parameter_set_id] = s
+
+    def decode_pps(self):
+        p = pps.Pps(self.ctx)
+        p.parse()
+        self.pps_list[p.pps_pic_parameter_set_id] = p
+

@@ -2,18 +2,26 @@ import math
 import st_rps
 
 class SliceHeader:
-    def __init__(self, bs, naluh, vps, sps, pps, img):
-        self.bs = bs
-        self.naluh = naluh
-        self.vps_set = vps
-        self.sps_set = sps
-        self.pps_set = pps
-        self.img = img
+    def __init__(self, ctx):
+		self.ctx = ctx
+        self.bs = self.ctx.bs
+
+        self.img = self.ctx.img
+
+		self.vps = self.ctx.vps 
+		self.sps = self.ctx.sps
+		self.pps = self.ctx.pps
+
+        self.naluh = self.ctx.naluh
+
         self.short_term_ref_pic_set = st_rps.ShortTermRefPicSet(bs)
 
         self.B_SLICE = 0
         self.P_SLICE = 1
         self.I_SLICE = 2
+
+	def activate_pps(self):
+        self.pps = self.ctx.pps_list[self.slice_pic_parameter_set_id]
 
     def decode(self):
         print >>self.bs.log, "============= Slice Header ============="
@@ -23,9 +31,7 @@ class SliceHeader:
             self.no_output_of_prior_pics_flag = self.bs.u(1, "no_output_of_prior_pics_flag")
 
         self.slice_pic_parameter_set_id = self.bs.ue("slice_pic_parameter_set_id")
-        self.pps = self.pps_set[self.slice_pic_parameter_set_id]
-        self.sps = self.sps_set[self.pps.pps_seq_parameter_set_id]
-        self.vps = self.vps_set[self.sps.sps_video_parameter_set_id]
+		self.activate_pps()
 
         self.dependent_slice_segment_flag = 0
         self.slice_segment_address = 0

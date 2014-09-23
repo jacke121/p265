@@ -1,17 +1,31 @@
 import sld
+import img
 
 class Pps:
-    def __init__(self, bs, sps):
-        self.bs = bs
-        self.sps_set = sps
+    def __init__(self, ctx):
+		self.ctx = ctx
+        self.bs = self.ctx.bs
+		self.img = self.ctx.img
+        self.sps_list = self.ctx.sps_list
         self.scaling_list_data = sld.ScalingListData(bs)
+
+	def activate_sps(self):
+        self.sps = self.sps_list[pps_seq_paramter_set_id]
+		self.ctx.sps = self.sps
+
+		self.create_img()
+	
+	def create_img(self):
+		self.img = img.Image()
+        self.img.ctb = ctb.Ctb(self.ctx, 0, 0, 1 << self.sps.ctb_log2_size_y)
+        self.img.ctbs = [[None] * self.sps.pic_height_in_ctbs_y] * self.sps.pic_width_in_ctbs_y
 
     def parse(self):
         print >>self.bs.log, "============= Picture Parameter Set ============="
 
         self.pps_pic_parameter_set_id = self.bs.ue("pps_pic_parameter_set_id")
         self.pps_seq_parameter_set_id = self.bs.ue("pps_seq_parameter_set_id")
-        self.sps = self.sps_set[pps_seq_paramter_set_id]
+		self.activate_sps()
 
         self.dependent_slice_segments_enabled_flag = self.bs.u(1, "dependent_slice_segments_enabled_flag")
         self.output_flag_present_flag = self.bs.u(1, "output_flag_present_flag")

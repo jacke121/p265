@@ -9,19 +9,23 @@ class SaoInfo:
         self.sao_type_idx = [0] * 3 # 0:y, 1:cb, 2:cr
 
 class Ctb:
-    def __init__(self, addr, sps):
-        self.sps = sps
+    def __init__(self, ctx):
+        self.sps = self.ctx.sps
+		self.img = self.ctx.img
 
-        self.slice_addr = 0
-        self.addr = addr # CTB address in raster scan
+		self.slice_addr = self.img.slice_hdrs[-1].slice_segment_address
+
+        self.addr = self.img.ctb_addr_rs # CTB address in raster scan
         
         # CTB coordinate
-        self.x_ctb = self.addr % self.sps.pic_width_in_ctbs_y
-        self.y_ctb = self.addr / self.sps.pic_width_in_ctbs_y
+        self.x = self.addr % self.sps.pic_width_in_ctbs_y
+        self.y = self.addr / self.sps.pic_width_in_ctbs_y
         
         # CTB coordinate in luma pixels
-        self.x_ctb_pixel = self.x_ctb << self.sps.ctb_log2_size_y
-        self.y_ctb_pixel = self.y_ctb << self.sps.ctb_log2_size_y
+        self.x_pixel = self.x << self.sps.ctb_log2_size_y
+        self.y_pixel = self.y << self.sps.ctb_log2_size_y
+		
+		self.split_cu_flag = {}
 
         self.sao_info = SaoInfo()
 
@@ -33,7 +37,7 @@ class Ctb:
         # All the coding blocks (in minimum CB size) contained in the current CTB
         self.mincbs= {}
 
-        (x_cb, y_cb) = self.get_mincb_coordinate(self.x_ctb_pixel, self.y_ctb_pixel)
+        (x_cb, y_cb) = self.get_mincb_coordinate(self.x_pixel, self.y_pixel)
         width = 1 << (self.sps.ctb_log2_size_y - self.sps.min_cb_log2_size_y)
 
         for j in range(y_cb, y_cb+width):
