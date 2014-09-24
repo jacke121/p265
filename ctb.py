@@ -11,9 +11,9 @@ class SaoInfo:
 class Ctb:
     def __init__(self, ctx):
         self.sps = self.ctx.sps
-		self.img = self.ctx.img
+        self.img = self.ctx.img
 
-		self.slice_addr = self.img.slice_hdrs[-1].slice_segment_address
+        self.slice_addr = self.img.slice_hdrs[-1].slice_segment_address
 
         self.addr = self.img.ctb_addr_rs # CTB address in raster scan
         
@@ -24,8 +24,8 @@ class Ctb:
         # CTB coordinate in luma pixels
         self.x_pixel = self.x << self.sps.ctb_log2_size_y
         self.y_pixel = self.y << self.sps.ctb_log2_size_y
-		
-		self.split_cu_flag = {}
+        
+        self.split_cu_flag = {}
 
         self.sao_info = SaoInfo()
 

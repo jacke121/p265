@@ -12,20 +12,20 @@ class VuiParameters:
 
 class Sps:
     def __init__(self, ctx):
-		self.ctx = ctx
+        self.ctx = ctx
         self.bs = self.ctx.bs
-        self.profile_tier_level = ptl.ProfileTierLevel(bs)
-        self.scaling_list_data = sld.ScalingListData(bs)
-        self.vui_parameters = VuiParameters(bs)
+        self.profile_tier_level = ptl.ProfileTierLevel(self.bs)
+        self.scaling_list_data = sld.ScalingListData(self.bs)
+        self.vui_parameters = VuiParameters(self.bs)
 
-	def activate_vps(self):
-		self.ctx.vps = self.ctx.vps_list[self.sps_video_parameter_set_id]
+    def activate_vps(self):
+        self.ctx.vps = self.ctx.vps_list[self.sps_video_parameter_set_id]
 
     def parse(self):
         print >>self.bs.log, "============= Sequence Parameter Set ============="
 
         self.sps_video_parameter_set_id = self.bs.u(4, "sps_video_parameter_set_id")
-		self.activate_vps()
+        self.activate_vps() # Activate VPS
 
         self.sps_max_sub_layers_minus1 = self.bs.u(3, "sps_max_sub_layers_minus1")
         self.sps_temporal_id_nesting_flag = self.bs.u(1, "sps_temporal_id_nesting_flag")
@@ -66,12 +66,13 @@ class Sps:
         self.log2_min_luma_coding_block_size_minus3 = self.bs.ue("log2_min_luma_coding_block_size_minus3")
         self.log2_diff_max_min_luma_coding_block_size = self.bs.ue("log2_diff_max_min_luma_coding_block_size")
 
-        self.determin_picture_size_parameters()
-
         self.log2_min_transform_block_size_minus2 = self.bs.ue("log2_min_transform_block_size_minus2")
         self.log2_diff_max_min_transform_block_size = self.bs.ue("log2_diff_max_min_transform_block_size")
+
         self.max_transform_hierarchy_depth_inter = self.bs.ue("max_transform_hierarchy_depth_inter")
         self.max_transform_hierarchy_depth_intra = self.bs.ue("max_transform_hierarchy_depth_intra")
+
+        self.initialize_picture_size_parameters()
 
         self.scaling_list_enabled_flag = self.bs.u(1, "scaling_list_enabled_flag")
         if self.scaling_list_enabled_flag:
@@ -127,9 +128,10 @@ class Sps:
 
         #raise "TODO @ SPS"
 
-    def determin_picture_size_parameters(self):
+    def initialize_picture_size_parameters(self):
         self.min_cb_log2_size_y = self.log2_min_luma_coding_block_size_minus3 + 3
         self.ctb_log2_size_y = self.min_cb_log2_size_y + self.log2_diff_max_min_luma_coding_block_size
+
         self.min_cb_size_y = 1 << self.min_cb_log2_size_y
         self.ctb_size_y = 1 << self.ctb_log2_size_y
 
@@ -143,5 +145,17 @@ class Sps:
         self.pic_size_in_ctbs_y = self.pic_width_in_ctbs_y * self.pic_height_in_ctbs_y
 
         self.pic_size_in_samples_y = self.pic_width_in_luma_samples * self.pic_height_in_luma_samples
+
+        self.log2_min_transform_block_size = self.log2_min_transform_block_size_minus2 + 2
+        if self.log2_min_transform_block_size >= self.min_cb_log2_size_y:
+            raise ValueError("The minimum transform block size should be less than minimum coding block size.")
+
+        self.log2_max_transform_block_size = self.log2_min_transform_block_size + self.log2_diff_max_min_transform_block_size
+        if self.log2_max_transform_block_size > math.min(self.ctb_log2_size_y, 5):
+            raise ValueError("The maximum transform block size should not be greater than CTB size, and should be less than or equal to 32")
+
+        self.pic_width_in_min_tbs = self.pic_width_in_ctbs_y << (self.ctb_log2_size_y - self.log2_min_transform_block_size)
+        self.pic_height_in_min_tbs = self.pic_height_in_ctbs_y << (self.ctb_log2_size_y - self.log2_min_transform_block_size)
+
 
 
