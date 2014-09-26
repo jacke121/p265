@@ -10,7 +10,7 @@ class Context:
 	def __init__(self, bs = "str.bin"):
 		self.bs = bsb.BitStreamBuffer(bs)
 
-		self.img = image.Image() # The current image being decoded
+		self.img = image.Image(self) # The current image being decoded
 		self.dpb = dpb.Dpb() # Decoded picture buffer
 
 		self.vps_list = [None] * MAX_VPS_COUNT

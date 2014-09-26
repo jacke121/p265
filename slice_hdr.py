@@ -3,7 +3,7 @@ import st_rps
 
 class SliceHeader:
     def __init__(self, ctx):
-		self.ctx = ctx
+        self.ctx = ctx
         self.naluh = self.ctx.naluh
 
         self.short_term_ref_pic_set = st_rps.ShortTermRefPicSet(self.ctx.bs)
@@ -12,9 +12,9 @@ class SliceHeader:
         self.P_SLICE = 1
         self.I_SLICE = 2
 
-	def activate_pps(self):
-		self.vps = self.ctx.vps # VPS had been activated when parsing SPS
-		self.sps = self.ctx.sps # SPS had been activated when parsing PPS
+    def activate_pps(self):
+        self.vps = self.ctx.vps # VPS had been activated when parsing SPS
+        self.sps = self.ctx.sps # SPS had been activated when parsing PPS
         self.pps = self.ctx.pps = self.ctx.pps_list[self.slice_pic_parameter_set_id]
 
     def decode(self):
@@ -23,18 +23,21 @@ class SliceHeader:
         print >>bs.log, "============= Slice Header ============="
 
         self.first_slice_segment_in_pic_flag = bs.u(1, "first_slice_segment_in_pic_flag")
+        if self.first_slice_segment_in_pic_flag:
+            self.ctb = ctb.Ctb(self.ctx, 0) # The first CTB in the picture is created, ctb_addr_rs = 0
+
         if self.naluh.nal_unit_type >= self.naluh.BLA_W_LP and self.naluh.nal_unit_type <= self.naluh.RSV_IRAP_VCL23:
             self.no_output_of_prior_pics_flag = bs.u(1, "no_output_of_prior_pics_flag")
 
         self.slice_pic_parameter_set_id = bs.ue("slice_pic_parameter_set_id")
-		self.activate_pps() # Activate PPS 
+        self.activate_pps() # Activate PPS 
 
         self.dependent_slice_segment_flag = 0
         self.slice_segment_address = 0
         if not self.first_slice_segment_in_pic_flag:
             if self.pps.dependent_slice_segments_enabled_flag:
                 self.dependent_slice_segment_flag = bs.u(1, "dependent_slice_segment_flag")
-            self.slice_segment_address = bs.u(math.ceil(math.log(self.sps.pic_size_in_ctbs_y, 2)), "")
+            self.slice_segment_address = bs.u(math.ceil(math.log(self.sps.pic_size_in_ctbs_y, 2)), "slice_segment_address")
 
         if not self.dependent_slice_segment_flag:
             self.slice_reserved_flag = [0] * self.pps.num_extra_slice_header_bits

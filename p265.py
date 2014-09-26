@@ -1,24 +1,25 @@
 import bsb
-import naluh
+import nalu
 import vps
 import sps
 import pps
 import slice
 import image
+import context
 
-class P265
-	def __init__(self, bs= "str.bin"):
-		self.ctx = ctx.Context(bs)
-		self.bs = self.ctx.bs
-		self.nalu = nalu.Nalu()
+class P265:
+    def __init__(self, bs= "str.bin"):
+        self.ctx = context.Context(bs)
+        self.bs = self.ctx.bs
+        self.nalu = nalu.Nalu(self.ctx)
 
     def decode(self):
         while True:
             self.bs.search_start_code()
             self.bs.report_position()
 
-			naluh = self.nalu.decode_naluh()
-			nalu_type = naluh.nalu_type
+            naluh = self.nalu.decode_naluh()
+            nalu_type = naluh.nal_unit_type
 
             if nalu_type == 32:
                 self.nalu.decode_vps()

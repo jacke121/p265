@@ -152,7 +152,7 @@ class Sps:
             raise ValueError("The minimum transform block size should be less than minimum coding block size.")
 
         self.log2_max_transform_block_size = self.log2_min_transform_block_size + self.log2_diff_max_min_transform_block_size
-        if self.log2_max_transform_block_size > math.min(self.ctb_log2_size_y, 5):
+        if self.log2_max_transform_block_size > min(self.ctb_log2_size_y, 5):
             raise ValueError("The maximum transform block size should not be greater than CTB size, and should be less than or equal to 32")
 
         self.pic_width_in_min_tbs = self.pic_width_in_ctbs_y << (self.ctb_log2_size_y - self.log2_min_transform_block_size)

@@ -2,10 +2,11 @@ import ptl
 
 class Vps:
     def __init__(self, ctx):
-        self.profile_tier_level = ptl.ProfileTierLevel(self.ctx.bs)
+        self.ctx = ctx
+        self.profile_tier_level = ptl.ProfileTierLevel(ctx.bs)
 
     def parse(self):
-        bs = self.bs
+        bs = self.ctx.bs
 
         print >>bs.log, "============= Video Parameter Set ============="
 

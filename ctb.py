@@ -4,25 +4,25 @@ class Cb:
     def __init__(self, x, y, size):
         self.x = x
         self.y = y
-		self.size = size # one of 64/32/16/8
+        self.size = size # one of 64/32/16/8
 
-		self.children = [] # 4 children or no children for quad tree 
-		self.parent = None # parent node
+        self.children = [] # 4 children or no children for quad tree 
+        self.parent = None # parent node
 
         self.depth= 0  # depth of root is 0, maximum depth of cb with size 64/32/16/8 is 3/2/1/0
-		self.split_cu_flag = 0
-	
-	def add_child(self, idx, child=None):
-		pass
+        self.split_cu_flag = 0
+    
+    def add_child(self, idx, child=None):
+        pass
 
-	def get_child(self, idx=0):
-		pass
-	
-	def is_root(self):
-		pass
+    def get_child(self, idx=0):
+        pass
+    
+    def is_root(self):
+        pass
 
-	def is_leaf(self):
-		pass
+    def is_leaf(self):
+        pass
 
     def get_leaves(self):
         pass
@@ -32,7 +32,7 @@ class Cb:
 
 class Ctb(Cb):
     def __init__(self, ctx, addr_rs):
-		super().__init__((addr_rs % ctx.sps.pic_width_in_ctbs_y) << ctx.sps.ctb_log2_size_y, 
+        Cb.__init__((addr_rs % ctx.sps.pic_width_in_ctbs_y) << ctx.sps.ctb_log2_size_y, 
                          (addr_rs / ctx.sps.pic_width_in_ctbs_y) << ctx.sps.ctb_log2_size_y, 
                          ctx.sps.ctb_size_y)
 
@@ -40,11 +40,11 @@ class Ctb(Cb):
 
         self.slice_addr = 0
 
-		self.addr_rs = addr_rs
+        self.addr_rs = addr_rs
         self.addr_ts = self.ctx.pps.ctb_addr_rs2ts[self.addr_rs]
 
-		self.x_ctb = self.x >> self.ctx.sps.ctb_log2_size_y
-		self.y_ctb = self.y >> self.ctx.sps.ctb_log2_size_y
+        self.x_ctb = self.x >> self.ctx.sps.ctb_log2_size_y
+        self.y_ctb = self.y >> self.ctx.sps.ctb_log2_size_y
 
         self.sao = Sao(self.ctx, self.x_ctb, self.y_ctb)
 
@@ -55,65 +55,65 @@ class Ctb(Cb):
         self.parse_coding_quadtree(self.ctb.x, self.ctb.y, self.ctx.sps.ctb_log2_size_y, 0, 0, self.ctb, True)
 
     def parse_coding_quadtree(self, x0, y0, log2size, depth, idx, parent, exist):
-		if exist and parent:
-			cb = Cb(x0, y0, log2size)
-			cb.parent = parent
-			cb.depth = depth
-			if depth == 0: 
-				pass # do nothing for root CTB 
-			elif depth == 1:
-				parent.add_child(idx, cb)
-			elif depth == 2:
-				parent.add_child(idx, cb)
-			elif depth == 3:
-				parent.add_child(idx, cb)
-			else:
-				raise ValueError("Unexpected depth value.")
-		elif (not exist) and parent:
-			parent.add_child(None)
-			return
-		else:
-			return
+        if exist and parent:
+            cb = Cb(x0, y0, log2size)
+            cb.parent = parent
+            cb.depth = depth
+            if depth == 0: 
+                pass # do nothing for root CTB 
+            elif depth == 1:
+                parent.add_child(idx, cb)
+            elif depth == 2:
+                parent.add_child(idx, cb)
+            elif depth == 3:
+                parent.add_child(idx, cb)
+            else:
+                raise ValueError("Unexpected depth value.")
+        elif (not exist) and parent:
+            parent.add_child(None)
+            return
+        else:
+            return
 
-		right_boundary_within_pic_flag = (x0 + (1 << log2size)) <= self.sps.pic_width_in_luma_samples
-		bottom_boundary_within_pic_flag = (y0 + (1 << log2size)) <= self.sps.pic_height_in_luma_samples
-		minimum_cb_flag = log2size > self.sps.min_cb_log2_size_y
+        right_boundary_within_pic_flag = (x0 + (1 << log2size)) <= self.sps.pic_width_in_luma_samples
+        bottom_boundary_within_pic_flag = (y0 + (1 << log2size)) <= self.sps.pic_height_in_luma_samples
+        minimum_cb_flag = log2size > self.sps.min_cb_log2_size_y
 
-		if right_boundary_within_pic_flag and bottom_boundary_within_pic_flag and (not minimum_cb_flag):
-			self.decode_split_cu_flag(x0, y0, depth)
+        if right_boundary_within_pic_flag and bottom_boundary_within_pic_flag and (not minimum_cb_flag):
+            self.decode_split_cu_flag(x0, y0, depth)
         else:
             if log2size > self.ctx.sps.min_cb_log2_size_y:
                 self.split_cu_flag = 1
             else:
                 self.split_cu_flag = 0
-		
-		"""
-		if cu_qp_delta_enabled_flag and ...:
-			is_cu_qp_delta_coded = 0
-			cu_qp_delta_val = 0
-		"""
-		
-		if self.split_cu_flag:
-			x1 = x0 + (1 << log2size)
-			y1 = y0 + (1 << log2size)
+        
+        """
+        if cu_qp_delta_enabled_flag and ...:
+            is_cu_qp_delta_coded = 0
+            cu_qp_delta_val = 0
+        """
+        
+        if self.split_cu_flag:
+            x1 = x0 + (1 << log2size)
+            y1 = y0 + (1 << log2size)
 
-			if depth == 0:
-				next_parent = self.ctb
-			elif depth == 1:
-				next_parent = parent.children[idx]
-			elif depth == 2:
-				next_parent = parent.children[idx]
-			elif depth == 3:
-				next_parent = parent.children[idx]
-			else:
-				raie ValueError("Unexpected depth")
+            if depth == 0:
+                next_parent = self.ctb
+            elif depth == 1:
+                next_parent = parent.children[idx]
+            elif depth == 2:
+                next_parent = parent.children[idx]
+            elif depth == 3:
+                next_parent = parent.children[idx]
+            else:
+                raise ValueError("Unexpected depth")
 
-			self.parse_coding_quadtree(x0, y0, log2size-1, depth+1, 0, next_parent, True)
-			self.parse_coding_quadtree(x1, y0, log2size-1, depth+1, 1, next_parent, x1 < self.sps.pic_width_in_luma_samples)
-			self.parse_coding_quadtree(x0, y1, log2size-1, depth+1, 2, next_parent, y1 < self.sps.pic_height_in_luma_samples)
-			self.parse_coding_quadtree(x1, y1, log2size-1, depth+1, 3, next_parent, x1 < self.sps.pic_width_in_luma_samples and y1 < self.sps.pic_height_in_luma_samples)
-		else:
-			self.parse_coding_unit(x0, y0, log2size)
+            self.parse_coding_quadtree(x0, y0, log2size-1, depth+1, 0, next_parent, True)
+            self.parse_coding_quadtree(x1, y0, log2size-1, depth+1, 1, next_parent, x1 < self.sps.pic_width_in_luma_samples)
+            self.parse_coding_quadtree(x0, y1, log2size-1, depth+1, 2, next_parent, y1 < self.sps.pic_height_in_luma_samples)
+            self.parse_coding_quadtree(x1, y1, log2size-1, depth+1, 3, next_parent, x1 < self.sps.pic_width_in_luma_samples and y1 < self.sps.pic_height_in_luma_samples)
+        else:
+            self.parse_coding_unit(x0, y0, log2size)
 
         raise "Unimplemented yet." 
 
@@ -175,7 +175,7 @@ class Ctb(Cb):
             available = False
         elif in_different_slices_flag:
             available = False
-        elif in_different tiles_flag:
+        elif in_different_tiles_flag:
             available = False
         else:
             available = True

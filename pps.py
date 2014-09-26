@@ -11,7 +11,7 @@ class Pps:
         self.scaling_list_data = sld.ScalingListData(self.ctx.bs)
 
     def activate_sps(self):
-        self.sps = self.ctx.sps = self.ctx.sps_list[self.pps_seq_paramter_set_id]
+        self.sps = self.ctx.sps = self.ctx.sps_list[self.pps_seq_parameter_set_id]
 
     def parse(self):
         bs = self.ctx.bs
@@ -23,7 +23,6 @@ class Pps:
 
         # Only after parsing to here ,we know what SPS should be used.
         self.activate_sps() # Activate SPS
-        self.create_img() # Create Image object based on the activated SPS paramters
 
         self.dependent_slice_segments_enabled_flag = bs.u(1, "dependent_slice_segments_enabled_flag")
         self.output_flag_present_flag = bs.u(1, "output_flag_present_flag")
@@ -92,7 +91,7 @@ class Pps:
 
             self.row_boundary = [0] * (self.num_tile_rows+1)
             for i in range(self.num_tile_rows):
-                self.row_boundary[i+1] = self.row_boundary[i] + self.row_width[i]
+                self.row_boundary[i+1] = self.row_boundary[i] + self.row_height[i]
         else:
             self.num_tile_columns_minus1 = 0
             self.num_tile_rows_minus1 = 0
@@ -106,7 +105,7 @@ class Pps:
             self.row_height = [self.sps.pic_height_in_ctbs_y]
 
             self.column_boundary = [0, self.column_width]
-            self.row_boundary = [0, self.row_width]
+            self.row_boundary = [0, self.row_height]
         
         self.initialize_raster_and_tile_scaning_conversion_array()
         self.initialize_tile_id_array()

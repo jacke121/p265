@@ -1,3 +1,8 @@
+import slice
+import vps
+import sps
+import pps
+
 class NaluHeader:
     def __init__(self, bs):
         self.bs = bs
@@ -62,8 +67,9 @@ class NaluHeader:
 
 class Nalu:
     def __init__(self, ctx):
+        self.ctx = ctx
         self.bs = self.ctx.bs
-		self.img = self.ctx.img
+        self.img = self.ctx.img
 
         self.vps_list = self.ctx.vps_list
         self.sps_list = self.ctx.sps_list
@@ -71,10 +77,10 @@ class Nalu:
 
         self.slice_seg = slice.SliceSegment(self.ctx)
 
-	def decode_naluh(self):
-        naluh = naluh.NaluHeader(self.bs)
+    def decode_naluh(self):
+        naluh = NaluHeader(self.bs)
         naluh.decode()
-		return naluh
+        return naluh
 
     def decode_slice_seg(self):
         self.slice_seg.decode()

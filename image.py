@@ -3,10 +3,11 @@ import ctb
 class Image:
     def __init__(self, ctx):
         self.ctx = ctx
-		self.slice_hdrs = [] 
+        self.slice_hdrs = [] 
         self.slice_hdr = None
-        self.ctb = ctb.Ctb(self.ctx, 0)
-		self.ctbs = {}
+
+        self.ctb = None
+        self.ctbs = {}
     
     def next_ctb(self):
         assert self.ctb.addr_rs not in self.ctb

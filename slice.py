@@ -7,32 +7,32 @@ import slice_hdr
 
 class SliceSegment:
     def __init__(self, ctx):
-		self.ctx = ctx
+        self.ctx = ctx
         self.slice_hdr = slice_hdr.SliceHeader(self.ctx)
         self.slice_data = SliceData(self.ctx)
 
     def decode(self):
         self.slice_hdr.decode()
-		self.ctx.img.slice_hdrs.append(copy.deepcopy(self.slice_hdr))
-		self.slice_data.decode()
+        self.ctx.img.slice_hdrs.append(copy.deepcopy(self.slice_hdr))
+        self.slice_data.decode()
 
 class SliceData:
     def __init__(self, ctx):
-		self.ctx = ctx
+        self.ctx = ctx
         self.bs = self.ctx.bs
 
         self.vps = self.ctx.vps
         self.sps = self.ctx.sps
         self.pps = self.ctx.pps
 
-		self.ctb = self.img.ctb
-        self.cabac = cabac.Cabac(bs)
+        self.ctb = self.ctx.img.ctb
+        self.cabac = cabac.Cabac(self.bs)
 
     def decode(self):
         if not self.slice_hdrs[-1].dependent_slice_segment_flag:
             self.cabac.initialize_context_models(self.slice_hdr)
-			self.ctx.img.slice_hdr = self.slice_hdrs[-1]
-		else:
+            self.ctx.img.slice_hdr = self.slice_hdrs[-1]
+        else:
             for hdr in reversed(self.slice_hdrs):
                 if not hdr.dependent_slice_segment_flag:
                     self.slice_hdr = hdr
