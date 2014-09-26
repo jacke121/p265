@@ -80,12 +80,12 @@ class Nalu:
         self.slice_seg.decode()
 
     def decode_vps(self):
-        v = vps.Vps(self.bs)
+        v = vps.Vps(self.ctx)
         v.parse()
         self.vps_list[v.vps_video_parameter_set_id] = v
 
     def decode_sps(self):
-        s = sps.Sps(self.bs)
+        s = sps.Sps(self.ctx)
         s.parse()
         self.sps_list[s.sps_seq_parameter_set_id] = s
 
