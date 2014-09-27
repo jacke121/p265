@@ -25,30 +25,34 @@ class SliceData:
         self.sps = self.ctx.sps
         self.pps = self.ctx.pps
 
-        self.ctb = self.ctx.img.ctb
-        self.cabac = cabac.Cabac(self.bs)
+        self.cabac = self.ctx.cabac
 
     def decode(self):
-        if not self.slice_hdrs[-1].dependent_slice_segment_flag:
-            self.cabac.initialize_context_models(self.slice_hdr)
-            self.ctx.img.slice_hdr = self.slice_hdrs[-1]
+        bs = self.bs
+
+        print >>bs.log, "============= Slice Segment Data ============="
+
+        if not self.ctx.img.slice_hdrs[-1].dependent_slice_segment_flag:
+            self.ctx.img.slice_hdr = self.ctx.img.slice_hdrs[-1]
+            self.cabac.initialize_context_models(self.ctx.img.slice_hdr)
+            self.cabac.initialization_process_arithmetic_decoding_engine()
         else:
-            for hdr in reversed(self.slice_hdrs):
+            for hdr in reversed(self.ctx.img.slice_hdrs):
                 if not hdr.dependent_slice_segment_flag:
-                    self.slice_hdr = hdr
+                    self.ctx.img.slice_hdr = hdr
                     break
 
-        self.ctb.slice_addr = self.slice_hdr.slice_segment_address 
+        self.ctx.img.ctb.slice_addr = self.ctx.img.slice_hdr.slice_segment_address 
 
         while True:
-            self.ctb.parse_coding_tree_unit()
+            self.ctx.img.ctb.parse_coding_tree_unit()
             raise "The first CTU is parsed!"
 
             self.decode_end_of_slice_segment_flag()
             self.ctx.img.next_ctb() # Switching to next CTB
             
-            switching_tile_flag = self.ctx.pps.tiles_enabled_flag and (self.ctx.pps.tile_id[self.ctb.addr_ts] != self.ctx.pps.tile_id[self.ctb.addr_ts - 1])
-            if (not self.end_of_slice_segment_flag) and (switching_tile_flag or (self.ctx.pps.entropy_coding_sync_enabled_flag and (self.ctb.addr_ts % self.ctx.sps.pic_width_in_ctbs_y))):
+            switching_tile_flag = self.ctx.pps.tiles_enabled_flag and (self.ctx.pps.tile_id[self.ctx.img.ctb.addr_ts] != self.ctx.pps.tile_id[self.ctx.img.ctb.addr_ts - 1])
+            if (not self.end_of_slice_segment_flag) and (switching_tile_flag or (self.ctx.pps.entropy_coding_sync_enabled_flag and (self.ctx.img.ctb.addr_ts % self.ctx.sps.pic_width_in_ctbs_y))):
                 self.decode_end_of_sub_stream_one_bit()
                 self.ctx.bs.byte_alignment()
             else:

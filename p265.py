@@ -7,6 +7,9 @@ import slice
 import image
 import context
 
+import logging
+log = logging.getLogger(__name__)
+
 class P265:
     def __init__(self, bs= "str.bin"):
         self.ctx = context.Context(bs)
@@ -18,8 +21,8 @@ class P265:
             self.bs.search_start_code()
             self.bs.report_position()
 
-            naluh = self.nalu.decode_naluh()
-            nalu_type = naluh.nal_unit_type
+            self.ctx.naluh = self.nalu.decode_naluh()
+            nalu_type = self.ctx.naluh.nal_unit_type
 
             if nalu_type == 32:
                 self.nalu.decode_vps()
@@ -30,7 +33,7 @@ class P265:
             elif nalu_type == 19:
                 self.nalu.decode_slice_seg()
             else:
-                print "Error: unimplemeted NALU type = %d." % nalu_type
+                log.error("Unimplemeted NALU type = %d." % nalu_type)
                 raise "Intensional raise"
 
 if __name__ == "__main__":

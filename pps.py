@@ -77,7 +77,7 @@ class Pps:
                     self.row_height[i] = self.row_height_minus1[i] + 1
                 self.row_height[self.num_tile_rows_minus1] = self.sps.pic_height_in_ctbs_y - sum(self.row_height_minus1)
 
-                self.loop_filter_across_tiles_enabled_flag = self.u(1, "loop_filter_across_tiles_enabled_flag")
+                self.loop_filter_across_tiles_enabled_flag = bs.u(1, "loop_filter_across_tiles_enabled_flag")
             else:
                 avg_column_width = self.sps.pic_width_in_ctbs_y / self.num_tile_columns
                 self.column_width = [avg_column_width] * self.num_tile_columns
@@ -104,8 +104,8 @@ class Pps:
             self.column_width = [self.sps.pic_width_in_ctbs_y]
             self.row_height = [self.sps.pic_height_in_ctbs_y]
 
-            self.column_boundary = [0, self.column_width]
-            self.row_boundary = [0, self.row_height]
+            self.column_boundary = [0, self.column_width[0]]
+            self.row_boundary = [0, self.row_height[0]]
         
         self.initialize_raster_and_tile_scaning_conversion_array()
         self.initialize_tile_id_array()
@@ -152,40 +152,40 @@ class Pps:
             tb_y = ctb_addr_rs / self.sps.pic_width_in_ctbs_y
 
             tile_x = -1
-            for i in range(self.sps.num_tile_columns):
-                if tb_x >= self.sps.column_boundary[i]:
+            for i in range(self.num_tile_columns):
+                if tb_x >= self.column_boundary[i]:
                     tile_x = i
             assert(tile_x >= 0)
 
             tile_y = -1
-            for j in range(self.sps.num_tile_rows):
-                if tb_y >= self.sps.row_boundary[j]:
+            for j in range(self.num_tile_rows):
+                if tb_y >= self.row_boundary[j]:
                     tile_y = j
             assert(tile_y >= 0)
 
             self.ctb_addr_rs2ts[ctb_addr_rs] = 0
             
             for i in range(tile_x):
-                self.ctb_addr_rs2ts[ctb_addr_rs] += (self.sps.row_height[tile_y] * self.sps.column_width[i])
+                self.ctb_addr_rs2ts[ctb_addr_rs] += (self.row_height[tile_y] * self.column_width[i])
 
             for j in range(tile_y):
-                self.ctb_addr_rs2ts[ctb_addr_rs] += self.sps.pic_width_in_ctbs_y * self.sps.row_height[j]
+                self.ctb_addr_rs2ts[ctb_addr_rs] += self.pic_width_in_ctbs_y * self.row_height[j]
 
-            self.ctb_addr_rs2ts[ctb_addr_rs] += (tb_y - self.sps.row_boundary[tile_y]) * self.sps.column_width[tile_x]
-            self.ctb_addr_rs2ts[ctb_addr_rs] += tb_x - self.sps.column_boundary[tile_x]
+            self.ctb_addr_rs2ts[ctb_addr_rs] += (tb_y - self.row_boundary[tile_y]) * self.column_width[tile_x]
+            self.ctb_addr_rs2ts[ctb_addr_rs] += tb_x - self.column_boundary[tile_x]
 
             self.ctb_addr_ts2rs[self.ctb_addr_rs2ts[ctb_addr_rs]] = ctb_addr_rs
     
     def dump_ctb_addr(self):
         print "CTB addr in raster scaning:"
         for y in range(self.sps.pic_height_in_ctbs_y):
-            if y in self.sps.row_boundary[1:]:
+            if y in self.row_boundary[1:]:
                 for x in range(self.sps.pic_width_in_ctbs_y):
                     sys.stdout.write("-----")
                 sys.stdout.write("\n")
 
             for x in range(self.sps.pic_width_in_ctbs_y):
-                if x in self.sps.column_boundary[1:]:
+                if x in self.column_boundary[1:]:
                     sys.stdout.write("|")
                 ctb_addr_rs = self.sps.pic_width_in_ctbs_y * y + x
                 sys.stdout.write("%4d " % ctb_addr_rs)
@@ -193,13 +193,13 @@ class Pps:
 
         print "CTB addr in tile scaning:"
         for y in range(self.sps.pic_height_in_ctbs_y):
-            if y in self.sps.row_boundary[1:]:
+            if y in self.row_boundary[1:]:
                 for x in range(self.sps.pic_width_in_ctbs_y):
                     sys.stdout.write("-----")
                 sys.stdout.write("\n")
 
             for x in range(self.sps.pic_width_in_ctbs_y):
-                if x in self.sps.column_boundary[1:]:
+                if x in self.column_boundary[1:]:
                     sys.stdout.write("|")
                 ctb_addr_rs = self.sps.pic_width_in_ctbs_y * y + x
                 sys.stdout.write("%4d " % self.ctb_addr_rs2ts[ctb_addr_rs])
@@ -211,10 +211,10 @@ class Pps:
         self.tile_id_rs= [0] * self.sps.pic_size_in_ctbs_y
         
         tile_idx = 0
-        for j in range(self.sps.num_tile_rows):
-            for i in range(self.sps.num_tile_columns):
-                for y in range(self.sps.row_boundary[j], self.sps.row_boundary[j+1]):
-                    for x in range(self.sps.column_boundary[i], self.sps.column_boundary[i+1]):
+        for j in range(self.num_tile_rows):
+            for i in range(self.num_tile_columns):
+                for y in range(self.row_boundary[j], self.row_boundary[j+1]):
+                    for x in range(self.column_boundary[i], self.column_boundary[i+1]):
                         ctb_addr_rs = y*self.sps.pic_width_in_ctbs_y + x
                         self.tile_id[self.ctb_addr_rs2ts[ctb_addr_rs]] = tile_idx
                         self.tile_id_rs[ctb_addr_rs] = tile_idx
@@ -223,13 +223,13 @@ class Pps:
     def dump_tile_id(self):
         print "Tile ID of each CTB,"
         for y in range(self.sps.pic_height_in_ctbs_y):
-            if y in self.sps.row_boundary[1:]:
+            if y in self.row_boundary[1:]:
                 for x in range(self.sps.pic_width_in_ctbs_y):
                     sys.stdout.write("-----")
                 sys.stdout.write("\n")
 
             for x in range(self.sps.pic_width_in_ctbs_y):
-                if x in self.sps.column_boundary[1:]:
+                if x in self.column_boundary[1:]:
                     sys.stdout.write("|")
                 ctb_addr_rs = self.sps.pic_width_in_ctbs_y * y + x
                 sys.stdout.write("%4d " % self.tile_id_rs[ctb_addr_rs])
@@ -321,17 +321,19 @@ if __name__ == "__main__":
     ctx.sps.pic_width_in_ctbs_y = 8
     ctx.sps.pic_height_in_ctbs_y = 4
     ctx.sps.pic_size_in_ctbs_y = ctx.sps.pic_width_in_ctbs_y * ctx.sps.pic_height_in_ctbs_y
-    ctx.sps.num_tile_columns = 2
-    ctx.sps.num_tile_rows = 2
-    ctx.sps.column_boundary = [0, 4, 8]
-    ctx.sps.row_boundary = [0, 2, 4]
-    ctx.sps.row_height = [2, 2]
-    ctx.sps.column_width = [4, 4]
     ctx.sps.pic_width_in_min_tbs = 8 * 4
     ctx.sps.pic_height_in_min_tbs = 4 * 4
     ctx.sps.log2_min_transform_block_size = 4
     ctx.sps.ctb_log2_size_y = 6
+
     pps = Pps(ctx)
+    pps.num_tile_columns = 2
+    pps.num_tile_rows = 2
+    pps.column_boundary = [0, 4, 8]
+    pps.row_boundary = [0, 2, 4]
+    pps.row_height = [2, 2]
+    pps.column_width = [4, 4]
+
     pps.sps = ctx.sps
     pps.initialize_raster_and_tile_scaning_conversion_array()
     pps.dump_ctb_addr()

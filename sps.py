@@ -52,6 +52,12 @@ class Sps:
 
         self.bit_depth_luma_minus8 = bs.ue("bit_depth_luma_minus8")
         self.bit_depth_chroma_minus8 = bs.ue("bit_depth_chroma_minus8")
+        assert self.bit_depth_luma_minus8 in range(0, 7)
+        assert self.bit_depth_chroma_minus8 in range(0, 7)
+        self.bit_depth_y = self.bit_depth_luma_minus8 + 8
+        self.bit_depth_c = self.bit_depth_chroma_minus8 + 8
+        self.qp_bd_offset_y = self.bit_depth_luma_minus8 * 6
+        self.qp_bd_offset_c = self.bit_depth_chroma_minus8 * 6
 
         self.log2_max_pic_order_cnt_lsb_minus4 = bs.ue("log2_max_pic_order_cnt_lsb_minus4")
         self.sps_sub_layer_ordering_info_present_flag = bs.u(1, "sps_sub_layer_ordering_info_present_flag")

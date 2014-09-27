@@ -239,14 +239,14 @@ class Cabac:
         ivl_lps_range = self.tables.lps_range_table[self.context_models[ctx_table][ctx_idx].p_state_idx][q_range_idx]
 
         self.ivl_curr_range = self.ivl_curr_range - ivl_lps_range
-        if ivl_offset >= self.ivl_curr_range:
+        if self.ivl_offset >= self.ivl_curr_range:
             bin_val = 1 - self.context_models[ctx_table][ctx_idx].val_mps
             self.ivl_offset -= self.ivl_curr_range
             self.ivl_curr_range = ivl_lps_range
         else:
             bin_val = self.context_models[ctx_table][ctx_idx].val_mps
             
-        self.state_transition_process(bin_val)
+        self.state_transition_process(ctx_table, ctx_idx, bin_val)
         self.renormalization_process()
 
         return bin_val

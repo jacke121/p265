@@ -1,10 +1,10 @@
 import math
 import st_rps
+import ctb
 
 class SliceHeader:
     def __init__(self, ctx):
         self.ctx = ctx
-        self.naluh = self.ctx.naluh
 
         self.short_term_ref_pic_set = st_rps.ShortTermRefPicSet(self.ctx.bs)
 
@@ -24,9 +24,9 @@ class SliceHeader:
 
         self.first_slice_segment_in_pic_flag = bs.u(1, "first_slice_segment_in_pic_flag")
         if self.first_slice_segment_in_pic_flag:
-            self.ctb = ctb.Ctb(self.ctx, 0) # The first CTB in the picture is created, ctb_addr_rs = 0
+            self.ctx.img.ctb = ctb.Ctb(self.ctx, addr_rs=0) # The first CTB in the picture is created with ctb_addr_rs = 0
 
-        if self.naluh.nal_unit_type >= self.naluh.BLA_W_LP and self.naluh.nal_unit_type <= self.naluh.RSV_IRAP_VCL23:
+        if self.ctx.naluh.nal_unit_type >= self.ctx.naluh.BLA_W_LP and self.ctx.naluh.nal_unit_type <= self.ctx.naluh.RSV_IRAP_VCL23:
             self.no_output_of_prior_pics_flag = bs.u(1, "no_output_of_prior_pics_flag")
 
         self.slice_pic_parameter_set_id = bs.ue("slice_pic_parameter_set_id")
@@ -45,12 +45,13 @@ class SliceHeader:
                 self.slice_reserved_flag[i] = bs.u(1, "slice_reserved_flag[%d]" % i)
             self.slice_type = bs.ue("slice_type")
 
-            #if slice_header.slice_type == slice_header.I_SLICE:
-            #    self.init_type = 0
-            #elif slice_header.slice_type == slice_header.P_SLICE:
-            #    self.init_type = slice_header.cabac_init_flag ? 2 : 1
-            #else slice_header.slice_type == slice_header.B_SLICE:
-            #    self.init_type = slice_header.cabac_init_flag ? 1 : 2
+            assert self.slice_type in [0, 1, 2]
+            if self.slice_type == self.I_SLICE:
+                self.init_type = 0
+            elif self.slice_type == self.P_SLICE:
+                self.init_type = (2 if self.cabac_init_flag else 1)
+            elif self.slice_type == self.B_SLICE:
+                self.init_type = (1 if self.cabac_init_flag else 2)
 
             if self.pps.output_flag_present_flag:
                 self.pic_output_flag = bs.u(1, "pic_output_flag")
@@ -58,7 +59,7 @@ class SliceHeader:
             if self.sps.separate_colour_plane_flag:
                 self.colour_plane_id = bs.u(2, "colour_plane_id")
 
-            if self.naluh.nal_unit_type != self.naluh.IDR_W_RADL and self.naluh.nal_unit_type != self.naluh.IDR_N_LP:
+            if self.ctx.naluh.nal_unit_type != self.ctx.naluh.IDR_W_RADL and self.ctx.naluh.nal_unit_type != self.ctx.naluh.IDR_N_LP:
                 self.slice_pic_order_cnt_lsb = bs.u(self.sps.log2_max_pic_order_cnt_lsb_minus4 + 4, "slice_pic_order_cnt_lsb")
 
                 self.short_term_ref_pic_set_sps_flag = bs.u(1, "short_term_ref_pic_set_sps_flag")
