@@ -96,7 +96,7 @@ class Ctb(Cb):
 
         right_boundary_within_pic_flag = (x0 + (1 << log2size)) <= self.sps.pic_width_in_luma_samples
         bottom_boundary_within_pic_flag = (y0 + (1 << log2size)) <= self.sps.pic_height_in_luma_samples
-        minimum_cb_flag = log2size > self.sps.min_cb_log2_size_y
+        minimum_cb_flag = log2size <= self.sps.min_cb_log2_size_y
 
         if right_boundary_within_pic_flag and bottom_boundary_within_pic_flag and (not minimum_cb_flag):
             self.decode_split_cu_flag(x0, y0, depth)
