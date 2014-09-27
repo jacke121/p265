@@ -1,5 +1,8 @@
 import ptl
 
+import logging
+log = logging.getLogger(__name__)
+
 class Vps:
     def __init__(self, ctx):
         self.ctx = ctx
@@ -8,7 +11,7 @@ class Vps:
     def parse(self):
         bs = self.ctx.bs
 
-        print >>bs.log, "============= Video Parameter Set ============="
+        log.info("============= Video Parameter Set =============")
 
         self.vps_video_parameter_set_id = bs.u(4, "vps_video_parameter_set_id")
 

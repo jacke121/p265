@@ -1,6 +1,9 @@
 import math
 import sao
 
+import logging
+log = logging.getLogger(__name__)
+
 class Cb:
     def __init__(self, x, y, size):
         self.x = x
@@ -68,6 +71,11 @@ class Ctb(Cb):
             self.ctx.img.ctb.sao.decode()
         
         self.parse_coding_quadtree(self.x, self.y, self.ctx.sps.ctb_log2_size_y, depth=0, idx=0, parent=None, exist=True)
+
+        self.draw_partitio(self)
+
+    def draw_ctb_partition(self):
+        pass
 
     def parse_coding_quadtree(self, x0, y0, log2size, depth, idx, parent, exist):
         assert depth in [0, 1, 2, 3]
@@ -141,6 +149,7 @@ class Ctb(Cb):
         context_idx = context_offset + context_inc
 
         self.split_cu_flag = self.ctx.cabac.decode_bin("split_cu_flag", context_idx, 0)
+        log.info("split_cu_flag = %d" % self.split_cu_flag)
 
     def get_cqt_depth(self, x, y, log2size, depth):
         ctb_addr_rs = self.get_ctb_addr_rs_from_luma_pixel_coordinates(x, y)

@@ -3,6 +3,9 @@ import ptl
 import sld
 import st_rps
 
+import logging
+log = logging.getLogger(__name__)
+
 class VuiParameters:
     def __init__(self, bs):
         self.bs = bs
@@ -23,7 +26,7 @@ class Sps:
     def parse(self):
         bs = self.ctx.bs
 
-        print >>bs.log, "============= Sequence Parameter Set ============="
+        log.info("============= Sequence Parameter Set =============")
 
         self.sps_video_parameter_set_id = bs.u(4, "sps_video_parameter_set_id")
         self.activate_vps() # Activate VPS
@@ -133,6 +136,8 @@ class Sps:
         bs.rbsp_trailing_bits()
         '''
 
+        self.log_derived_picture_info()
+
         #raise "TODO @ SPS"
 
     def initialize_picture_size_parameters(self):
@@ -143,10 +148,10 @@ class Sps:
         self.ctb_size_y = 1 << self.ctb_log2_size_y
 
         self.pic_width_in_min_cbs_y = self.pic_width_in_luma_samples / self.min_cb_size_y
-        self.pic_width_in_ctbs_y = int(math.ceil(float(self.pic_height_in_luma_samples) / self.ctb_size_y))
+        self.pic_width_in_ctbs_y = self.pic_width_in_luma_samples / self.ctb_size_y
 
         self.pic_height_in_min_cbs_y = self.pic_height_in_luma_samples / self.min_cb_size_y
-        self.pic_height_in_ctbs_y = int(math.ceil(float(self.pic_height_in_luma_samples) / self.ctb_size_y))
+        self.pic_height_in_ctbs_y = self.pic_height_in_luma_samples / self.ctb_size_y
 
         self.pic_size_in_min_cbs_y = self.pic_width_in_min_cbs_y * self.pic_height_in_min_cbs_y
         self.pic_size_in_ctbs_y = self.pic_width_in_ctbs_y * self.pic_height_in_ctbs_y
@@ -163,6 +168,14 @@ class Sps:
 
         self.pic_width_in_min_tbs = self.pic_width_in_ctbs_y << (self.ctb_log2_size_y - self.log2_min_transform_block_size)
         self.pic_height_in_min_tbs = self.pic_height_in_ctbs_y << (self.ctb_log2_size_y - self.log2_min_transform_block_size)
-
+    
+    def log_derived_picture_info(self):
+        log.info("==============Derived Picture INFO from SPS parameters ==============")
+        log.info("pic_width_in_luma_samples = %d", self.pic_width_in_luma_samples)
+        log.info("pic_height_in_luma_samples = %d", self.pic_height_in_luma_samples)
+        log.info("pic_width_in_ctbs_y = %d" % self.pic_width_in_ctbs_y)
+        log.info("pic_height_in_ctbs_y = %d" % self.pic_height_in_ctbs_y)
+        log.info("ctb_size_y = %d" % self.ctb_size_y)
+        log.info("min_cb_size_y = %d" % self.min_cb_size_y)
 
 

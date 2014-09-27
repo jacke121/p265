@@ -4,6 +4,9 @@ import ctb
 import sld
 import image
 
+import logging
+log = logging.getLogger(__name__)
+
 class Pps:
     def __init__(self, ctx):
         self.ctx = ctx
@@ -16,7 +19,7 @@ class Pps:
     def parse(self):
         bs = self.ctx.bs
 
-        print >>bs.log, "============= Picture Parameter Set ============="
+        log.info("============= Picture Parameter Set =============")
 
         self.pps_pic_parameter_set_id = bs.ue("pps_pic_parameter_set_id")
         self.pps_seq_parameter_set_id = bs.ue("pps_seq_parameter_set_id")

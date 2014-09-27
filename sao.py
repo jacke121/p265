@@ -1,3 +1,6 @@
+import logging
+log = logging.getLogger(__name__)
+
 class Sao:
     def __init__(self, ctx, x, y):
         self.ctx = ctx
@@ -120,29 +123,37 @@ class Sao:
 
     def decode_sao_merge_left_flag(self):
         bit = self.cabac.decode_decision("sao_merge_left_flag", 0)
+        log.info("sao_merge_left_flag = %d" % bit)
         return bit
 
     def decode_sao_merge_up_flag(self):
         bit = self.cabac.decode_decision("sao_merge_up_flag", 0)
+        log.info("sao_merge_up_flag = %d" % bit)
         return bit
 
     def decode_sao_type_idx(self, table):
         bit0 = self.cabac.decode_decision(table, 0)
 
         if bit0 == 0:
-            return 0
+            value = 0
         else:
             bit1 = self.cabac.decode_bypass()
             if bit1 == 0:
-                return 1
+                value = 1
             else:
-                return 2
+                value = 2
+
+        return value
     
     def decode_sao_type_idx_luma(self):
-        return self.decode_sao_type_idx("sao_type_idx_lumachroma_flag")
+        value = self.decode_sao_type_idx("sao_type_idx_lumachroma_flag")
+        log.info("sao_type_idx_luma = %d" % value)
+        return value
 
     def decode_sao_type_idx_chroma(self):
-        return self.decode_sao_type_idx("sao_type_idx_lumachroma_flag")
+        value = self.decode_sao_type_idx("sao_type_idx_lumachroma_flag")
+        log.info("sao_type_idx_luma = %d" % value)
+        return value
 
     def decode_sao_offset_abs(self, c_idx):
         if c_idx == 0: 
@@ -155,12 +166,15 @@ class Sao:
         for i in range(c_max):
             bit = self.cabac.decode_bypass()
             if bit == 0:
+                log.info("sao_offset_abs = %d" % i)
                 return i
 
+        log.info("sao_offset_abs = %d" % c_max)
         return c_max
     
     def decode_sao_offset_sign(self):
         bit = self.cabac.decode_bypass()
+        log.info("sao_offset_sign = %d" % bit)
         return bit
 
     def decode_sao_band_position(self):
@@ -168,7 +182,8 @@ class Sao:
 
         for i in range(4):
             value = (value << 1) | self.cabac.decode_bypass()
-
+        
+        log.info("sao_band_position = %d" % value)
         return value
 
     def decode_sao_eo_class(self):
@@ -177,8 +192,12 @@ class Sao:
         return value
 
     def decode_sao_eo_class_luma(self):
-        self.decode_sao_eo_class()
+        value = self.decode_sao_eo_class()
+        log.info("sao_eo_class_luma = %d" % value)
+        return value
     
     def decode_sao_eo_class_chroma(self):
-        self.decode_sao_eo_class()
+        value = self.decode_sao_eo_class()
+        log.info("sao_eo_class_chroma = %d" % value)
+        return value
 

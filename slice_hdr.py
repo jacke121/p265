@@ -2,6 +2,9 @@ import math
 import st_rps
 import ctb
 
+import logging
+log = logging.getLogger(__name__)
+
 class SliceHeader:
     def __init__(self, ctx):
         self.ctx = ctx
@@ -20,7 +23,7 @@ class SliceHeader:
     def decode(self):
         bs = self.ctx.bs
 
-        print >>bs.log, "============= Slice Header ============="
+        log.info("============= Slice Header =============")
 
         self.first_slice_segment_in_pic_flag = bs.u(1, "first_slice_segment_in_pic_flag")
         if self.first_slice_segment_in_pic_flag:

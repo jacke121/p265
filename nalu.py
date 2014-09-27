@@ -3,6 +3,9 @@ import vps
 import sps
 import pps
 
+import logging
+log = logging.getLogger(__name__)
+
 class NaluHeader:
     def __init__(self, bs):
         self.bs = bs
@@ -58,7 +61,7 @@ class NaluHeader:
         self.UNDEFINED = 255
 
     def decode(self):
-        print >>self.bs.log, "============= NALU Header ============="
+        log.info("============= NALU Header =============")
         self.forbidden_zero_bit = self.bs.u(1, "forbidden_zero_bit")
         assert(self.forbidden_zero_bit == 0)
         self.nal_unit_type = self.bs.u(6, "nal_unit_type")

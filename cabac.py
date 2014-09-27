@@ -228,11 +228,11 @@ class Cabac:
 
     def decode_bin(self, ctx_table, ctx_idx, bypass_flag):
         if bypass_flag == 1:
-            self.decode_bypass()
+            return self.decode_bypass()
         elif ctx_table == 0 and ctx_idx == 0:
-            self.decode_terminate()
+            return self.decode_terminate()
         else:
-            self.decode_decision(ctx_table, ctx_idx)
+            return self.decode_decision(ctx_table, ctx_idx)
 
     def decode_decision(self, ctx_table, ctx_idx):
         q_range_idx = (self.ivl_curr_range >> 6) & 3

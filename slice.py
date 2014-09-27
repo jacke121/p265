@@ -5,6 +5,9 @@ import cabac
 import ctb
 import slice_hdr
 
+import logging
+log = logging.getLogger(__name__)
+
 class SliceSegment:
     def __init__(self, ctx):
         self.ctx = ctx
@@ -30,7 +33,7 @@ class SliceData:
     def decode(self):
         bs = self.bs
 
-        print >>bs.log, "============= Slice Segment Data ============="
+        log.info("============= Slice Segment Data =============")
 
         if not self.ctx.img.slice_hdrs[-1].dependent_slice_segment_flag:
             self.ctx.img.slice_hdr = self.ctx.img.slice_hdrs[-1]

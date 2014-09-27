@@ -1,5 +1,8 @@
 import math
 
+import logging
+log = logging.getLogger(__name__)
+
 #TODO: use get_byte() instead of directly accessing bytes list
 class BitStreamBuffer:
     def __init__(self, bit_stream = None):
@@ -127,18 +130,18 @@ class BitStreamBuffer:
 
     def f(self, n, name):
         bits = self.read_bits(n)
-        print >>self.log, "%s = %d" % (name, bits)
+        log.info("%s = %d" % (name, bits))
         return bits
 
     def u(self, n, name):
         bits = self.read_bits(n)
-        print >>self.log, "%s = %d" % (name, bits)
+        log.info("%s = %d" % (name, bits))
         return bits
 
     def se(self, name):
         k = self.ue(name, True)
         code_num = ((-1)**k) * int(math.ceil(float(k)/2))
-        print >>self.log, "%s = %d" % (name, code_num)
+        log.info("%s = %d" % (name, code_num))
         return code_num
    
     def ue(self, name, no_print = False):
@@ -148,7 +151,7 @@ class BitStreamBuffer:
 
         code_num = 2**leading_zero_bits - 1 + self.read_bits(leading_zero_bits)    
         if not no_print:
-            print >>self.log, "%s = %d" % (name, code_num)
+            log.info("%s = %d" % (name, code_num))
 
         return code_num
 

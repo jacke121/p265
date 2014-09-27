@@ -8,6 +8,7 @@ import image
 import context
 
 import logging
+logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
 
 class P265:
