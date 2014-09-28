@@ -1,3 +1,4 @@
+import random
 import math
 import sao
 
@@ -5,18 +6,20 @@ import logging
 log = logging.getLogger(__name__)
 
 class Cb:
-    def __init__(self, x, y, size):
+    def __init__(self, x, y, size, depth=0, parent=None):
         self.x = x
         self.y = y
         self.size = size # one of 64/32/16/8
 
         self.children = [] # 4 children or no children for quad tree 
-        self.parent = None # parent node
+        self.parent = parent
 
-        self.depth= 0  # depth of root is 0, maximum depth of cb with size 64/32/16/8 is 3/2/1/0
+        # depth of root is 0, maximum depth of cb with size 64/32/16/8 is 3/2/1/0
+        # depth will be assigned when constructing CTB tree
+        self.depth= depth  
         self.split_cu_flag = 0
     
-    def add_child(self, idx, child=None):
+    def add_child(self, child=None):
         self.children.append(child)
         assert len(self.children) <= 4
 
@@ -41,13 +44,61 @@ class Cb:
         for child in self.children:
             child.traverse()
 
-    def iter_leaves(self):
-        for n in self.traverse():
-            if n.is_leaf():
-                yield n
-
     def get_leaves(self):
-        return [n for n in self.iter_leaves()]
+        leaves = []
+        if self.is_leaf() and (not self.is_root()):
+            leaves.append(self)
+        for child in self.children:
+            leaves.extend(child.get_leaves())
+
+    def dump(self):
+        print "====== Dumping Tree Structure ======="
+        self._dump()
+
+    def _dump(self):
+        print "%s%dx%d(%d)" % (' '*4*self.depth, self.x, self.y, self.size)
+        for n in self.children:
+            if n is not None:
+                n._dump()
+            else:
+                print "%sNone" % (' '*4*self.depth)
+
+    def dump_leaves(self):
+        print "====== Dumping Leaves ======="
+        self._dump_leaves()
+
+    def _dump_leaves(self):
+        if self.is_leaf(): # CTB is not partitioned
+            print "%dx%d(%d)" % (self.x, self.y, self.size)
+        else:
+            for n in self.children:
+                if n is not None:
+                    n._dump_leaves()
+                else:
+                    print "None"
+
+    def split(self, size, depth):
+        if len(self.children) == 4: 
+            raise ValueError("Already split.")
+        cb = [None] * 4
+        cb[0] = Cb(self.x, self.y, size, depth, self)
+        cb[1] = Cb(self.x+size, self.y, size, depth, self)
+        cb[2] = Cb(self.x, self.y+size, size, depth, self)
+        cb[3] = Cb(self.x+size, self.y+size, size, depth, self)
+        not_exist_idx = random.randint(0,3)
+        #cb[not_exist_idx] = None
+        for i in range(4):
+            self.add_child(cb[i])
+
+    def populate(self, max_depth):
+        if self.depth > max_depth: 
+            return
+        split_flag = random.randint(0, 1)
+        if split_flag == 0:
+            self.split(self.size/2, self.depth + 1)
+        for n in self.children:
+            if n is not None:
+                n.populate(max_depth)
 
 class Ctb(Cb):
     def __init__(self, ctx, addr_rs):# CTB is indexed by its raster scanning address
@@ -197,6 +248,13 @@ class Ctb(Cb):
         return y_ctb * self.ctx.sps.pic_width_in_ctbs_y + x_ctb
 
 if __name__ == "__main__":
+    ctb = Cb(0, 0, 64)
+    ctb.populate(2)
+    ctb.dump()
+    ctb.dump_leaves()
+
+    exit()
+
     class Sps:
         def __init__(self, pic_width_in_ctbs, pic_width_in_min_cbs, ctb_log2_size, min_cb_log2_size):
             self.pic_width_in_ctbs_y = pic_width_in_ctbs
