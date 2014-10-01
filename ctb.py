@@ -110,7 +110,7 @@ class Cb:
         return s
 
 class Ctb(Cb):
-    def __init__(self, ctx, addr_rs):# CTB is indexed by its raster scanning address
+    def __init__(self, ctx, addr_rs):
         # CB is indexed by its (x, y) coordinates in the picture
         Cb.__init__(self, (addr_rs % ctx.sps.pic_width_in_ctbs_y) << ctx.sps.ctb_log2_size_y, (addr_rs / ctx.sps.pic_width_in_ctbs_y) << ctx.sps.ctb_log2_size_y, ctx.sps.ctb_size_y)
 
@@ -130,22 +130,17 @@ class Ctb(Cb):
         if self.ctx.img.slice_hdr.slice_sao_luma_flag or self.ctx.img.slice_hdr.slice_sao_chroma_flag:
             self.ctx.img.ctb.sao.decode()
         
-        self.parse_coding_quadtree(self.x, self.y, self.ctx.sps.ctb_log2_size_y, depth=0, idx=0, parent=None, exist=True)
+        self.parse_coding_quadtree(self.x, self.y, self.ctx.sps.ctb_log2_size_y, depth=0, parent=None, exist=True)
 
-        self.draw_partitio(self)
+        print(self)
 
-    def draw_ctb_partition(self):
-        pass
-
-    def parse_coding_quadtree(self, x0, y0, log2size, depth, idx, parent, exist):
+    def parse_coding_quadtree(self, x0, y0, log2size, depth, parent, exist):
         assert depth in [0, 1, 2, 3]
 
         if parent is None:
             pass
         elif exist:
-            cb = Cb(x0, y0, log2size)
-            cb.parent = parent
-            cb.depth = depth
+            cb = Cb(x0, y0, log2size, depth, parent)
             assert depth in [1, 2, 3]
             parent.add_child(cb)
         elif not exist:
@@ -176,10 +171,10 @@ class Ctb(Cb):
             x1 = x0 + (1 << log2size)
             y1 = y0 + (1 << log2size)
             
-            self.parse_coding_quadtree(x0, y0, log2size-1, depth+1, 0, self, True)
-            self.parse_coding_quadtree(x1, y0, log2size-1, depth+1, 1, self, x1 < self.sps.pic_width_in_luma_samples)
-            self.parse_coding_quadtree(x0, y1, log2size-1, depth+1, 2, self, y1 < self.sps.pic_height_in_luma_samples)
-            self.parse_coding_quadtree(x1, y1, log2size-1, depth+1, 3, self, x1 < self.sps.pic_width_in_luma_samples and y1 < self.sps.pic_height_in_luma_samples)
+            self.parse_coding_quadtree(x0, y0, log2size-1, depth+1, self, True)
+            self.parse_coding_quadtree(x1, y0, log2size-1, depth+1, self, x1 < self.sps.pic_width_in_luma_samples)
+            self.parse_coding_quadtree(x0, y1, log2size-1, depth+1, self, y1 < self.sps.pic_height_in_luma_samples)
+            self.parse_coding_quadtree(x1, y1, log2size-1, depth+1, self, x1 < self.sps.pic_width_in_luma_samples and y1 < self.sps.pic_height_in_luma_samples)
         else:
             self.parse_coding_unit(x0, y0, log2size)
 
@@ -189,11 +184,11 @@ class Ctb(Cb):
         raise "Unimplemented yet." 
 
     def decode_split_cu_flag(self, x0, y0, depth):
-        available_left  = self.check_availability(x0, y0, x0-1, y0)
-        available_above = self.check_availability(x0, y0, x0, y0-1)
+        available_left  = self.ctx.img.check_availability(x0, y0, x0-1, y0)
+        available_above = self.ctx.img.check_availability(x0, y0, x0, y0-1)
 
-        cond_left = 1 if available_left  and self.get_cqt_depth(x0-1, y0) > depth else 0
-        cond_above= 1 if available_above and self.get_cqt_depth(x0, y0-1) > depth else 0
+        cond_left = 1 if available_left  and self.ctx.img.get_cqt_depth(x0-1, y0) > depth else 0
+        cond_above= 1 if available_above and self.ctx.img.get_cqt_depth(x0, y0-1) > depth else 0
 
         context_inc = cond_left + cond_above
 
@@ -211,50 +206,6 @@ class Ctb(Cb):
         self.split_cu_flag = self.ctx.cabac.decode_bin("split_cu_flag", context_idx, 0)
         log.info("split_cu_flag = %d" % self.split_cu_flag)
 
-    def get_cqt_depth(self, x, y, log2size, depth):
-        ctb_addr_rs = self.get_ctb_addr_rs_from_luma_pixel_coordinates(x, y)
-        if ctb_addr_rs == self.addr_rs: # In the current CTB
-            for leave in self.get_leaves():
-                if leave.contain(x, y):
-                    return leave.depth
-        else:
-            assert ctb_addr_rs in self.ctx.img.ctbs
-            self.ctx.img.ctbs[ctb_addr_rs].get_cqt_addr(x, y, log2size, depth)
-
-    def check_availability(self, x_current, y_current, x_neighbor, y_neighbor):
-        min_block_addr_current = self.ctx.pps.min_tb_addr_zs[x_current >> self.ctx.sps.log2_min_transform_block_size][y_current >> self.ctx.sps.log2_min_transform_block_size]
-        
-        if x_neighbor < 0 or y_neighbor < 0: 
-            return False
-        elif x_neighbor >= self.sps.pic_width_in_luma_samples:  
-            return False
-        elif y_neighbor >= self.sps.pic_height_in_luma_samples: 
-            return False
-        else:
-            min_block_addr_neighbor = self.ctx.pps.min_tb_addr_zs[x_neighbor >> self.log2_min_transform_block_size][y_neighbor >> self.log2_min_transform_block_size]
-
-        ctb_addr_rs_current = self.get_ctb_addr_rs_from_luma_pixel_coordinates(x_current, y_current)
-        ctb_addr_rs_neighbor= self.get_ctb_addr_rs_from_luma_pixel_coordinates(x_neighbor, y_neighbor)
-
-        assert ctb_addr_rs_current == self.addr_rs
-
-        in_different_tiles_flag = self.ctx.pps.tile_id_rs[self.addr_rs] != self.ctx.pps.tile_id_rs[ctb_addr_rs_neighbor]
-        in_different_slices_flag = self.slice_addr != self.ctx.img.ctbs[ctb_addr_rs_neighbor].slice_addr
-
-        if min_block_addr_neighbor > min_block_addr_current:
-            return False
-        elif in_different_slices_flag:
-            return False
-        elif in_different_tiles_flag:
-            return False
-        else:
-            return True
-
-    def get_ctb_addr_rs_from_luma_pixel_coordinates(self, x, y):
-        assert x > 0 and y > 0
-        x_ctb = x >> self.sps.ctb_log2_size_y
-        y_ctb = y >> self.sps.ctb_log2_size_y
-        return y_ctb * self.ctx.sps.pic_width_in_ctbs_y + x_ctb
 
 if __name__ == "__main__":
     ctb = Cb(0, 0, 64)
