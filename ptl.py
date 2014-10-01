@@ -2,7 +2,7 @@ class ProfileTierLevel:
     def __init__(self, bs):
         self.bs = bs
 
-    def parse(self, vps_max_sub_layers_minus1):
+    def decode(self, vps_max_sub_layers_minus1):
         self.general_profile_space = self.bs.u(2, "general_profile_space")
         self.general_tier_flag = self.bs.u(1, "general_tier_flag")
         self.general_profile_idc = self.bs.u(5, "general_profile_idc")

@@ -34,7 +34,7 @@ class Sps:
         self.sps_max_sub_layers_minus1 = bs.u(3, "sps_max_sub_layers_minus1")
         self.sps_temporal_id_nesting_flag = bs.u(1, "sps_temporal_id_nesting_flag")
 
-        self.profile_tier_level.parse(self.sps_max_sub_layers_minus1)
+        self.profile_tier_level.decode(self.sps_max_sub_layers_minus1)
 
         self.sps_seq_parameter_set_id = bs.ue("sps_seq_parameter_set_id")
         self.chroma_format_idc = bs.ue("chroma_format_idc")
