@@ -2,7 +2,7 @@ class ScalingListData:
     def __init__(self, bs):
         self.bs = bs
 
-    def parse(self):
+    def decode(self):
         self.scaling_list_pred_mode_flag = [0] * 4
         self.scaling_list_pred_matrix_id_delta = [0] * 4
         self.scaling_list_dc_coef_minus8 = [0] * 2

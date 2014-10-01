@@ -10,7 +10,7 @@ class VuiParameters:
     def __init__(self, bs):
         self.bs = bs
 
-    def parse(self):
+    def decode(self):
         raise "Not implemented yet"
 
 class Sps:
@@ -32,6 +32,7 @@ class Sps:
         self.activate_vps() # Activate VPS
 
         self.sps_max_sub_layers_minus1 = bs.u(3, "sps_max_sub_layers_minus1")
+        self.sps_max_sub_layers = self.sps_max_sub_layers_minus1 + 1
         self.sps_temporal_id_nesting_flag = bs.u(1, "sps_temporal_id_nesting_flag")
 
         self.profile_tier_level.decode(self.sps_max_sub_layers_minus1)
@@ -65,10 +66,10 @@ class Sps:
         self.log2_max_pic_order_cnt_lsb_minus4 = bs.ue("log2_max_pic_order_cnt_lsb_minus4")
         self.sps_sub_layer_ordering_info_present_flag = bs.u(1, "sps_sub_layer_ordering_info_present_flag")
         
-        self.sps_max_dec_pic_buffering_minus1 = [0] * (self.sps_max_sub_layers_minus1+1)
-        self.sps_max_num_reorder_pics = [0] * (self.sps_max_sub_layers_minus1+1)
-        self.sps_max_latency_increase_plus1 = [0] * (self.sps_max_sub_layers_minus1+1)
-        for i in range(0 if self.sps_sub_layer_ordering_info_present_flag else self.sps_max_sub_layers_minus1, self.sps_max_sub_layers_minus1+1):
+        self.sps_max_dec_pic_buffering_minus1 = [0] * (self.sps_max_sub_layers)
+        self.sps_max_num_reorder_pics = [0] * (self.sps_max_sub_layers)
+        self.sps_max_latency_increase_plus1 = [0] * (self.sps_max_sub_layers)
+        for i in range(0 if self.sps_sub_layer_ordering_info_present_flag else self.sps_max_sub_layers_minus1, self.sps_max_sub_layers):
             self.sps_max_dec_pic_buffering_minus1[i] = bs.ue("sps_max_dec_pic_buffering_minus1")
             self.sps_max_num_reorder_pics[i] = bs.ue("sps_max_num_reorder_pics")
             self.sps_max_latency_increase_plus1[i] = bs.ue("sps_max_latency_increase_plus1")
@@ -88,7 +89,7 @@ class Sps:
         if self.scaling_list_enabled_flag:
             self.sps_scaling_list_data_present_flag = bs.u(1, "sps_scaling_list_data_present_flag")
             if self.sps_scaling_list_data_present_flag:
-                scaling_list_data.parse()
+                scaling_list_data.decode()
         
         self.amp_enabled_flag = bs.u(1, "amp_enabled_flag")
         self.sample_adaptive_offset_enabled_flag = bs.u(1, "sample_adaptive_offset_enabled_flag")
@@ -102,10 +103,9 @@ class Sps:
             self.pcm_loop_filter_disabled_flag = bs.u(1, "pcm_loop_filter_disabled_flag")
 
         self.num_short_term_ref_pic_sets = bs.ue("num_short_term_ref_pic_sets")
-        self.short_term_ref_pic_set = [0] * self.num_short_term_ref_pic_sets
+        self.short_term_ref_pic_set = [st_rps.ShortTermRefPicSet(bs) for i in range(self.num_short_term_ref_pic_sets)]
         for i in range(0, self.num_short_term_ref_pic_sets):
-            self.short_term_ref_pic_set[i] = st_rps.ShortTermRefPicSet(bs)
-            self.short_term_ref_pic_set[i].parse(i, self.num_short_term_ref_pic_sets)
+            self.short_term_ref_pic_set[i].decode(i, self.num_short_term_ref_pic_sets)
 
         self.long_term_ref_pics_present_flag = bs.u(1, "long_term_ref_pics_present_flag")
         if self.long_term_ref_pics_present_flag:
@@ -122,7 +122,7 @@ class Sps:
 
         self.vui_parameters_present_flag = bs.u(1, "vui_parameters_present_flag")
         if self.vui_parameters_present_flag:
-            vui_parameters.parse()
+            vui_parameters.decode()
 
         
         self.sps_extension_flag = bs.u(1, "sps_extension_flag")

@@ -2,7 +2,7 @@ class ShortTermRefPicSet:
     def __init__(self, bs):
         self.bs = bs
 
-    def parse(self, stRpsIdx, num_short_term_ref_pic_sets):
+    def decode(self, stRpsIdx, num_short_term_ref_pic_sets):
         if stRpsIdx != 0:
             self.inter_ref_pic_set_prediction_flag = self.bs.u(1, "inter_ref_pic_set_prediction_flag")
         else:
