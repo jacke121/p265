@@ -60,33 +60,36 @@ class Pps:
         if self.tiles_enabled_flag:
             self.num_tile_columns_minus1 = bs.ue("num_tile_columns_minus1")
             self.num_tile_rows_minus1 = bs.ue("num_tile_rows_minus1")
-
             self.num_tile_columns = self.num_tile_colums_minus1 + 1
             self.num_tile_rows = self.num_tile_colums_minus1 + 1
 
             self.uniform_spacing_flag = bs.u(1, "uniform_spacing_flag")
             if not self.uniform_spacing_flag:
+                # Processig tile columns
                 self.column_width_minus1 = [0] * self.num_tile_columns_minus1
                 self.column_width = [0] * self.num_tile_columns
                 for i in range(self.num_tile_columns_minus1):
                     self.column_width_minus1[i] = bs.ue("column_width_minus1[%d]" % i)
                     self.column_width[i] = self.column_width_minus1[i] + 1
-                self.column_width[self.num_tile_columns_minus1] = self.sps.pic_width_in_ctbs_y - sum(self.column_width_minus1)
+                self.column_width[self.num_tile_columns_minus1] = self.sps.pic_width_in_ctbs_y - sum(self.column_width[0:self.num_tile_columns_minus1])
+                assert self.sps.pic_width_in_ctbs_y == sum(self.column_width)
 
+                # Processing tile rows
                 self.row_height_minus1 = [0] * self.num_tile_rows_minus1
                 self.row_height = [0] * self.num_tile_rows
                 for i in range(self.num_tile_rows_minus1):
                     self.row_height_minus1[i] = bs.ue("row_height_minus1[%d]" % i)
                     self.row_height[i] = self.row_height_minus1[i] + 1
-                self.row_height[self.num_tile_rows_minus1] = self.sps.pic_height_in_ctbs_y - sum(self.row_height_minus1)
-
-                self.loop_filter_across_tiles_enabled_flag = bs.u(1, "loop_filter_across_tiles_enabled_flag")
+                self.row_height[self.num_tile_rows_minus1] = self.sps.pic_height_in_ctbs_y - sum(self.row_height[0:self.num_tile_rows_minus1])
+                assert self.sps.pic_height_in_ctbs_y == sum(self.row_height)
             else:
                 avg_column_width = self.sps.pic_width_in_ctbs_y / self.num_tile_columns
                 self.column_width = [avg_column_width] * self.num_tile_columns
 
                 avg_row_height = self.sps.pic_height_in_ctbs_y / self.num_tile_rows
                 self.row_height= [avg_row_height] * self.num_tile_rows
+
+            self.loop_filter_across_tiles_enabled_flag = bs.u(1, "loop_filter_across_tiles_enabled_flag")
 
             self.column_boundary = [0] * (self.num_tile_columns+1)
             for i in range(self.num_tile_columns):
@@ -113,28 +116,27 @@ class Pps:
         self.initialize_raster_and_tile_scaning_conversion_array()
         self.initialize_tile_id_array()
         self.initialize_min_tb_addr_zs_array()
-        #self.initialize_up_right_diagonal_scan_order_array()
-        #self.initialize_horizontal_diagonal_scan_order_array()
-        #self.initialize_vertical_diagonal_scan_order_array()
 
         self.pps_loop_filter_across_slices_enabled_flag = bs.u(1, "pps_loop_filter_across_slices_enabled_flag")
         self.deblocking_filter_control_present_flag = bs.u(1, "deblocking_filter_control_present_flag")
 
-        self.deblocking_filter_override_enabled_flag = 0
         if self.deblocking_filter_control_present_flag:
             self.deblocking_filter_override_enabled_flag = bs.u(1, "deblocking_filter_override_enabled_flag")
             self.pps_deblocking_filter_disabled_flag = bs.u(1, "pps_deblocking_filter_disabled_flag")
             if not self.pps_deblocking_filter_disabled_flag:
                 self.pps_beta_offset_div2 = bs.se("pps_beta_offset_div2")
                 self.pps_tc_offset_div2 = bs.se("pps_tc_offset_div2")
+        else:
+            self.deblocking_filter_override_enabled_flag = 0
 
         self.pps_scaling_list_data_present_flag = bs.u(1, "pps_scaling_list_data_present_flag")
         if self.pps_scaling_list_data_present_flag:
-            self.scaling_list_data.parse()
+            self.scaling_list_data.decode()
 
         self.lists_modification_present_flag = bs.u(1, "lists_modification_present_flag")
         self.log2_parallel_merge_level_minus2 = bs.ue("log2_parallel_merge_level_minus2")
         self.slice_segment_header_extension_present_flag = bs.u(1, "slice_segment_header_extension_present_flag")
+
         self.pps_extension_flag = bs.u(1, "pps_extension_flag")
         
         #TODO
@@ -265,49 +267,6 @@ class Pps:
                 sys.stdout.write("%4d " % self.min_tb_addr_zs[x][y])
             sys.stdout.write("\n")
 
-    def get_upright_diagonal_scan_order_array(self, size):
-        diagnoal_scan = numpy.zeros((size*size, 2))
-
-        i = x = y = 0
-        stop = False
-        while not stop:
-            while y >= 0:
-                if x < size and y < size:
-                    diagnoal_scan[i][0] = x
-                    diagnoal_scan[i][1] = y
-                    i += 1
-                y -= 1
-                x += 1
-            y = x
-            x = 0
-            if i >= (size * size):
-                stop = True
-
-        return diagnoal_scan
-        
-    def get_horizontal_scan_order_array(self, size):
-        horizontal_scan = numpy.zeros((size*size, 2))
-
-        i = 0
-        for y in range(size):
-            for x in range(size):
-                horizontal_scan[i][0] = x
-                horizontal_scan[i][1] = y
-                i += 1
-
-        return horizontal_scan
-
-    def get_vertical_scan_order_array(self, size):
-        vertical_scan = numpy.zeros((size*size, 2))
-
-        i = 0
-        for x in range(size):
-            for y in range(size):
-                vertical_scan[i][0] = x
-                vertical_scan[i][1] = y
-                i += 1
-
-        return vertical_scan
 
 
 if __name__ == "__main__":
