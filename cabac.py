@@ -176,8 +176,6 @@ class Cabac:
             for j in range(len(self.init_value_tables[i])):
                 self.context_models[i].append(ContextModel())
 
-        self.init_type = 0
-
     def clip3(self, min, max, val):
         if val > max:
             result = max
