@@ -2,9 +2,7 @@ import sys
 import random
 import math
 import sao
-
-import logging
-log = logging.getLogger(__name__)
+import log
 
 class Cb:
     def __init__(self, x, y, size, depth=0, parent=None):
@@ -204,7 +202,7 @@ class Ctb(Cb):
         context_idx = context_offset + context_inc
 
         self.split_cu_flag = self.ctx.cabac.decode_bin("split_cu_flag", context_idx, 0)
-        log.info("split_cu_flag = %d" % self.split_cu_flag)
+        log.syntax.info("split_cu_flag = %d" % self.split_cu_flag)
 
 
 if __name__ == "__main__":

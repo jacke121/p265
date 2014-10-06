@@ -3,9 +3,7 @@ import copy
 import st_rps
 import cabac
 import ctb
-
-import logging
-log = logging.getLogger(__name__)
+import log
 
 class SliceSegmentHeader:
     def __init__(self, ctx):
@@ -25,7 +23,7 @@ class SliceSegmentHeader:
     def decode(self):
         bs = self.ctx.bs
 
-        log.info("============= Slice Header =============")
+        log.main.info("============= Slice Header =============")
 
         self.first_slice_segment_in_pic_flag = bs.u(1, "first_slice_segment_in_pic_flag")
         if self.first_slice_segment_in_pic_flag:
@@ -37,32 +35,32 @@ class SliceSegmentHeader:
         self.slice_pic_parameter_set_id = bs.ue("slice_pic_parameter_set_id")
         self.activate_pps() # Activate PPS 
 
-        self.dependent_slice_segment_flag = 0
-        self.slice_segment_address = 0
         if not self.first_slice_segment_in_pic_flag:
             if self.pps.dependent_slice_segments_enabled_flag:
                 self.dependent_slice_segment_flag = bs.u(1, "dependent_slice_segment_flag")
+            else:
+                self.dependent_slice_segment_flag = 0
             self.slice_segment_address = bs.u(math.ceil(math.log(self.sps.pic_size_in_ctbs_y, 2)), "slice_segment_address")
+        else:
+            self.dependent_slice_segment_flag = 0
+            self.slice_segment_address = 0
 
         if not self.dependent_slice_segment_flag:
             self.slice_reserved_flag = [0] * self.pps.num_extra_slice_header_bits
             for i in range(self.pps.num_extra_slice_header_bits):
                 self.slice_reserved_flag[i] = bs.u(1, "slice_reserved_flag[%d]" % i)
-            self.slice_type = bs.ue("slice_type")
 
+            self.slice_type = bs.ue("slice_type")
             assert self.slice_type in [0, 1, 2]
-            if self.slice_type == self.I_SLICE:
-                self.init_type = 0
-            elif self.slice_type == self.P_SLICE:
-                self.init_type = (2 if self.cabac_init_flag else 1)
-            elif self.slice_type == self.B_SLICE:
-                self.init_type = (1 if self.cabac_init_flag else 2)
 
             if self.pps.output_flag_present_flag:
                 self.pic_output_flag = bs.u(1, "pic_output_flag")
+            else:
+                self.pic_output_flag = 1
 
             if self.sps.separate_colour_plane_flag:
                 self.colour_plane_id = bs.u(2, "colour_plane_id")
+                assert self.colour_plane_id in [0, 1, 2]
 
             if self.ctx.naluh.nal_unit_type != self.ctx.naluh.IDR_W_RADL and self.ctx.naluh.nal_unit_type != self.ctx.naluh.IDR_N_LP:
                 self.slice_pic_order_cnt_lsb = bs.u(self.sps.log2_max_pic_order_cnt_lsb_minus4 + 4, "slice_pic_order_cnt_lsb")
@@ -70,7 +68,7 @@ class SliceSegmentHeader:
                 self.short_term_ref_pic_set_sps_flag = bs.u(1, "short_term_ref_pic_set_sps_flag")
                 self.short_term_ref_pic_set_idx = 0
                 if not self.short_term_ref_pic_set_sps_flag:
-                    self.short_term_ref_pic_set.parse(self.sps.num_short_term_ref_pic_sets)
+                    self.short_term_ref_pic_set.decode(self.sps.num_short_term_ref_pic_sets)
                 elif self.sps.num_short_term_ref_pic_sets > 1:
                     self.short_term_ref_pic_set_idx = bs.u(math.ceil(math.log(self.sps.num_short_term_ref_pic_sets, 2)), "short_term_ref_pic_set_idx")
 
@@ -97,6 +95,11 @@ class SliceSegmentHeader:
                         self.num_long_term_sps = bs.ue("num_long_term_sps")
                     self.num_long_term_pics = bs.ue("num_long_term_pics")
 
+                    self.lt_idx_sps = [0] * (self.sps.num_long_term_sps + self.sps.num_long_term_pics)
+                    self.poc_lsb_lt = [0] * (self.sps.num_long_term_sps + self.sps.num_long_term_pics)
+                    self.used_by_curr_pic_lt_flag = [0] * (self.sps.num_long_term_sps + self.sps.num_long_term_pics)
+                    self.delta_poc_msb_present_flag = [0] * (self.sps.num_long_term_sps + self.sps.num_long_term_pics)
+                    self.delta_poc_msb_cycle_lt = [0] * (self.sps.num_long_term_sps + self.sps.num_long_term_pics)
                     for i in range(self.sps.num_long_term_sps + self.sps.num_long_term_pics):
                         if i < self.num_long_term_sps:
                             if self.sps.num_long_term_ref_pics_sps > 1:
@@ -104,8 +107,7 @@ class SliceSegmentHeader:
                         else:
                             self.poc_lsb_lt[i] = bs.u(self.sps.log2_max_pic_order_cnt_lsb_minus4+4, "poc_lsb_lt[%d]" % i)
                             self.used_by_curr_pic_lt_flag[i] = bs.u(1, "used_by_curr_pic_lt_flag[%d]" % i)
-
-                        self.delta_poc_msb_present_flag = bs.u(1, "delta_poc_msb_present_flag[%d]" % i)
+                        self.delta_poc_msb_present_flag[i] = bs.u(1, "delta_poc_msb_present_flag[%d]" % i)
                         if self.delta_poc_msb_present_flag[i]:
                             self.delta_poc_msb_cycle_lt[i] = bs.ue("delta_poc_msb_cycle_lt[%d]" % i)
 
@@ -119,12 +121,15 @@ class SliceSegmentHeader:
             if self.sps.sample_adaptive_offset_enabled_flag:
                 self.slice_sao_luma_flag = bs.u(1, "slice_sao_luma_flag")
                 self.slice_sao_chroma_flag = bs.u(1, "slice_sao_chroma_flag")
+            else:
+                self.slice_sao_luma_flag = 0
+                self.slice_sao_chroma_flag = 0
             
             if self.slice_type == self.P_SLICE or self.slice_type == self.B_SLICE:
                 self.num_ref_idx_active_override_flag = bs.u(1, "num_ref_idx_active_override_flag")
                 if self.num_ref_idx_active_override_flag:
                     self.num_ref_idx_l0_active_minus1 = bs.ue("num_ref_idx_l0_active_minus1")
-                    if self.slice_type == 2:
+                    if self.slice_type == self.B_SLICE:
                         self.num_ref_idx_l1_active_minus1 = bs.ue("num_ref_idx_l1_active_minus1")
 
                 if self.pps.lists_modification_present_flag and self.num_poc_total_curr>1:
@@ -135,14 +140,22 @@ class SliceSegmentHeader:
 
                 if self.pps.cabac_init_present_flag:
                     self.cabac_init_flag = bs.u(1, "cabac_init_flag")
+                else:
+                    self.cabac_init_flag = 0
 
                 if self.slice_temporal_mvp_enabled_flag:
                     raise "Unimplemented yet"
-
                 if (self.weighted_pred_flag and self.slice_type == self.P_SLICE) or (self.weighted_bipred_flag and self.slice_type == self.B_SLICE):
                     raise "Unimplemented yet"
                 
                 self.five_minus_max_num_merge_cand = bs.ue("five_minus_max_num_merge_cand")
+
+            if self.slice_type == self.I_SLICE:
+                self.init_type = 0
+            elif self.slice_type == self.P_SLICE:
+                self.init_type = (2 if self.cabac_init_flag else 1)
+            elif self.slice_type == self.B_SLICE:
+                self.init_type = (1 if self.cabac_init_flag else 2)
 
             self.slice_qp_delta = bs.se("slice_qp_delta")
             self.slice_qp_y = self.slice_qp_delta + self.pps.init_qp_minus26 + 26
@@ -191,7 +204,7 @@ class SliceSegmentData:
     def decode(self):
         bs = self.bs
 
-        log.info("============= Slice Segment Data =============")
+        log.main.info("============= Slice Segment Data =============")
 
         if not self.ctx.img.slice_hdrs[-1].dependent_slice_segment_flag:
             self.ctx.img.slice_hdr = self.ctx.img.slice_hdrs[-1]

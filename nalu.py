@@ -2,9 +2,7 @@ import slice
 import vps
 import sps
 import pps
-
-import logging
-log = logging.getLogger(__name__)
+import log
 
 class NaluHeader:
     TRAIL_N =0
@@ -76,7 +74,7 @@ class NaluHeader:
         self.bs = bs
 
     def decode(self):
-        log.info("============= NALU Header =============")
+        log.main.info("============= NALU Header =============")
 
         self.forbidden_zero_bit = self.bs.u(1, "forbidden_zero_bit")
         assert(self.forbidden_zero_bit == 0)

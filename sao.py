@@ -1,5 +1,4 @@
-import logging
-log = logging.getLogger(__name__)
+import log
 
 class Sao:
     def __init__(self, ctx, x, y):
@@ -57,13 +56,13 @@ class Sao:
                    
                     if self.sao_type_idx[c_idx] != 0:
                         for i in range(4):
-                            self.sao_offset_abs[c_idx][i] = self.decode_sao_offset_abs(c_idx)
+                            self.sao_offset_abs[c_idx][i] = self.decode_sao_offset_abs(c_idx, i)
 
                         if self.sao_type_idx[c_idx] == 1:
                             for i in range(4):
                                 if self.sao_offset_abs[c_idx][i] != 0:
-                                    self.sao_offset_sign[c_idx][i] = self.decode_sao_offset_sign()
-                            self.sao_band_position[c_idx] = self.decode_sao_band_position()
+                                    self.sao_offset_sign[c_idx][i] = self.decode_sao_offset_sign(c_idx, i)
+                            self.sao_band_position[c_idx] = self.decode_sao_band_position(c_idx)
                         else:
                             if c_idx == 0:
                                 self.sao_eo_class_luma = self.decode_sao_eo_class_luma()
@@ -123,12 +122,12 @@ class Sao:
 
     def decode_sao_merge_left_flag(self):
         bit = self.cabac.decode_decision("sao_merge_left_flag", 0)
-        log.info("sao_merge_left_flag = %d" % bit)
+        log.syntax.info("sao_merge_left_flag = %d" % bit)
         return bit
 
     def decode_sao_merge_up_flag(self):
         bit = self.cabac.decode_decision("sao_merge_up_flag", 0)
-        log.info("sao_merge_up_flag = %d" % bit)
+        log.syntax.info("sao_merge_up_flag = %d" % bit)
         return bit
 
     def decode_sao_type_idx(self, table):
@@ -147,43 +146,47 @@ class Sao:
     
     def decode_sao_type_idx_luma(self):
         value = self.decode_sao_type_idx("sao_type_idx_lumachroma_flag")
-        log.info("sao_type_idx_luma = %d" % value)
+        log.syntax.info("sao_type_idx_luma = %d" % value)
         return value
 
     def decode_sao_type_idx_chroma(self):
         value = self.decode_sao_type_idx("sao_type_idx_lumachroma_flag")
-        log.info("sao_type_idx_luma = %d" % value)
+        log.syntax.info("sao_type_idx_luma = %d" % value)
         return value
 
-    def decode_sao_offset_abs(self, c_idx):
+    def decode_sao_offset_abs(self, c_idx, i):
         if c_idx == 0: 
             bit_depth = self.sps.bit_depth_y
         else:
             bit_depth = self.sps.bit_depth_c
 
         c_max = (1 << (min(bit_depth, 10) - 5)) - 1
-
-        for i in range(c_max):
-            bit = self.cabac.decode_bypass()
-            if bit == 0:
-                log.info("sao_offset_abs = %d" % i)
-                return i
-
-        log.info("sao_offset_abs = %d" % c_max)
-        return c_max
+        if c_max == 0:
+            value = 0
+        else:
+            k = 0
+            while True:
+                bit = self.cabac.decode_bypass()
+                if bit == 0: break
+                k += 1
+                if k == c_max: break
+            value = k
+                
+        log.syntax.info("sao_offset_abs[%s][%d] = %d" % ("luma" if c_idx==0 else "chroma", i, value))
+        return value
     
-    def decode_sao_offset_sign(self):
+    def decode_sao_offset_sign(self, c_idx, i):
         bit = self.cabac.decode_bypass()
-        log.info("sao_offset_sign = %d" % bit)
+        log.syntax.info("sao_offset_sign[%s][%d] = %d" % ("luma" if c_idx==0 else "chroma", i, bit))
         return bit
 
-    def decode_sao_band_position(self):
+    def decode_sao_band_position(self, c_idx):
         value = self.cabac.decode_bypass()
 
         for i in range(4):
             value = (value << 1) | self.cabac.decode_bypass()
         
-        log.info("sao_band_position = %d" % value)
+        log.syntax.info("sao_band_position[%s] = %d" % ("luma" if c_idx==0 else "chroma", value))
         return value
 
     def decode_sao_eo_class(self):
@@ -193,11 +196,11 @@ class Sao:
 
     def decode_sao_eo_class_luma(self):
         value = self.decode_sao_eo_class()
-        log.info("sao_eo_class_luma = %d" % value)
+        log.syntax.info("sao_eo_class_luma = %d" % value)
         return value
     
     def decode_sao_eo_class_chroma(self):
         value = self.decode_sao_eo_class()
-        log.info("sao_eo_class_chroma = %d" % value)
+        log.syntax.info("sao_eo_class_chroma = %d" % value)
         return value
 

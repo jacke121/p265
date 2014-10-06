@@ -1,3 +1,5 @@
+import log
+
 class CabacTables:
     def __init__(self):
         self.setup_init_value_tables()
@@ -189,17 +191,22 @@ class Cabac:
 
     def initialization_process(self, ctx_table, ctx_idx, slice_header):
         init_value = self.init_value_tables[ctx_table][ctx_idx]
-        slope_idx = init_value >> 4;
-        offset_idx = init_value & 0xF;
-        m = slope_idx * 5 - 45;
-        n = (offset_idx << 3) - 16;
-        pre_ctx_state = self.clip3(1, 126, ((m * self.clip3(0, 51, slice_header.slice_qp_y)) >> 4) + n);
-        
-        self.context_models[ctx_table][ctx_idx].val_mps = 0 if (pre_ctx_state <= 63) else 1;
-        self.context_models[ctx_table][ctx_idx].p_state_idx = (pre_ctx_state - 64) if self.context_models[ctx_table][ctx_idx].val_mps else (63 - pre_ctx_state);
+        slope_idx = init_value >> 4
+        offset_idx = init_value & 0xF
+        m = slope_idx * 5 - 45
+        n = (offset_idx << 3) - 16
+        pre_ctx_state = self.clip3(1, 126, ((m * self.clip3(0, 51, slice_header.slice_qp_y)) >> 4) + n)
+
+        val_mps = 0 if (pre_ctx_state <= 63) else 1
+        p_state_idx = (pre_ctx_state - 64) if val_mps else (63 - pre_ctx_state)
+        self.context_models[ctx_table][ctx_idx].val_mps = val_mps
+        self.context_models[ctx_table][ctx_idx].p_state_idx = p_state_idx
 
         if not (self.context_models[ctx_table][ctx_idx].p_state_idx <= 62):
             raise "Unexpected probability state."
+
+        if ctx_table == "split_cu_flag":
+            log.syntax.debug("%s: ctx_idx = %d, p_state_idx = %d, val_mps = %d, qp = %d" % (ctx_table, ctx_idx, p_state_idx, val_mps, slice_header.slice_qp_y))
 
             #if slice_header.slice_type == slice_header.I_SLICE:
             #    self.init_type = 0
@@ -220,6 +227,8 @@ class Cabac:
         pass
 
     def initialization_process_arithmetic_decoding_engine(self):
+        self.bs.report_position()
+        assert self.bs.byte_aligned() == 1
         self.ivl_curr_range = 510
         self.ivl_offset = self.bs.read_bits(9)
         
@@ -235,20 +244,25 @@ class Cabac:
             return self.decode_decision(ctx_table, ctx_idx)
 
     def decode_decision(self, ctx_table, ctx_idx):
+        p_state_idx = self.context_models[ctx_table][ctx_idx].p_state_idx
+        val_mps = self.context_models[ctx_table][ctx_idx].val_mps
+        log.syntax.debug("enter decode_decision: p_state_idx = %d, val_mps = %d, ivl_curr_range = %d, ivl_offset = %d" % (p_state_idx, val_mps, self.ivl_curr_range, self.ivl_offset))
+
         q_range_idx = (self.ivl_curr_range >> 6) & 3
-        ivl_lps_range = self.tables.lps_range_table[self.context_models[ctx_table][ctx_idx].p_state_idx][q_range_idx]
+        ivl_lps_range = self.tables.lps_range_table[p_state_idx][q_range_idx]
 
         self.ivl_curr_range = self.ivl_curr_range - ivl_lps_range
         if self.ivl_offset >= self.ivl_curr_range:
-            bin_val = 1 - self.context_models[ctx_table][ctx_idx].val_mps
+            bin_val = 1 - val_mps
             self.ivl_offset -= self.ivl_curr_range
             self.ivl_curr_range = ivl_lps_range
         else:
-            bin_val = self.context_models[ctx_table][ctx_idx].val_mps
+            bin_val = val_mps
             
         self.state_transition_process(ctx_table, ctx_idx, bin_val)
         self.renormalization_process()
 
+        log.syntax.debug("exit  decode_decision: p_state_idx = %d, val_mps = %d, ivl_curr_range = %d, ivl_offset = %d, bin = %d" % (p_state_idx, val_mps, self.ivl_curr_range, self.ivl_offset, bin_val))
         return bin_val
 
     def state_transition_process(self, ctx_table, ctx_idx, bin_val):
@@ -266,6 +280,7 @@ class Cabac:
             self.ivl_offset |= self.bs.read_bits(1)
 
     def decode_bypass(self):
+        log.syntax.debug("enter decode_bypass: ivl_curr_range = %d, ivl_offset = %d" % (self.ivl_curr_range, self.ivl_offset))
         self.ivl_offset <<= 1
         self.ivl_offset |= self.bs.read_bits(1)
 
@@ -278,6 +293,7 @@ class Cabac:
         if self.ivl_offset >= self.ivl_curr_range:
             raise "Unexpected interval offset."
 
+        log.syntax.debug("exit  decode_bypass: ivl_curr_range = %d, ivl_offset = %d, bin = %d" % (self.ivl_curr_range, self.ivl_offset, bin_val))
         return bin_val
 
     def decode_terminate(self):

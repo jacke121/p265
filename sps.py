@@ -2,9 +2,7 @@ import math
 import ptl
 import sld
 import st_rps
-
-import logging
-log = logging.getLogger(__name__)
+import log
 
 class VuiParameters:
     def __init__(self, bs):
@@ -26,7 +24,7 @@ class Sps:
     def parse(self):
         bs = self.ctx.bs
 
-        log.info("============= Sequence Parameter Set =============")
+        log.main.info("============= Sequence Parameter Set =============")
 
         self.sps_video_parameter_set_id = bs.u(4, "sps_video_parameter_set_id")
         self.activate_vps() # Activate VPS
@@ -70,9 +68,9 @@ class Sps:
         self.sps_max_num_reorder_pics = [0] * (self.sps_max_sub_layers)
         self.sps_max_latency_increase_plus1 = [0] * (self.sps_max_sub_layers)
         for i in range(0 if self.sps_sub_layer_ordering_info_present_flag else self.sps_max_sub_layers_minus1, self.sps_max_sub_layers):
-            self.sps_max_dec_pic_buffering_minus1[i] = bs.ue("sps_max_dec_pic_buffering_minus1")
-            self.sps_max_num_reorder_pics[i] = bs.ue("sps_max_num_reorder_pics")
-            self.sps_max_latency_increase_plus1[i] = bs.ue("sps_max_latency_increase_plus1")
+            self.sps_max_dec_pic_buffering_minus1[i] = bs.ue("sps_max_dec_pic_buffering_minus1[%d]" % i)
+            self.sps_max_num_reorder_pics[i] = bs.ue("sps_max_num_reorder_pics[%d]" % i)
+            self.sps_max_latency_increase_plus1[i] = bs.ue("sps_max_latency_increase_plus1[%d]" % i)
 
         self.log2_min_luma_coding_block_size_minus3 = bs.ue("log2_min_luma_coding_block_size_minus3")
         self.log2_diff_max_min_luma_coding_block_size = bs.ue("log2_diff_max_min_luma_coding_block_size")
@@ -170,12 +168,12 @@ class Sps:
         self.pic_height_in_min_tbs = self.pic_height_in_ctbs_y << (self.ctb_log2_size_y - self.log2_min_transform_block_size)
     
     def log_derived_picture_info(self):
-        log.info("==============Derived Picture INFO from SPS parameters ==============")
-        log.info("pic_width_in_luma_samples = %d", self.pic_width_in_luma_samples)
-        log.info("pic_height_in_luma_samples = %d", self.pic_height_in_luma_samples)
-        log.info("pic_width_in_ctbs_y = %d" % self.pic_width_in_ctbs_y)
-        log.info("pic_height_in_ctbs_y = %d" % self.pic_height_in_ctbs_y)
-        log.info("ctb_size_y = %d" % self.ctb_size_y)
-        log.info("min_cb_size_y = %d" % self.min_cb_size_y)
+        log.main.info("==============Derived Picture INFO from SPS parameters ==============")
+        log.main.info("pic_width_in_luma_samples = %d", self.pic_width_in_luma_samples)
+        log.main.info("pic_height_in_luma_samples = %d", self.pic_height_in_luma_samples)
+        log.main.info("pic_width_in_ctbs_y = %d" % self.pic_width_in_ctbs_y)
+        log.main.info("pic_height_in_ctbs_y = %d" % self.pic_height_in_ctbs_y)
+        log.main.info("ctb_size_y = %d" % self.ctb_size_y)
+        log.main.info("min_cb_size_y = %d" % self.min_cb_size_y)
 
 

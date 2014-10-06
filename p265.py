@@ -1,9 +1,6 @@
 import nalu
 import context
-
-import logging
-logging.basicConfig(level=logging.INFO)
-log = logging.getLogger(__name__)
+import log
 
 class P265:
     def __init__(self, bs_file= "str.bin"):
@@ -39,7 +36,7 @@ class P265:
             elif nalu_type == nalu.NaluHeader.RASL_R:
                 self.nalu.decode_slice_seg()
             elif nalu_type in range(nalu.NaluHeader.RSV_VCL_N10, nalu.NaluHeader.RSV_VCL_R15+1):
-                log.error("Reserved NALU type - RSV_VCL_N10~RSV_VCL_R15.")
+                log.main.error("Reserved NALU type - RSV_VCL_N10~RSV_VCL_R15.")
             elif nalu_type == nalu.NaluHeader.BLA_W_LP:
                 self.nalu.decode_slice_seg()
             elif nalu_type == nalu.NaluHeader.BLA_W_RADL:
@@ -52,10 +49,10 @@ class P265:
                 self.nalu.decode_slice_seg()
             elif nalu_type == nalu.NaluHeader.CRA_NUT:
                 self.nalu.decode_slice_seg()
-            elif nalu_type in (nalu.NaluHeader.RSV_IRAP_VCL22, nalu.NaluHeader.RSV_IRAP_VCL23+1):
-                log.error("Reserved NALU type - RSV_IRAP_VCL22~RSV_IRAP_VCL23.")
-            elif nalu_type in (nalu.NaluHeader.RSV_VCL24, nalu.NaluHeader.RSV_VCL31+1):
-                log.error("Reserved NALU type - RSV_VCL24~RSV_VCL31.")
+            elif nalu_type in range(nalu.NaluHeader.RSV_IRAP_VCL22, nalu.NaluHeader.RSV_IRAP_VCL23+1):
+                log.main.error("Reserved NALU type - RSV_IRAP_VCL22~RSV_IRAP_VCL23.")
+            elif nalu_type in range(nalu.NaluHeader.RSV_VCL24, nalu.NaluHeader.RSV_VCL31+1):
+                log.main.error("Reserved NALU type - RSV_VCL24~RSV_VCL31.")
             elif nalu_type == nalu.NaluHeader.VPS_NUT:
                 self.nalu.decode_vps()
             elif nalu_type == nalu.NaluHeader.SPS_NUT:
@@ -75,11 +72,11 @@ class P265:
             elif nalu_type == nalu.NaluHeader.SUFFIX_SEI_NUT:
                 self.nalu.decode_sei()
             elif nalu_type in range(nalu.NaluHeader.RSV_NVCL41, nalu.NaluHeader.RSV_NVCL47+1):
-                log.error("Reserved NALU type -- RSV_NVCL41~RSV_NVCL47.")
+                log.main.error("Reserved NALU type -- RSV_NVCL41~RSV_NVCL47.")
             elif nalu_type in range(nalu.NaluHeader.UNSPEC48, nalu.NaluHeader.UNSPEC63+1):
-                log.error("Reserved NALU type -- RSV_UNSPEC48~RSV_UNSPEC49.")
+                log.main.error("Reserved NALU type -- RSV_UNSPEC48~RSV_UNSPEC49.")
             else:
-                log.error("NALU type should be within 0~63, but got %d." % nalu_type)
+                log.main.error("NALU type should be within 0~63, but got %d." % nalu_type)
 
 if __name__ == "__main__":
     p265 = P265("str.bin")

@@ -1,7 +1,5 @@
 import math
-
-import logging
-log = logging.getLogger(__name__)
+import log
 
 #TODO: use get_byte() instead of directly accessing bytes list
 class BitStreamBuffer:
@@ -23,7 +21,7 @@ class BitStreamBuffer:
         self.length = len(self.bytes)
 
     def report_position(self):
-        log.info("Bit stream position: byte_idx = %d, bit_idx = %d, line = %d, colum = %d" % (self.byte_idx, self.bit_idx, (self.byte_idx / 16)+ 1, (self.byte_idx % 16 ) + 1))
+        log.main.info("Bit stream position: byte_idx = %d, bit_idx = %d, addr = 0x%x, colum = %d" % (self.byte_idx, self.bit_idx, (self.byte_idx / 16) << 4, (self.byte_idx % 16 )))
 
     def reset(self):
         self.bit_idx = 0
@@ -34,12 +32,22 @@ class BitStreamBuffer:
             print "0x%02x" % self.bytes[i]
 
     def byte_alignment(self):
-        if self.bit_idx==0:
-            return
-        else:
-            self.byte_idx += 1
-            self.bit_idx = 0
+        alignment_bit_equal_to_one = self.read_bits(1)
+        assert alignment_bit_equal_to_one == 1
+
+        while not self.byte_aligned():
+            alignment_bit_equal_to_zero = self.read_bits(1)
+            assert alignment_bit_equal_to_zero == 0
+
+        #if self.bit_idx==0:
+        #    return
+        #else:
+        #    self.byte_idx += 1
+        #    self.bit_idx = 0
     
+    def byte_aligned(self):
+        return self.bit_idx == 0
+
     def get_byte(self, idx):
         if idx > self.length:
             raise "Error: out of range."
@@ -128,18 +136,18 @@ class BitStreamBuffer:
 
     def f(self, n, name):
         bits = self.read_bits(n)
-        log.info("%s = %d" % (name, bits))
+        log.syntax.info("%s = %d" % (name, bits))
         return bits
 
     def u(self, n, name):
         bits = self.read_bits(n)
-        log.info("%s = %d" % (name, bits))
+        log.syntax.info("%s = %d" % (name, bits))
         return bits
 
     def se(self, name):
         k = self.ue(name, True)
-        code_num = ((-1)**k) * int(math.ceil(float(k)/2))
-        log.info("%s = %d" % (name, code_num))
+        code_num = ((-1)**(k+1)) * int(math.ceil(float(k)/2))
+        log.syntax.info("%s = %d" % (name, code_num))
         return code_num
    
     def ue(self, name, no_print = False):
@@ -149,7 +157,7 @@ class BitStreamBuffer:
 
         code_num = 2**leading_zero_bits - 1 + self.read_bits(leading_zero_bits)    
         if not no_print:
-            log.info("%s = %d" % (name, code_num))
+            log.syntax.info("%s = %d" % (name, code_num))
 
         return code_num
 

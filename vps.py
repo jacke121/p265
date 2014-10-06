@@ -1,7 +1,5 @@
 import ptl
-
-import logging
-log = logging.getLogger(__name__)
+import log
 
 class Vps:
     def __init__(self, ctx):
@@ -11,7 +9,7 @@ class Vps:
     def parse(self):
         bs = self.ctx.bs
 
-        log.info("============= Video Parameter Set =============")
+        log.main.info("============= Video Parameter Set =============")
 
         self.vps_video_parameter_set_id = bs.u(4, "vps_video_parameter_set_id")
 
@@ -20,7 +18,7 @@ class Vps:
 
         self.vps_max_layers_minus1 = bs.u(6, "vps_max_layers_minus1")
         self.vps_max_sub_layers_minus1 = bs.u(3, "vps_max_sub_layers_minus1")
-        self.vps_max_sub_layers = self.vps_max_sublayers_minus1 + 1
+        self.vps_max_sub_layers = self.vps_max_sub_layers_minus1 + 1
         self.vps_temporal_id_nesting_flag = bs.u(1, "vps_temporal_id_nesting_flag")
 
         self.vps_reserved_0xffff_16bits = bs.u(16, "vps_reserved_0xffff_16bits")
@@ -31,11 +29,11 @@ class Vps:
         self.vps_sub_layer_ordering_info_present_flag = bs.u(1, "vps_sub_layer_ordering_info_present_flag")
         self.vps_max_dec_pic_buffering_minus1 = [0] * (self.vps_max_sub_layers)
         self.vps_max_num_reorder_pics = [0] * (self.vps_max_sub_layers)
-        self.max_latency_increase_plus1 = [0] * (self.vps_max_sub_layers)
+        self.vps_max_latency_increase_plus1 = [0] * (self.vps_max_sub_layers)
         for i in range(0 if self.vps_sub_layer_ordering_info_present_flag else self.vps_max_sub_layers_minus1, self.vps_max_sub_layers):
             self.vps_max_dec_pic_buffering_minus1[i] = bs.ue("vps_max_dec_pic_buffering_minus1[%d]" % i)
             self.vps_max_num_reorder_pics[i] = bs.ue("vps_max_num_reorder_pics[%d]" % i)
-            self.max_latency_increase_plus1[i] = bs.ue("max_latency_increase_plus1[%d]" % i)
+            self.vps_max_latency_increase_plus1[i] = bs.ue("vps_max_latency_increase_plus1[%d]" % i)
 
         self.vps_max_layer_id = bs.u(6, "vps_max_layer_id")
         self.vps_num_layer_sets_minus1 = bs.ue("vps_num_layer_sets_minus1")

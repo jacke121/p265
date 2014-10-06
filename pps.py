@@ -3,9 +3,7 @@ import sys
 import ctb
 import sld
 import image
-
-import logging
-log = logging.getLogger(__name__)
+import log
 
 class Pps:
     def __init__(self, ctx):
@@ -19,7 +17,7 @@ class Pps:
     def parse(self):
         bs = self.ctx.bs
 
-        log.info("============= Picture Parameter Set =============")
+        log.main.info("============= Picture Parameter Set =============")
 
         self.pps_pic_parameter_set_id = bs.ue("pps_pic_parameter_set_id")
         self.pps_seq_parameter_set_id = bs.ue("pps_seq_parameter_set_id")
@@ -30,11 +28,11 @@ class Pps:
         self.dependent_slice_segments_enabled_flag = bs.u(1, "dependent_slice_segments_enabled_flag")
         self.output_flag_present_flag = bs.u(1, "output_flag_present_flag")
         self.num_extra_slice_header_bits = bs.u(3, "num_extra_slice_header_bits")
-        self.sign_datahiding_enabled_flag = bs.u(1, "sign_datahiding_enabled_flag")
+        self.sign_data_hiding_enabled_flag = bs.u(1, "sign_data_hiding_enabled_flag")
         self.cabac_init_present_flag = bs.u(1, "cabac_init_present_flag")
 
-        self.num_ref_idx_l0_defualt_active_minus1 = bs.ue("num_ref_idx_l0_defualt_active_minus1")
-        self.num_ref_idx_l1_defualt_active_minus1 = bs.ue("num_ref_idx_l1_defualt_active_minus1")
+        self.num_ref_idx_l0_default_active_minus1 = bs.ue("num_ref_idx_l0_default_active_minus1")
+        self.num_ref_idx_l1_default_active_minus1 = bs.ue("num_ref_idx_l1_default_active_minus1")
         
         self.init_qp_minus26 = bs.se("init_qp_minus26")
 
@@ -54,7 +52,7 @@ class Pps:
 
         self.transquant_bypass_enabled_flag = bs.u(1, "transquant_bypass_enabled_flag")
 
-        self.tiles_enabled_flag = bs.u(1, "tiles_enabled_flag ")
+        self.tiles_enabled_flag = bs.u(1, "tiles_enabled_flag")
         self.entropy_coding_sync_enabled_flag = bs.u(1, "entropy_coding_sync_enabled_flag")
 
         if self.tiles_enabled_flag:
