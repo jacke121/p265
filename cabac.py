@@ -9,40 +9,40 @@ class CabacTables:
     
     def setup_init_value_tables(self):
         self.init_value_tables = {}
-        self.init_value_tables["sao_merge_leftup_flag"] = [153, 153, 153] #[3] Table 9-5
-        self.init_value_tables["sao_type_idx_lumachroma_flag"] = [200, 185, 160] #[3] Table 9-6
-        self.init_value_tables["split_cu_flag"] = [139, 141, 157, 107, 139, 126, 107, 139, 126] #[3][3] Table 9-7
-        self.init_value_tables["cu_transquant_bypass_flag"] = [154, 154, 154] #[3] Table 9-8
-        self.init_value_tables["cu_skip_flag"] = [197, 185, 201, 197, 185, 201] #[2][3] Table 9-9
-        self.init_value_tables["pred_mode_flag"] = [149, 134] #[2] Table 9-10
-        self.init_value_tables["part_mode"] = [184, 154, 139,  154, 154, 154,  139, 154, 154] #[9] Table 9-11
-        self.init_value_tables["prev_intra_luma_pred_flag"] = [184, 154, 183] #[3] Table 9-12
-        self.init_value_tables["intra_chroma_pred_mode"] = [63, 152, 152] #[3] Table 9-13
-        self.init_value_tables["rqt_root_cbf"] = [79] #[1] Table 9-14
-        self.init_value_tables["merge_flag"] = [110, 154] #[2] Table 9-15
-        self.init_value_tables["merge_idx"] = [122, 137] #[2] Table 9-16
-        self.init_value_tables["inter_pred_idc"] = [95, 79, 63, 31, 31, 95, 79, 63, 31, 31] #[10] Table 9-17
-        self.init_value_tables["ref_idx_l0l1"] = [153, 153, 153, 153] #[4] Table 9-18
-        self.init_value_tables["mvp_l0l1_flag"] = [168, 168] #[1] Table 9-19
-        self.init_value_tables["split_transform_flag"] = [153, 138, 138,  124, 138, 94,  224, 167, 122] #[9] Table 9-20 
-        self.init_value_tables["cbf_luma"] = [111, 141, 153, 111, 153, 111] #[6] Table 9-21
-        self.init_value_tables["cbf_chroma"] = [94, 138, 182, 154, 149, 107, 167, 154, 149, 92, 167, 154] #[12] Table 9-22
-        self.init_value_tables["abs_mvd_greater0greater1_flag"] = [140, 198, 169, 198] #[4] Table 9-23
-        self.init_value_tables["cu_qp_delta_abs"] = [154, 154, 154, 154, 154, 154] #[6] Table 9-24
-        self.init_value_tables["transform_skip_flag"] = [139, 139, 139, 139, 139, 139] #[2] Table 9-25
+        self.init_value_tables["sao_merge_leftup_flag"] = [153, 153, 153] # Table 9-5
+        self.init_value_tables["sao_type_idx_lumachroma_flag"] = [200, 185, 160] # Table 9-6
+        self.init_value_tables["split_cu_flag"] = [139, 141, 157, 107, 139, 126, 107, 139, 126] # Table 9-7
+        self.init_value_tables["cu_transquant_bypass_flag"] = [154, 154, 154] # Table 9-8
+        self.init_value_tables["cu_skip_flag"] = [197, 185, 201, 197, 185, 201] # Table 9-9
+        self.init_value_tables["pred_mode_flag"] = [149, 134] # Table 9-10
+        self.init_value_tables["part_mode"] = [184, 154, 139, 154, 154, 154, 139, 154, 154] # Table 9-11
+        self.init_value_tables["prev_intra_luma_pred_flag"] = [184, 154, 183] # Table 9-12
+        self.init_value_tables["intra_chroma_pred_mode"] = [63, 152, 152] # Table 9-13
+        self.init_value_tables["rqt_root_cbf"] = [79, 79] # Table 9-14
+        self.init_value_tables["merge_flag"] = [110, 154] # Table 9-15
+        self.init_value_tables["merge_idx"] = [122, 137] # Table 9-16
+        self.init_value_tables["inter_pred_idc"] = [95, 79, 63, 31, 31, 95, 79, 63, 31, 31] # Table 9-17
+        self.init_value_tables["ref_idx_l0l1"] = [153, 153, 153, 153] # Table 9-18
+        self.init_value_tables["mvp_l0l1_flag"] = [168, 168] # Table 9-19
+        self.init_value_tables["split_transform_flag"] = [153, 138, 138, 124, 138, 94, 224, 167, 122] # Table 9-20 
+        self.init_value_tables["cbf_luma"] = [111, 141, 153, 111, 153, 111] # Table 9-21
+        self.init_value_tables["cbf_chroma"] = [94, 138, 182, 154, 149, 107, 167, 154, 149, 92, 167, 154] # Table 9-22
+        self.init_value_tables["abs_mvd_greater0greater1_flag"] = [140, 198, 169, 198] # Table 9-23
+        self.init_value_tables["cu_qp_delta_abs"] = [154, 154, 154, 154, 154, 154] # Table 9-24
+        self.init_value_tables["transform_skip_flag"] = [139, 139, 139, 139, 139, 139] # Table 9-25
         self.init_value_tables["last_sig_coeff_x_prefix"] = \
             [
                 110, 110, 124, 125, 140, 153, 125, 127, 140, 109, 111, 143, 127, 111,  79, 108, 123,  63, 
                 125, 110,  94, 110,  95,  79, 125, 111, 110,  78, 110, 111, 111,  95,  94, 108, 123, 108, 
                 125, 110, 124, 110,  95,  94, 125, 111, 111,  79, 125, 126, 111, 111,  79, 108, 123,  93
-            ] #[54] Table 9-26
+            ] # Table 9-26
         self.init_value_tables["last_sig_coeff_y_prefix"] = \
             [
                 110, 110, 124, 125, 140, 153, 125, 127, 140, 109, 111, 143, 127, 111,  79, 108, 123,  63, 
                 125, 110,  94, 110,  95,  79, 125, 111, 110,  78, 110, 111, 111,  95,  94, 108, 123, 108, 
                 125, 110, 124, 110,  95,  94, 125, 111, 111,  79, 125, 126, 111, 111,  79, 108, 123,  93
-            ] #[54] Table 9-27
-        self.init_value_tables["coded_sub_block_flag"] = [91, 171, 134, 141, 121, 140, 61, 154, 121, 140, 61, 154] #[12] Table 9-28
+            ] # Table 9-27
+        self.init_value_tables["coded_sub_block_flag"] = [91, 171, 134, 141, 121, 140, 61, 154, 121, 140, 61, 154] # Table 9-28
         self.init_value_tables["sig_coeff_flag"] = \
             [
                     111, 111, 125, 110, 110,  94, 124, 108, 124, 107, 125, 141, 179, 153, 125, 107,
@@ -54,7 +54,7 @@ class CabacTables:
                     170, 154, 139, 153, 139, 123, 123,  63, 124, 166, 183, 140, 136, 153, 154, 166,
                     183, 140, 136, 153, 154, 166, 183, 140, 136, 153, 154, 170, 153, 138, 138, 122,
                     121, 122, 121, 167, 151, 183, 140, 151, 183, 140
-            ] #[3][42] Table 9-29
+            ] # Table 9-29
         self.init_value_tables["coeff_abs_level_greater1_flag"] = \
             [
                 140,  92, 137, 138, 140, 152, 138, 139, 153,  74, 149,  92, 139, 107, 122, 152, 
@@ -62,12 +62,12 @@ class CabacTables:
                 182, 134, 149, 136, 153, 121, 136, 137, 169, 194, 166, 167, 154, 167, 137, 182, 
                 154, 196, 167, 167, 154, 152, 167, 182, 182, 134, 149, 136, 153, 121, 136, 122, 
                 169, 208, 166, 167, 154, 152, 167, 182
-            ] #[72] Table 9-30
+            ] # Table 9-30
         self.init_value_tables["coeff_abs_level_greater2_flag"] = \
             [
                 138, 153, 136, 167, 152, 152, 107, 167,  91, 
                 122, 107, 167, 107, 167,  91, 107, 107,  167
-            ] #[18] Table 9-31
+            ] # Table 9-31
 
     def setup_lps_range_table(self):
         # [64][4]
@@ -163,7 +163,6 @@ class ContextModel:
     def __init__(self):
         self.val_mps = 0
         self.p_state_idx = 0
-
 
 class Cabac:
     def __init__(self, bs):
