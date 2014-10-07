@@ -1,6 +1,5 @@
 import numpy
 import sys
-import ctb
 import sld
 import image
 import log

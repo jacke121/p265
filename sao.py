@@ -15,16 +15,16 @@ class Sao:
         self.slice_hdr = self.img.slice_hdr
         self.slice_hdrs = self.img.slice_hdrs
 
-        self.ctb = self.img.ctb
-        self.ctbs = self.img.ctbs
+        self.ctu = self.img.ctu
+        self.ctus = self.img.ctus
 
-        rx = self.ctb.x
-        ry = self.ctb.y
+        rx = self.ctu.x
+        ry = self.ctu.y
 
         # Decode sao_merge_left_flag
         if rx > 0:
-            left_ctb_in_slice_seg = self.ctb.addr_rs > self.ctb.slice_addr
-            left_ctb_in_tile =  self.pps.tile_id[self.ctb.addr_ts] ==  self.pps.tile_id[self.pps.ctb_addr_rs2ts[self.ctb.addr_rs-1]]
+            left_ctb_in_slice_seg = self.ctu.addr_rs > self.ctu.slice_addr
+            left_ctb_in_tile =  self.pps.tile_id[self.ctu.addr_ts] ==  self.pps.tile_id[self.pps.ctb_addr_rs2ts[self.ctu.addr_rs-1]]
             if left_ctb_in_slice_seg and left_ctb_in_tile:
                 self.sao_merge_left_flag = self.decode_sao_merge_left_flag()
         else:
@@ -32,8 +32,8 @@ class Sao:
         
         # Decode sao_merge_up_flag
         if ry > 0 and (not self.sao_merge_left_flag):
-            up_ctb_in_slice_seg = (self.ctb.addr_rs - self.sps.pic_width_in_ctbs_y) >= self.ctb.slice_addr
-            up_ctb_in_tile = self.pps.tile_id[self.ctb.addr_ts] == self.pps.tile_id[self.pps.ctb_addr_rs2ts[self.ctb.addr_rs - self.sps.pic_width_in_ctbs_y]]
+            up_ctb_in_slice_seg = (self.ctu.addr_rs - self.sps.pic_width_in_ctbs_y) >= self.ctu.slice_addr
+            up_ctb_in_tile = self.pps.tile_id[self.ctu.addr_ts] == self.pps.tile_id[self.pps.ctb_addr_rs2ts[self.ctu.addr_rs - self.sps.pic_width_in_ctbs_y]]
             if up_ctb_in_slice_seg and up_ctb_in_tile:
                 self.sao_merge_up_flag = self.decode_sao_merge_up_flag()
         else:
@@ -72,27 +72,27 @@ class Sao:
             # Set default value of sao_type_idx
             for c_idx in range(3):
                 if self.sao_merge_left_flag:
-                    self.sao_type_idx[c_idx] = self.ctbs[rx - 1][ry].sao.sao_tpe_idx[c_idx]
+                    self.sao_type_idx[c_idx] = self.ctus[rx - 1][ry].sao.sao_tpe_idx[c_idx]
                 elif self.sao_merge_up_flag:
-                    self.sao_type_idx[c_idx] = self.ctbs[rx][ry - 1].sao.sao_tpe_idx[c_idx]
+                    self.sao_type_idx[c_idx] = self.ctus[rx][ry - 1].sao.sao_tpe_idx[c_idx]
                 else:
                     self.sao_type_idx[c_idx] = 0
 
             # Set default value of sao_offset_abs
             for c_idx in range(3):
                 if self.sao_merge_left_flag:
-                    self.sao_offset_abs[c_idx] = self.ctbs[rx - 1][ry].sao.sao_offset_abs[c_idx]
+                    self.sao_offset_abs[c_idx] = self.ctus[rx - 1][ry].sao.sao_offset_abs[c_idx]
                 elif self.sao_merge_up_flag:
-                    self.sao_offset_abs[c_idx] = self.ctbs[rx][ry - 1].sao.sao_offset_abs[c_idx]
+                    self.sao_offset_abs[c_idx] = self.ctus[rx][ry - 1].sao.sao_offset_abs[c_idx]
                 else:
                     self.sao_offset_abs[c_idx] = [0] * 4
 
             # Set default value of sao_offset_sign
             for c_idx in range(3):
                 if self.sao_merge_left_flag:
-                    self.sao_offset_sign[c_idx] = self.ctbs[rx - 1][ry].sao.sao_offset_sign[c_idx]
+                    self.sao_offset_sign[c_idx] = self.ctus[rx - 1][ry].sao.sao_offset_sign[c_idx]
                 elif self.sao_merge_up_flag:
-                    self.sao_offset_sign[c_idx] = self.ctbs[rx][ry - 1].sao.sao_offset_sign[c_idx]
+                    self.sao_offset_sign[c_idx] = self.ctus[rx][ry - 1].sao.sao_offset_sign[c_idx]
                 elif self.sao_type_idx[c_idx] == 2:
                     for i in range(4):
                         if i == 0 or i == 1:
@@ -105,18 +105,18 @@ class Sao:
             # Set defualt value of sao_band_position
             for c_idx in range(3):
                 if self.sao_merge_left_flag:
-                    self.sao_band_position[c_idx] = self.ctbs[rx - 1][ry].sao.sao_band_position[c_idx]
+                    self.sao_band_position[c_idx] = self.ctus[rx - 1][ry].sao.sao_band_position[c_idx]
                 elif self.sao_merge_up_flag:
-                    self.sao_band_position[c_idx] = self.ctbs[rx][ry - 1].sao.sao_band_position[c_idx]
+                    self.sao_band_position[c_idx] = self.ctus[rx][ry - 1].sao.sao_band_position[c_idx]
                 else:
                     self.sao_band_position[c_idx] = 0
             
             # Set default value of sao_eo_class
             for c_idx in range(3):
                 if self.sao_merge_left_flag:
-                    self.sao_eo_class[c_idx] = self.ctbs[rx - 1][ry].sao.sao_eo_class[c_idx]
+                    self.sao_eo_class[c_idx] = self.ctus[rx - 1][ry].sao.sao_eo_class[c_idx]
                 elif self.sao_merge_up_flag:
-                    self.sao_eo_class[c_idx] = self.ctbs[rx][ry - 1].sao.sao_eo_class[c_idx]
+                    self.sao_eo_class[c_idx] = self.ctus[rx][ry - 1].sao.sao_eo_class[c_idx]
                 else:
                     self.sao_eo_class[c_idx] = 0
 
@@ -151,7 +151,7 @@ class Sao:
 
     def decode_sao_type_idx_chroma(self):
         value = self.decode_sao_type_idx("sao_type_idx_lumachroma_flag")
-        log.syntax.info("sao_type_idx_luma = %d" % value)
+        log.syntax.info("sao_type_idx_chroma = %d" % value)
         return value
 
     def decode_sao_offset_abs(self, c_idx, i):

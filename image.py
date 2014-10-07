@@ -1,4 +1,4 @@
-import ctb
+import ctu
 
 class Image:
     def __init__(self, ctx):
@@ -6,13 +6,13 @@ class Image:
         self.slice_hdrs = [] 
         self.slice_hdr = None
 
-        self.ctb = None
-        self.ctbs = {}
+        self.ctu = None
+        self.ctus = {}
     
-    def next_ctb(self):
-        assert self.ctb.addr_rs not in self.ctb
-        self.ctbs[self.ctb.addr_rs] = self.ctb # Save the previously decoded CTB
-        self.ctb = ctb.Ctb(self.ctx, self.ctx.pps.ctb_addr_ts2rs[self.ctb.addr_ts + 1]) # Create a new CTB instance
+    def next_ctu(self):
+        assert self.ctu.addr_rs not in self.ctu
+        self.ctus[self.ctb.addr_rs] = self.ctu # Save the previously decoded CTU
+        self.ctu = ctu.Ctu(self.ctx, self.ctx.pps.ctb_addr_ts2rs[self.ctb.addr_ts + 1]) # Create a new CTU instance
 
     def get_ctb_addr_rs_from_luma_pixel_coordinates(self, x, y):
         assert x > 0 and y > 0
