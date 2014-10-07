@@ -5,21 +5,114 @@ import sao
 import tree
 import log
 
+class IntraPartMode:
+    PART_2Nx2N = 0
+    PART_NXN = 1
+
+class InterPartMode:
+    PART_2Nx2N = 0
+    PART_2NxN = 1
+    PART_Nx2N = 2
+    PART_NxN = 3
+    PART_2NxnU = 4
+    PART_2NxnD = 5
+    PART_nLx2N = 6
+    PART_nRx2N = 7
+
 class Cu(tree.Tree):
     def __init__(self, x, y, log2size, depth=0, parent=None):
         tree.Tree.__init__(self, x, y, log2size, depth, parent)
 
-    def decode(self):
+        self.MODE_INTER = 0
+        self.MODE_INTRA = 1
+        self.MODE_SKIP = 2
+
+    def decode_leaf(self):
         assert self.is_leaf() == True
 
         if self.ctx.pps.transquant_bypass_enabled_flag:
-            self.decode_cu_transquant_bypass_flag()
+            self.cu_transquant_bypass_flag = self.decode_cu_transquant_bypass_flag()
 
-        if self.ctx.img.slice_hdr.slice_type != self.ctx.img.slice_hdr.I_SLICE:
-            self.decode_cu_skip_flag()
+        if not self.ctx.img.slice_hdr.is_I_slice():
+            self.cu_skip_flag = self.decode_cu_skip_flag()
 
-        #if self.cu_skip_flag
-        raise "Unimplemented yet." 
+        if self.cu_skip_flag:
+            self.decode_prediction_unit()
+            self.pred_mode = self.MODE_SKIP
+        else:
+            if self.ctx.img.slice_hdr.is_I_slice():
+                self.pred_mode = self.MODE_INTRA
+            else:
+                self.pred_mode_flag = self.decode_pred_mode_flag()
+                if self.pred_mode_flag == 0:
+                    self.pred_mode = self.MODE_INTER
+                else:
+                    self.pred_mode = self.MODE_INTRA
+
+            if self.pred_mode != self.MODE_INTRA or self.log2size == self.ctx.sps.min_cb_log2_size_y:
+                self.decode_part_mode()
+                if self.pred_mode == self.MODE_INTRA:
+                    if self.part_mode == IntraPartMode.PART_2Nx2N:
+                        self.intra_split_flag = 0
+                    else:
+                        self.intra_split_flag = 1
+            else:
+                self.part_mode = 0
+                self.intra_split_flag = 0
+
+            if self.pred_mode == self.MODE_INTRA:
+                if self.part_mode == IntraPartMode.PART_2Nx2N and self.ctx.sps.pcm_enabled_flag == 1 and self.log2size >= self.ctx.sps.log2_min_pcm_luma_coding_block_size and self.log2size <= self.ctx.sps.log2_max_pcm_luma_coding_block_size:
+                    self.pcm_flag = self.decode_pcm_flag()
+                else:
+                    self.pcm_flag = 0
+
+                if self.pcm_flag == 1:
+                     while not self.ctx.bs.byte_aligned():
+                         self.pcm_alignment_zero_bit = self.ctx.bs.f(1, "pcm_alignment_zero_bit")
+                         assert self.pcm_alignment_zero_bit == 0
+                     self.decode_pcm_sample()
+                else:
+                    self.intra_pred_mode()
+            else:
+                self.decode_inter_pred_info()
+
+            if self.pcm_flag == 0:
+                if self.pred_mode != self.MODE_INTRA and not(self.part_mode == InterPartMode.PART.2Nx2N and self.merge_flag == 1):
+                    self.rqt_root_cbf = self.decode_rqt_root_cbf()
+                if self.rqt_root_cbf:
+                    if self.pred_mode == self.MODE_INTRA:
+                        self.max_transform_depth = self.ctx.sps.max_transform_hierarchy_depth_intra + self.intra_split_flag
+                    else:
+                        self.max_transform_depth = self.ctx.sps.max_transform_hierarchy_depth_inter
+                    self.tu = Tu(self.x, self.y, self.log2size, depth=0, parent=None)
+                    self.tu.decode(self.ctxi, self)
+    
+    def decode_inter_pred_info(self):
+        if self.part_mode == InterPartMode.PART_2Nx2N:
+            self.decode_prediction_unit(self.x, self.y, self.size, self.size)
+        elif self.part_mode == InterPartMode.PART_2NxN:
+            self.decode_prediction_unit(self.x, self.y, self.size, self.size/2)
+            self.decode_prediction_unit(self.x, self.y+self.size/2, self.size, self.size/2)
+        elif self.part_mode == InterPartMode.PART_Nx2N:
+            self.decode_prediction_unit(self.x, self.y, self.size/2, self.size)
+            self.decode_prediction_unit(self.x+self.size/2, self.y, self.size/2, self.size)
+        elif self.part_mode == InterPartMode.PART_2NxnN:
+            self.decode_prediction_unit(self.x, self.y, self.size, self.size/4)
+            self.decode_prediction_unit(self.x, self.y+self.size/4, self.size, self.size*3/4)
+        elif self.part_mode == InterPartMode.PART_2NxnD:
+            self.decode_prediction_unit(self.x, self.y, self.size, self.size*3/4)
+            self.decode_prediction_unit(self.x, self.y+(self.size*3/4), self.size, self.size/4)
+        elif self.part_mode == InterPartMode.PART_nLx2N:
+            self.decode_prediction_unit(self.x, self.y, self.size/4, self.size)
+            self.decode_prediction_unit(self.x+self.size/4, self.y, self.size*3/4, self.size)
+        elif self.part_mode == InterPartMode.PART_nRx2N:
+            self.decode_prediction_unit(self.x, self.y, self.size*3/4, self.size)
+            self.decode_prediction_unit(self.x+self.size*3/4, self.y, self.size/4, self.size)
+        else: #PART_NxN
+            self.decode_prediction_unit(self.x, self.y, self.size/2, self.size/2)
+            self.decode_prediction_unit(self.x+self.size/2, self.y, self.size/2, self.size/2)
+            self.decode_prediction_unit(self.x, self.y+self.size/2, self.size/2, self.size/2)
+            self.decode_prediction_unit(self.x+self.size/2, self.y+self.size/2, self.size/2, self.size/2)
 
     def decode_coding_quadtree(self):
         right_boundary_within_pic_flag = (self.x + (1 << self.log2size)) <= self.ctx.sps.pic_width_in_luma_samples
@@ -47,30 +140,27 @@ class Cu(tree.Tree):
             x1 = self.x + (1 << self.log2size)
             y1 = self.y + (1 << self.log2size)
 
-            cu = [None] * 4
-            cu[0] = Cu(x0, y0, self.log2size-1, self.depth+1, self); 
-            cu[1] = Cu(x1, y0, self.log2size-1, self.depth+1, self); 
-            cu[2] = Cu(x0, y1, self.log2size-1, self.depth+1, self); 
-            cu[3] = Cu(x1, y1, self.log2size-1, self.depth+1, self); 
+            sub_cu = [None] * 4
+            sub_cu[0] = Cu(x0, y0, self.log2size-1, self.depth+1, self); 
+            sub_cu[1] = Cu(x1, y0, self.log2size-1, self.depth+1, self); 
+            sub_cu[2] = Cu(x0, y1, self.log2size-1, self.depth+1, self); 
+            sub_cu[3] = Cu(x1, y1, self.log2size-1, self.depth+1, self); 
 
             for i in range(4):
-                cu[i].ctx = self.ctx
+                sub_cu[i].ctx = self.ctx
 
-            cu[0].within_boundary_flag = True
-            cu[1].within_boundary_flag = x1 < self.ctx.sps.pic_width_in_luma_samples
-            cu[2].within_boundary_flag = y1 < self.ctx.sps.pic_height_in_luma_samples
-            cu[3].within_boundary_flag = x1 < self.ctx.sps.pic_width_in_luma_samples and y1 < self.ctx.sps.pic_height_in_luma_samples
+            sub_cu[0].within_boundary_flag = True
+            sub_cu[1].within_boundary_flag = x1 < self.ctx.sps.pic_width_in_luma_samples
+            sub_cu[2].within_boundary_flag = y1 < self.ctx.sps.pic_height_in_luma_samples
+            sub_cu[3].within_boundary_flag = x1 < self.ctx.sps.pic_width_in_luma_samples and y1 < self.ctx.sps.pic_height_in_luma_samples
 
             for i in range(4):
-                self.add_child(cu[i])
+                self.add_child(sub_cu[i])
 
             for child in self.children:
                 child.decode_coding_quadtree()
         else:
-            if self.parent is None:
-                super(Ctu, self).decode()
-            else:
-                self.decode()
+            self.decode_leaf()
 
     def decode_split_cu_flag(self):
         x0 = self.x
@@ -98,6 +188,21 @@ class Cu(tree.Tree):
 
         self.split_cu_flag = self.ctx.cabac.decode_bin("split_cu_flag", context_idx, 0)
         log.syntax.info("split_cu_flag = %d" % self.split_cu_flag)
+    
+    def check_part_mode(self):
+        if self.pred_mode == self.MODE_INTRA:
+            assert self.part_mode in (0, 1)
+        else:
+            if self.log2size > self.ctx.sps.min_cb_log2_size_y and self.ctx.sps.amp_enabled_flag == 1:
+                assert self.part_mode in (0,1,2,4,5,6,7)
+            elif (self.log2size > self.ctx.sps.min_cb_log2_size_y and self.ctx.sps.amp_enabled_flag == 0) or self.log2size == 3:
+                assert self.part_mode in (0,1,2)
+            else:
+                assert self.part_mode in (0,1,2,3)
+
+    def decode_part_mode(self):
+        self.check_part_mode()
+        pass
 
 class Ctu(Cu):
     def __init__(self, ctx, addr_rs):

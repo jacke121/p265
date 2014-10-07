@@ -20,6 +20,15 @@ class SliceSegmentHeader:
         self.sps = self.ctx.sps # SPS had been activated when parsing PPS
         self.pps = self.ctx.pps = self.ctx.pps_list[self.slice_pic_parameter_set_id]
 
+    def is_I_slice(self):
+        return self.slice_type == self.I_SLICE
+
+    def is_P_slice(self):
+        return self.slice_type == self.I_SLICE
+
+    def is_B_slice(self):
+        return self.slice_type == self.I_SLICE
+
     def decode(self):
         bs = self.ctx.bs
 
