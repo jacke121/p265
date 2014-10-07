@@ -118,7 +118,61 @@ class Cu(tree.Tree):
         self.intra_chroma_pred_mode = self.decode_intra_chroma_pred_mode()
     
     def decode_prev_intra_luma_pred_flag(self, y0, x0):
-        raise
+        ctx_inc = 0
+
+        if self.ctx.img.slice_hdr.init_type == 0:
+            ctx_offset = 0
+        elif self.ctx.img.slice_hdr.init_type == 1:
+            ctx_offset = 1
+        elif self.ctx.img.slice_hdr.init_type == 2:
+            ctx_offset = 2
+        else:
+            raise ValueError("Unexpected init_type.")
+
+        ctx_idx = ctx_inc + ctx_offset
+        bit = self.ctx.cabac.decode_decision("prev_intra_luma_pred_flag", ctx_idx)
+        log.syntax.info("prev_intra_luma_pred_flag = %d", bit)
+        return bit
+    
+    def decode_mpm_idx(self):
+        i = 0
+        while i < 2 and self.ctx.cabac.decode_bypass():
+            i += 1
+        value = i
+
+        log.syntax.info("mpm_idx = %d", value)
+        return value
+
+    def decode_rem_intra_luma_pred_mode(self):
+        value = self.ctx.cabac.decode_bypass();
+
+        for i in range(4):
+            value = (value << 1) | self.ctx.cabac.decode_bypass();
+
+        log.syntax.info("rem_intra_luma_pred_mode = %d", value)
+        return value;
+    
+    def decode_intra_chroma_pred_mode(self):
+        ctx_inc = 0
+        if self.ctx.img.slice_hdr.init_type == 0:
+            ctx_offset = 0
+        elif self.ctx.img.slice_hdr.init_type == 1:
+            ctx_offset = 1
+        elif self.ctx.img.slice_hdr.init_type == 2:
+            ctx_offset = 2
+        else:
+            raise ValueError("Unexpected init_type.")
+
+        ctx_idx = ctx_offset + ctx_inc
+        value = self.ctx.cabac.decode_decision("intra_chroma_pred_mode", ctx_idx)
+        if value == 0:
+            value = 4
+        else:
+            value = self.ctx.cabac.decode_bypass()
+            value = (value << 1) | self.ctx.cabac.decode_bypass()
+
+        log.syntax.info("intra_chroma_pred_mode = %d", value)
+        return value
 
     def decode_inter_pred_info(self):
         if self.part_mode == InterPartMode.PART_2Nx2N:
