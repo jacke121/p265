@@ -3,10 +3,10 @@ class Tree:
         self.x = x
         self.y = y
         self.log2size = log2size
-        self.size = 1 << log2size # one of 64/32/16/8
-        self.depth= depth# depth of root is 0, maximum depth of cb with size 64/32/16/8 is 3/2/1/0
+        self.size = 1 << log2size
+        self.depth= depth
         self.parent = parent
-        self.children = [] # 4 children or no children for quad tree 
+        self.children = []
     
     def add_child(self, child=None):
         self.children.append(child) # In order appending
@@ -15,6 +15,14 @@ class Tree:
     def get_child(self, idx=0):
         assert idx >= 0 and idx <= 3
         self.children[idx]
+
+    def get_idx(self):
+        if self.parent is None:
+            return 0
+        else:
+            for i in range(4):
+                if self.parent.children[i] == self:
+                    return i
     
     def is_root(self):
         return True if self.parent is None else False
@@ -40,6 +48,12 @@ class Tree:
             if n.is_leaf():
                 leaves.append(n)
         return leaves
+    
+    def get_sisters(self):
+        if self.parent is not None:
+            return [node for node in self.parent.children if node != self]
+        else:
+            return []
 
     def dump(self):
         print "%s%dx%d(%d)" % (' '*4*self.depth, self.x, self.y, self.size)

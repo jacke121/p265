@@ -45,21 +45,27 @@ class Tu(tree.Tree):
             self.decode_leaf()
 
     def decode_leaf(self):
+        assert self.is_leaf() == True
         if self.cbf_luma or self.cbf_cb or self.cbf_cr:
             if self.ctx.pps.cu_qp_delta_enabled_flag and not self.cu.is_cu_qp_delta_coded:
                 self.cu_qp_delta_abs = self.decode_cu_qp_delta_abs()
                 if self.cu_qp_delta_abs:
                     self.cu_qp_delta_sign_flag = self.decode_cu_qp_delta_sign_flag()
+
             if self.cbf_luma:
-                self.decode_residual_coding()
+                self.decode_residual_coding(self.x, self.y, self.log2size, 0)
             
-            #TODO
-            '''
             if self.log2size > 2:
                 if self.cbf_cb:
-                    self.decode_redidual_coding()
+                    self.decode_residual_coding(self.x, self.y, self.log2size-1, 1)
                 if self.cbf_cr:
-                    self.decode_redidual_coding()
+                    self.decode_residual_coding(self.x, self.y, self.log2size-1, 2)
             elif self.idx == 3:
-            '''
-
+                sisters  = self.get_sisters()
+                if sisters[0].cbf_cb:
+                    self.decode_residual_coding(sister[0].x, sister[0].y, self.log2size, 1)
+                if sisters[0].cbf_cr:
+                    self.decode_redidual_coding(sister[0].x, sister[0].y, self.log2size, 2)
+    
+    def decode_residual_coding(self, x0, y0, log2size, c_idx):
+        raise ValueError("Unimplemented yet.")
