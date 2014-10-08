@@ -241,25 +241,24 @@ class Cabac:
             return self.decode_decision(ctx_table, ctx_idx)
 
     def decode_decision(self, ctx_table, ctx_idx):
-        p_state_idx = self.context_models[ctx_table][ctx_idx].p_state_idx
-        val_mps = self.context_models[ctx_table][ctx_idx].val_mps
-        log.syntax.info("enter decode_decision: p_state_idx = %d, val_mps = %d, ivl_curr_range = %d, ivl_offset = %d" % (p_state_idx, val_mps, self.ivl_curr_range, self.ivl_offset))
+        ctx_model = self.context_models[ctx_table][ctx_idx]
+        log.syntax.info("enter decode_decision: p_state_idx = %d, val_mps = %d, ivl_curr_range = %d, ivl_offset = %d" % (ctx_model.p_state_idx, ctx_model.val_mps, self.ivl_curr_range, self.ivl_offset))
 
         q_range_idx = (self.ivl_curr_range >> 6) & 3
-        ivl_lps_range = self.tables.lps_range_table[p_state_idx][q_range_idx]
+        ivl_lps_range = self.tables.lps_range_table[ctx_model.p_state_idx][q_range_idx]
 
         self.ivl_curr_range = self.ivl_curr_range - ivl_lps_range
         if self.ivl_offset >= self.ivl_curr_range:
-            bin_val = 1 - val_mps
+            bin_val = 1 - ctx_model.val_mps
             self.ivl_offset -= self.ivl_curr_range
             self.ivl_curr_range = ivl_lps_range
         else:
-            bin_val = val_mps
+            bin_val = ctx_model.val_mps
             
         self.state_transition_process(ctx_table, ctx_idx, bin_val)
         self.renormalization_process()
 
-        log.syntax.info("exit  decode_decision: p_state_idx = %d, val_mps = %d, ivl_curr_range = %d, ivl_offset = %d, bin = %d" % (p_state_idx, val_mps, self.ivl_curr_range, self.ivl_offset, bin_val))
+        log.syntax.info("exit  decode_decision: p_state_idx = %d, val_mps = %d, ivl_curr_range = %d, ivl_offset = %d, bin = %d" % (ctx_model.p_state_idx, ctx_model.val_mps, self.ivl_curr_range, self.ivl_offset, bin_val))
         return bin_val
 
     def state_transition_process(self, ctx_table, ctx_idx, bin_val):
@@ -271,7 +270,7 @@ class Cabac:
             self.context_models[ctx_table][ctx_idx].p_state_idx = self.tables.next_state_lps_table[self.context_models[ctx_table][ctx_idx].p_state_idx]
 
     def renormalization_process(self):
-        if self.ivl_curr_range < 256:
+        while self.ivl_curr_range < 256:
             self.ivl_curr_range <<= 1
             self.ivl_offset <<= 1
             self.ivl_offset |= self.bs.read_bits(1)
