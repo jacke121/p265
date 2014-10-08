@@ -83,6 +83,9 @@ class Cu(tree.Tree):
             if self.pcm_flag == 0:
                 if self.pred_mode != self.MODE_INTRA and (not (self.part_mode == InterPartMode.PART_2Nx2N and self.merge_flag == 1)):
                     self.rqt_root_cbf = self.decode_rqt_root_cbf()
+                else:
+                    self.rqt_root_cbf = 1
+
                 if self.rqt_root_cbf:
                     if self.pred_mode == self.MODE_INTRA:
                         self.max_transform_depth = self.ctx.sps.max_transform_hierarchy_depth_intra + self.intra_split_flag
@@ -90,7 +93,7 @@ class Cu(tree.Tree):
                         self.max_transform_depth = self.ctx.sps.max_transform_hierarchy_depth_inter
 
                     self.tu = Tu(self.x, self.y, self.log2size, depth=0, parent=None)
-                    self.tu.decode(self.ctxi, self)
+                    self.tu.decode(self.ctx, self)
 
     def decode_intra_pred_info(self):
         if self.part_mode == IntraPartMode.PART_NxN:
