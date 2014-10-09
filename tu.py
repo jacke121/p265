@@ -124,10 +124,31 @@ class Tu(tree.Tree):
     
     def decode_residual_coding(self, x0, y0, log2size, c_idx):
         if self.ctx.pps.transform_skip_enabled_flag and (not self.cu.cu_transquant_bypass_flag) and (log2size==2):
-            self.transform_skip_flag[c_idx] = self.decode_transform_skip_flag(c_idx)
+            self.transform_skip_flag = self.decode_transform_skip_flag(c_idx)
 
         self.last_sig_coeff_x_prefix = self.decode_last_sig_coeff_x_prefix(log2size, c_idx)
         self.last_sig_coeff_y_prefix = self.decode_last_sig_coeff_y_prefix(log2size, c_idx)
+        assert self.last_sig_coeff_x_prefix in range(0, log2size<<1)
+        assert self.last_sig_coeff_y_prefix in range(0, log2size<<1)
+        
+        if self.last_sig_coeff_x_prefix > 3:
+            self.last_sig_coeff_x_suffix = self.decode_last_sig_coeff_x_suffix()
+            assert self.last_sig_coeff_x_suffix in range(0, 1<<((self.last_sig_coeff_x_prefix>>1)-1))
+            last_significant_coeff_x = (1<<((self.last_sig_coeff_x_prefix>>1)-1)) * (2+(self.last_sig_coeff_x_prefix&1)) + last_sig_coeff_x_suffix
+        else:
+            last_significant_coeff_x = self.last_sig_coeff_x_prefix
+
+        if self.last_sig_coeff_y_prefix > 3:
+            self.last_sig_coeff_y_suffix = self.decode_last_sig_coeff_y_suffix()
+            assert self.last_sig_coeff_y_suffix in range(0, 1<<((self.last_sig_coeff_y_prefix>>1)-1))
+            last_significant_coeff_y = (1<<((self.last_sig_coeff_y_prefix>>1)-1)) * (2+(self.last_sig_coeff_y_prefix&1)) + last_sig_coeff_y_suffix
+        else:
+            last_significant_coeff_y = self.last_sig_coeff_y_prefix
+
+        '''
+        if scan_idx == 2:
+            (last_significant_coeff_x, last_significant_coeff_y) = (last_significant_coeff_y, last_significant_coeff_x)
+        '''
 
         raise "over"
 
