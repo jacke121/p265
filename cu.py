@@ -2,6 +2,7 @@ import sys
 import random
 import math
 import tree
+import tu
 import log
 
 class IntraPartMode:
@@ -31,6 +32,8 @@ class Cu(tree.Tree):
 
         if self.ctx.pps.transquant_bypass_enabled_flag:
             self.cu_transquant_bypass_flag = self.decode_cu_transquant_bypass_flag()
+        else:
+            self.cu_transquant_bypass_flag = 0
 
         if not self.ctx.img.slice_hdr.is_I_slice():
             self.cu_skip_flag = self.decode_cu_skip_flag()
@@ -92,7 +95,7 @@ class Cu(tree.Tree):
                     else:
                         self.max_transform_depth = self.ctx.sps.max_transform_hierarchy_depth_inter
 
-                    self.tu = Tu(self.x, self.y, self.log2size, depth=0, parent=None)
+                    self.tu = tu.Tu(self.x, self.y, self.log2size, depth=0, parent=None)
                     self.tu.decode(self.ctx, self)
 
     def decode_intra_pred_info(self):

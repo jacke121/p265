@@ -1,4 +1,5 @@
 import tree
+import log
 
 class Tu(tree.Tree):
     def __init__(self, x, y, log2size, depth=0, parent=None):
@@ -10,7 +11,7 @@ class Tu(tree.Tree):
         if self.log2size <= self.ctx.sps.log2_max_transform_block_size and \
                 self.log2size > self.ctx.sps.log2_min_transform_block_size and \
                 self.depth < self.cu.max_transform_depth and \
-                not (self.cu.intra_split_flag == 1 and self.depth == 0)
+                not (self.cu.intra_split_flag == 1 and self.depth == 0):
             self.split_transform_flag = self.decode_split_transform_flag()
         
         if self.log2size > 2:
@@ -43,6 +44,60 @@ class Tu(tree.Tree):
             if self.cu.pred_mode == self.cu.MODE_INTRA or self.depth != 0 or self.cbf_cb or self.cbf_cr:
                 self.cbf_luma = self.decode_cbf_luma()
             self.decode_leaf()
+    
+    def decode_split_transform_flag(self):
+        if self.ctx.img.slice_hdr.init_type == 0:
+            ctx_offset = 0
+        elif self.ctx.img.slice_hdr.init_type == 1:
+            ctx_offset = 3
+        elif self.ctx.img.slice_hdr.init_type == 2:
+            ctx_offset = 6
+        else:
+            raise ValueError("Unexpected init_type.")
+        
+        ctx_inc = 5 - self.log2size
+        ctx_idx = ctx_offset + ctx_inc
+        bit = self.ctx.cabac.decode_decision("split_transform_flag", ctx_idx)
+        log.syntax.info("split_transform_flag = %d", bit)
+        return bit
+    
+    def decode_cbf_chroma(self, component):
+        ctx_inc = self.depth
+        if self.ctx.img.slice_hdr.init_type == 0:
+            ctx_offset = 0
+        elif self.ctx.img.slice_hdr.init_type == 1:
+            ctx_offset = 4
+        elif self.ctx.img.slice_hdr.init_type == 2:
+            ctx_offset = 8
+        else:
+            raise ValueError("Unexpected init_type.")
+
+        ctx_idx = ctx_offset + ctx_inc
+        bit = self.ctx.cabac.decode_decision("cbf_chroma", ctx_idx)
+        log.syntax.info("cbf_%s = %d", component, bit)
+        return bit
+
+    def decode_cbf_cb(self):
+        return self.decode_cbf_chroma("cb")
+
+    def decode_cbf_cr(self):
+        return self.decode_cbf_chroma("cr")
+
+    def decode_cbf_luma(self):
+        ctx_inc = 1 if self.depth==0 else 0
+        if self.ctx.img.slice_hdr.init_type == 0:
+            ctx_offset = 0
+        elif self.ctx.img.slice_hdr.init_type == 1:
+            ctx_offset = 2
+        elif self.ctx.img.slice_hdr.init_type == 2:
+            ctx_offset = 4
+        else:
+            raise ValueError("Unexpected init_type.")
+
+        ctx_idx = ctx_offset + ctx_inc
+        bit = self.ctx.cabac.decode_decision("cbf_luma", ctx_idx)
+        log.syntax.info("cbf_luma = %d", bit)
+        return bit
 
     def decode_leaf(self):
         assert self.is_leaf() == True
@@ -68,4 +123,70 @@ class Tu(tree.Tree):
                     self.decode_redidual_coding(sister[0].x, sister[0].y, self.log2size, 2)
     
     def decode_residual_coding(self, x0, y0, log2size, c_idx):
-        raise ValueError("Unimplemented yet.")
+        if self.ctx.pps.transform_skip_enabled_flag and (not self.cu.cu_transquant_bypass_flag) and (log2size==2):
+            self.transform_skip_flag[c_idx] = self.decode_transform_skip_flag(c_idx)
+
+        self.last_sig_coeff_x_prefix = self.decode_last_sig_coeff_x_prefix(log2size, c_idx)
+        self.last_sig_coeff_y_prefix = self.decode_last_sig_coeff_y_prefix(log2size, c_idx)
+
+        raise "over"
+
+    def decode_transform_skip_flag(c_idx):
+        ctx_inc = 0
+
+        if c_idx == 0:
+            if self.ctx.img.slice_hdr.init_type == 0:
+                ctx_offset = 0
+            elif self.ctx.img.slice_hdr.init_type == 1:
+                ctx_offset = 1
+            elif self.ctx.img.slice_hdr.init_type == 2:
+                ctx_offset = 2
+            else:
+                raise ValueError("Unexpected init_type.")
+        else:# c_idx == 1 or c_idx == 2:
+            if self.ctx.img.slice_hdr.init_type == 0:
+                ctx_offset = 3
+            elif self.ctx.img.slice_hdr.init_type == 1:
+                ctx_offset = 4
+            elif self.ctx.img.slice_hdr.init_type == 2:
+                ctx_offset = 5
+            else:
+                raise ValueError("Unexpected init_type.")
+
+        ctx_idx = ctx_offset + ctx_inc
+
+        bit = self.ctx.cabac.decode_decision("transform_skip_flag", ctx_idx)
+        log.syntax.info("transform_skip = %d", bit)
+        return bit
+
+    def decode_last_sig_coeff_xy_prefix(self, log2size, c_idx, xy):
+        if self.ctx.img.slice_hdr.init_type == 0:
+            ctx_offset = 0
+        elif self.ctx.img.slice_hdr.init_type == 1:
+            ctx_offset = 18
+        elif self.ctx.img.slice_hdr.init_type == 2:
+            ctx_offset = 36
+        else:
+            raise ValueError("Unexpected init_type.")
+
+        if c_idx == 0:
+            offset = 3 * (log2size -2) + ((log2size - 1) >> 2)
+            shift = (log2size + 1) >> 2
+        else:
+            offset = 15
+            shift = log2size - 2
+        
+        i = 0
+        ctx_table = "last_sig_coeff_%s_prefix" % xy
+        while i < ((log2size << 1) - 1) and self.ctx.cabac.decode_decision(ctx_table, ctx_offset + ((i >> shift) + offset)):
+            i += 1
+
+        value = i 
+        log.syntax.info("last_sig_coeff_%s_prefix = %d", xy, value)
+        return value
+     
+    def decode_last_sig_coeff_x_prefix(self, log2size, c_idx):
+        return self.decode_last_sig_coeff_xy_prefix(log2size, c_idx, 'x')
+
+    def decode_last_sig_coeff_y_prefix(self, log2size, c_idx):
+        return self.decode_last_sig_coeff_xy_prefix(log2size, c_idx, 'y')
