@@ -1,4 +1,5 @@
 import tree
+import scan
 import log
 
 class Tu(tree.Tree):
@@ -144,11 +145,99 @@ class Tu(tree.Tree):
             last_significant_coeff_y = (1<<((self.last_sig_coeff_y_prefix>>1)-1)) * (2+(self.last_sig_coeff_y_prefix&1)) + last_sig_coeff_y_suffix
         else:
             last_significant_coeff_y = self.last_sig_coeff_y_prefix
+        
+        log.main.info("log2size = %d", log2size)
 
-        '''
-        if scan_idx == 2:
+        if self.cu.pred_mode == MODE_INTRA and (log2size == 2 or (log2size == 3 and c_idx == 0)):
+            pred_mode_intra = self.cu.intra_luma_pred_mode
+        else:
+            pred_mode_intra = self.cu.intra_chroma_pred_mode
+
+        if pred_mode_intra in range(6, 14 + 1):
+            scan_idx = 2
+            scan_array = scan.get_vertical_scan_order_array
             (last_significant_coeff_x, last_significant_coeff_y) = (last_significant_coeff_y, last_significant_coeff_x)
-        '''
+        elif pred_mode_intra in range(22, 30 + 1):
+            scan_idx = 1
+            scan_array = scan.get_horizontal_scan_order_array
+        else:
+            scan_idx = 0
+            scan_array = scan.get_upright_diagnoal_scan_order_array
+        
+        scan_order_subblock = scan_array(log2size - 2)
+        scan_order_4x4 = scan_array(2)
+
+        last_scan_pos = 16
+        last_sub_block = (1 << (log2size - 2)) * (1 << (log2size - 2)) - 1
+        while True:
+            if last_scan_pos == 0:
+                last_scan_pos = 16
+                last_sub_block -= 1
+            last_scan_pos -= 1
+            xs = scan_order_subblock[last_sub_block][0]
+            ys = scan_order_subblock[last_sub_block][1]
+            xc = (xs << 2) + scan_order_4x4[last_scan_pos][0]
+            yc = (ys << 2) + scan_order_4x4[last_scan_pos][1]
+            if not ((xc != last_significant_coeff_x) or (yc != last_significant_coeff_y)):
+                break
+
+        for i in reversed(range(last_sub_block + 1)):
+            xs = scan_order_subblock[i][0]
+            ys = scan_order_subblock[i][1]
+            infer_sb_dc_sig_coeff_flag = 0
+            if i < last_sub_block and i > 0:
+                self.decode_coded_sub_block_flag(xs, ys)
+                infer_sb_dc_sig_coeff_flag = 1
+
+            for n in reversed(range(((last_scan_pos - 1) if (i == last_sub_block) else 15) + 1)):
+                xc = (xs << 2) + scan_order_4x4[n][0]
+                yc = (ys << 2) + scan_order_4x4[n][1]
+                if self.coded_sub_block_flag and (n > 0 or (not infer_sb_dc_sig_coeff_flag)):
+                    self.sig_coeff_flag = self.decode_sig_coeff_flag(xc, yc)
+                    if self.sig_coeff_flag:
+                        infer_sb_dc_sig_coeff_flag = 0
+
+            first_sig_scan_pos = 16
+            last_sig_scan_pos = -1
+            num_greater1_flag = 0
+            last_greater1_scan_pos = -1
+            for n in reversed(range(15 + 1)):
+                xc = (xs << 2) + scan_order_4x4[n][0]
+                yc = (ys << 2) + scan_order_4x4[n][1]
+                if self.sig_coeff_flag:
+                    if num_greater1_flag < 8:
+                        self.coeff_abs_level_greater1_flag = self.decode_coeff_abs_level_greater1_flag()
+                        num_greater1_flag += 1
+                        if self.coeff_abs_level_greater1_flag and (last_greater1_scan_pos == -1):
+                            last_greater1_scan_pos = n
+                    if last_sig_scan_pos == -1:
+                        last_sig_scan_pos = n
+                    first_sig_scan_pos = n
+            sign_hidden = (last_sig_scan_pos - first_sig_scan_pos > 3) and (not self.cu.cu_transquant_bypass_flag)
+            if last_greater1_scan_pos != -1:
+                self.coeff_abs_level_greater2_flag = self.decode_coeff_abs_level_greater2_flag()
+            
+            for n in reversed(range(15 + 1)):
+                xc = (xs << 2) + scan_order_4x4[n][0]
+                yc = (ys << 2) + scan_order_4x4[n][1]
+                if self.sig_coeff_flag and ((not self.sign_data_hiding_enabled_flag) or (not sign_hidden) or (n != first_sig_scan_pos)):
+                    self.coeff_sign_flag = self.decode_coeff_sign_flag()
+
+            num_sig_coeff = 0
+            sum_abs_level = 0
+            for n in reversed(range(15 + 1)):
+                xc = (xs << 2) + scan_order_4x4[n][0]
+                yc = (ys << 2) + scan_order_4x4[n][1]
+                if self.sig_coeff_flag:
+                    base_level = 1 + self.coeff_abs_level_greater1_flag + self.coeff_abs_level_greater2_flag
+                    if base_level == ((3 if n == last_greater1_scan_pos else 2) if num_sig_coeff < 8 else 1):
+                        self.coeff_abs_remaining = self.decode_coeff_abs_remaining()
+                    self.trans_coeff_level[xc][yc] = (self.coeff_abs_level_remaining + base_level) * (1 - (2 * self.coeff_sign_flag))
+                    if self.sign_data_hiding_enabled_flag and sign_hidden:
+                        sum_abs_level += self.coeff_abs_level_remaining + base_level
+                        if n == first_sig_scan_pos and ((sum_abs_level % 2) == 1):
+                            self.trans_coeff_level[xc][yc]  = -self.trans_coeff_level[xc][yc]
+                    num_sig_coeff += 1
 
         raise "over"
 
