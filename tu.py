@@ -6,9 +6,7 @@ class Tu(tree.Tree):
     def __init__(self, x, y, log2size, depth=0, parent=None):
         tree.Tree.__init__(self, x, y, log2size, depth, parent)
 
-    def decode(self, ctx, cu):
-        self.ctx = ctx
-        self.cu = cu
+    def decode(self):
         if self.log2size <= self.ctx.sps.log2_max_transform_block_size and \
                 self.log2size > self.ctx.sps.log2_min_transform_block_size and \
                 self.depth < self.cu.max_transform_depth and \
@@ -35,6 +33,8 @@ class Tu(tree.Tree):
 
             for i in range(4):
                 sub_tu[i].idx = i
+                sub_tu[i].ctx = self.ctx
+                sub_tu[i].cu = self.cu
 
             for i in sub_tu:
                 self.add_child(i)
@@ -102,6 +102,7 @@ class Tu(tree.Tree):
 
     def decode_leaf(self):
         assert self.is_leaf() == True
+
         if self.cbf_luma or self.cbf_cb or self.cbf_cr:
             if self.ctx.pps.cu_qp_delta_enabled_flag and not self.cu.is_cu_qp_delta_coded:
                 self.cu_qp_delta_abs = self.decode_cu_qp_delta_abs()
@@ -117,6 +118,7 @@ class Tu(tree.Tree):
                 if self.cbf_cr:
                     self.decode_residual_coding(self.x, self.y, self.log2size-1, 2)
             elif self.idx == 3:
+                raise "I am here!"
                 sisters  = self.get_sisters()
                 if sisters[0].cbf_cb:
                     self.decode_residual_coding(sister[0].x, sister[0].y, self.log2size, 1)
@@ -148,10 +150,10 @@ class Tu(tree.Tree):
         
         log.main.info("log2size = %d", log2size)
 
-        if self.cu.pred_mode == MODE_INTRA and (log2size == 2 or (log2size == 3 and c_idx == 0)):
-            pred_mode_intra = self.cu.intra_luma_pred_mode
+        if self.cu.pred_mode == self.cu.MODE_INTRA and (log2size == 2 or (log2size == 3 and c_idx == 0)):
+            pred_mode_intra = self.cu.intra_pred_mode_y
         else:
-            pred_mode_intra = self.cu.intra_chroma_pred_mode
+            pred_mode_intra = self.cu.intra_pred_mode_c
 
         if pred_mode_intra in range(6, 14 + 1):
             scan_idx = 2

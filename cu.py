@@ -79,7 +79,8 @@ class Cu(tree.Tree):
                          assert self.pcm_alignment_zero_bit == 0
                      self.decode_pcm_sample()
                 else:
-                    self.decode_intra_pred_info()
+                    self.decode_intra_luma_pred_mode()
+                    self.decode_intra_chroma_pred_mode()
             else:
                 self.decode_inter_pred_info()
 
@@ -96,9 +97,12 @@ class Cu(tree.Tree):
                         self.max_transform_depth = self.ctx.sps.max_transform_hierarchy_depth_inter
 
                     self.tu = tu.Tu(self.x, self.y, self.log2size, depth=0, parent=None)
-                    self.tu.decode(self.ctx, self)
+                    self.tu.idx = 0
+                    self.tu.ctx = self.ctx
+                    self.tu.cu = self
+                    self.tu.decode()
 
-    def decode_intra_pred_info(self):
+    def decode_intra_luma_pred_mode(self):
         if self.part_mode == IntraPartMode.PART_NxN:
             pb_offset = self.size/2
         else:
@@ -120,8 +124,24 @@ class Cu(tree.Tree):
                     self.mpm_idx[self.y + j][self.x + i] = self.decode_mpm_idx()
                 else:
                     self.rem_intra_luma_pred_mode[self.y + j][self.x + i] = self.decode_rem_intra_luma_pred_mode()
+        
+        raise "Next, section 8.4.2"
 
+    def decode_intra_chroma_pred_mode(self):
         self.intra_chroma_pred_mode = self.decode_intra_chroma_pred_mode()
+
+        if self.intra_chroma_pred_mode == 0:
+            self.intra_pred_mode_c = (34 if self.intra_pred_mode_y == 0 else 0)
+        elif self.intra_chroma_pred_mode == 1:
+            self.intra_pred_mode_c = (34 if self.intra_pred_mode_y == 26 else 26)
+        elif self.intra_chroma_pred_mode == 2:
+            self.intra_pred_mode_c = (34 if self.intra_pred_mode_y == 10 else 10)
+        elif self.intra_chroma_pred_mode == 3:
+            self.intra_pred_mode_c = (34 if self.intra_pred_mode_y == 1 else 1)
+        elif self.intra_chroma_pred_mode == 4:
+                self.intra_pred_mode_c = self.intra_pred_mode_y
+        else:
+            raise ValueError("Unexpected intra_chroma_pred_mode = %d" % self.intra_chroma_pred_mode)
     
     def decode_prev_intra_luma_pred_flag(self, y0, x0):
         ctx_inc = 0
