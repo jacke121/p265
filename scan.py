@@ -1,7 +1,7 @@
 import numpy
 
 def get_upright_diagonal_scan_order_array(size):
-    diagnoal_scan = numpy.zeros((size*size, 2))
+    diagnoal_scan = numpy.zeros((size*size, 2), int)
 
     i = x = y = 0
     stop = False
@@ -21,7 +21,7 @@ def get_upright_diagonal_scan_order_array(size):
     return diagnoal_scan
     
 def get_horizontal_scan_order_array(size):
-    horizontal_scan = numpy.zeros((size*size, 2))
+    horizontal_scan = numpy.zeros((size*size, 2), int)
 
     i = 0
     for y in range(size):
@@ -33,7 +33,7 @@ def get_horizontal_scan_order_array(size):
     return horizontal_scan
 
 def get_vertical_scan_order_array(size):
-    vertical_scan = numpy.zeros((size*size, 2))
+    vertical_scan = numpy.zeros((size*size, 2), int)
 
     i = 0
     for x in range(size):
