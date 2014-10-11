@@ -1,7 +1,7 @@
 import sys
 import logging
 
-logging.basicConfig(level=logging.INFO, format="%(message)s")
+logging.basicConfig(level=logging.DEBUG, format="%(message)s")
 
 main = logging.getLogger("p265")
 main.addHandler(logging.FileHandler(filename="p265.log", mode='w'))
