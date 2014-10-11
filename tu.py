@@ -164,7 +164,7 @@ class Tu(tree.Tree):
             scan_array = scan.get_horizontal_scan_order_array
         else:
             scan_idx = 0
-            scan_array = scan.get_upright_diagnoal_scan_order_array
+            scan_array = scan.get_upright_diagonal_scan_order_array
         
         scan_order_subblock = scan_array(log2size - 2)
         scan_order_4x4 = scan_array(2)
