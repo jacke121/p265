@@ -79,8 +79,7 @@ class Cu(tree.Tree):
                          assert self.pcm_alignment_zero_bit == 0
                      self.decode_pcm_sample()
                 else:
-                    self.decode_intra_luma_pred_mode()
-                    self.decode_intra_chroma_pred_mode()
+                    self.decode_intra_pred_mode()
             else:
                 self.decode_inter_pred_info()
 
@@ -102,7 +101,7 @@ class Cu(tree.Tree):
                     self.tu.cu = self
                     self.tu.decode()
 
-    def decode_intra_luma_pred_mode(self):
+    def decode_intra_pred_mode(self):
         if self.part_mode == IntraPartMode.PART_NxN:
             pb_offset = self.size/2
         else:
@@ -125,11 +124,71 @@ class Cu(tree.Tree):
                 else:
                     self.rem_intra_luma_pred_mode[self.y + j][self.x + i] = self.decode_rem_intra_luma_pred_mode()
         
-        raise "Next, section 8.4.2"
+        self.intra_pred_mode_y = {}
+        for j in range(0, self.size, pb_offset):
+            self.intra_pred_mode_y[self.y + j] = {}
+            for i in range(0, self.size, pb_offset):
+                x_pb = self.x + i
+                y_pb = self.y + j
 
-    def decode_intra_chroma_pred_mode(self):
+                x_neighbor_a = x_pb -1
+                y_neighbor_a = y_pb
+                x_neighbor_b = x_pb
+                y_neighbor_b = y_pb - 1
+
+                available_a = self.ctx.img.check_availability(x_pb, y_pb, x_neighbor_a, y_neighbor_a)
+                available_b = self.ctx.img.check_availability(x_pb, y_pb, x_neighbor_b, y_neighbor_b)
+
+                if available_a == False:
+                    cand_intra_pred_mode_a = 1
+                elif self.ctx.img.get_pred_mode(x_neighbor_a, y_neighbor_a) != self.MODE_INTRA or self.ctx.img.get_pcm_flag(x_neighbor_a, y_neighbor_a) == 1:
+                    cand_intra_pred_mode_a = 1
+                else:
+                    cand_intra_pred_mode_a = self.ctx.img.get_intra_pred_mode_y(x_neighbor_a, y_neighbor_a)
+
+                if available_b == False:
+                    cand_intra_pred_mode_b = 1
+                elif self.ctx.img.get_pred_mode(x_neighbor_b, y_neighbor_b) != self.MODE_INTRA or self.ctx.img.get_pcm_flag(x_neighbor_b, y_neighbor_b) == 1:
+                    cand_intra_pred_mode_b = 1
+                elif (y_pb - 1) < ((y_pb >> self.ctx.sps.ctb_log2_size_y) << self.ctx.sps.ctb_log2_size_y):
+                    cand_intra_pred_mode_b = 1
+                else:
+                    cand_intra_pred_mode_b = self.ctx.img.get_intra_pred_mode_y(x_neighbor_b, y_neighbor_b)
+                
+                cand_mode_list = [0] * 3
+                if cand_intra_pred_mode_a == cand_intra_pred_mode_b:
+                    if cand_intra_pred_mode_a < 2:
+                        cand_mode_list = [0, 1, 26]
+                    else:
+                        cand_mode_list[0] = cand_intra_pred_mode_a
+                        cand_mode_list[1] = 2 + ((cand_intra_pred_mode_a + 29) % 32)
+                        cand_mode_list[2] = 2 + ((cand_intra_pred_mode_a -2 + 1) % 32)
+                else:
+                    cand_mode_list[0] = cand_intra_pred_mode_a
+                    cand_mode_list[1] = cand_intra_pred_mode_b
+                    if not (cand_mode_list[0] == 0 or cand_mode_list[1] == 0):
+                        cand_mode_list[2] = 0
+                    elif not (cand_mode_list[0] == 1 or cand_mode_list[1] == 1):
+                        cand_mode_list[2] = 1
+                    else:
+                        cand_mode_list[2] = 26
+
+                if self.prev_intra_luma_pred_flag[x_pb][y_pb] == 1:
+                    self.intra_pred_mode_y[x_pb][y_pb] = cand_mode_list[self.mpm_idx[x_pb][y_pb]]
+                else:
+                    if cand_mode_list[0] > cand_mode_list[1]:
+                        (cand_mode_list[0], cand_mode_list[1]) = (cand_mode_list[1], cand_mode_list[0])
+                    if cand_mode_list[0] > cand_mode_list[2]:
+                        (cand_mode_list[0], cand_mode_list[2]) = (cand_mode_list[2], cand_mode_list[0])
+                    if cand_mode_list[1] > cand_mode_list[2]:
+                        (cand_mode_list[1], cand_mode_list[2]) = (cand_mode_list[2], cand_mode_list[1])
+                    
+                    self.intra_pred_mode_y[x_pb][y_pb] = self.rem_intra_luma_pred_mode[x_pb][y_pb]
+                    for i in range(3):
+                        if self.intra_pred_mode_y[x_pb][y_pb] >= cand_mode_list[i]:
+                            self.intra_pred_mode_y[x_pb][y_pb] += 1
+
         self.intra_chroma_pred_mode = self.decode_intra_chroma_pred_mode()
-
         if self.intra_chroma_pred_mode == 0:
             self.intra_pred_mode_c = (34 if self.intra_pred_mode_y == 0 else 0)
         elif self.intra_chroma_pred_mode == 1:
