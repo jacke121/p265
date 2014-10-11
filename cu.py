@@ -200,7 +200,7 @@ class Cu(tree.Tree):
         elif self.intra_chroma_pred_mode == 3:
             self.intra_pred_mode_c = (34 if self.intra_pred_mode_y == 1 else 1)
         elif self.intra_chroma_pred_mode == 4:
-                self.intra_pred_mode_c = self.intra_pred_mode_y
+                self.intra_pred_mode_c = self.intra_pred_mode_y[self.x][self.y]
         else:
             raise ValueError("Unexpected intra_chroma_pred_mode = %d" % self.intra_chroma_pred_mode)
 
