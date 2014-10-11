@@ -1,3 +1,4 @@
+import numpy
 import tree
 import scan
 import log
@@ -108,6 +109,14 @@ class Tu(tree.Tree):
                 self.cu_qp_delta_abs = self.decode_cu_qp_delta_abs()
                 if self.cu_qp_delta_abs:
                     self.cu_qp_delta_sign_flag = self.decode_cu_qp_delta_sign_flag()
+            
+            self.transform_skip_flag = [0] * 3
+            self.last_sig_coeff_x_prefix = [0] * 3
+            self.last_sig_coeff_y_prefix = [0] * 3
+            self.last_sig_coeff_x_suffix = [0] * 3
+            self.last_sig_coeff_y_suffix = [0] * 3
+            self.last_significant_coeff_x = [0] * 3
+            self.last_significant_coeff_y = [0] * 3
 
             if self.cbf_luma:
                 self.decode_residual_coding(self.x, self.y, self.log2size, 0)
@@ -124,41 +133,117 @@ class Tu(tree.Tree):
                     self.decode_residual_coding(sister[0].x, sister[0].y, self.log2size, 1)
                 if sisters[0].cbf_cr:
                     self.decode_redidual_coding(sister[0].x, sister[0].y, self.log2size, 2)
+
+    def decode_last_sig_coeff_x_suffix(self, c_idx):
+        length = (self.last_sig_coeff_x_prefix[c_idx] >> 1) - 1;
+        value = self.ctx.cabac.decode_bypass()
+
+        for i in range(1, length):
+            value = (value << 1) | self.ctx.cabac.decode_bypass()
+
+        log.syntax.info("last_sig_coeff_x_prefix = %d" % value)
+        return value;
+
+    def decode_last_sig_coeff_y_suffix(self):
+        length = (self.last_sig_coeff_y_prefix[c_idx] >> 1) - 1;
+        value = self.ctx.cabac.decode_bypass()
+
+        for i in range(1, length):
+            value = (value << 1) | self.ctx.cabac.decode_bypass()
+
+        log.syntax.info("last_sig_coeff_y_prefix = %d" % value)
+        return value;
     
+    def decode_sig_coeff_flag(self, xc, yc, log2size, c_idx, scan_idx):
+        if self.ctx.img.slice_hdr.init_type == 0:
+            ctx_offset = 0
+        elif self.ctx.img.slice_hdr.init_type == 1:
+            ctx_offset = 42
+        elif self.ctx.img.slice_hdr.init_type == 2:
+            ctx_offset = 84
+        else:
+            raise ValueError("Unexpected init_type.")
+
+        ctx_idx_map = [0, 1, 4, 5, 2, 3, 4, 5, 6, 6, 8, 8, 7, 7, 8]
+        if log2size == 2:
+            sig_ctx = ctx_idx_map[(yc << 2) + xc]
+        elif (xc + yc) == 0:
+            sig_ctx = 0
+        else:
+            (xs, ys) = (xc >> 2, yc >> 2)
+            prev_csbf = 0
+            if xs < ((1 << (log2size - 2)) - 1):
+                prev_csbf += self.coded_sub_block_flag[xs + 1][ys]
+            if ys < ((1 << (log2size - 2)) - 1):
+                prev_csbf += (self.coded_sub_block_flag[xs][ys + 1] << 1)
+            (xp, yp) = (xc & 3, yc & 3)
+
+            if prev_csbf == 0:
+                sig_ctx = 2 if ((xp + yp) == 0) else (1 if ((xp + yp) < 3) else 0)
+            elif prev_csbf == 1:
+                sig_ctx = 2 if (yp == 0) else (1 if yp == 1 else 0)
+            elif prev_csbf == 2:
+                sig_ctx = 2 if xp == 0 else (1 if xp == 1 else 0)
+            else:
+                sig_ctx = 2
+
+            if c_idx == 0:
+                if (xs + ys) > 0:
+                    sig_ctx += 3
+                if log2size == 3:
+                    sig_ctx += (9 if scan_idx == 0 else 15)
+                else:
+                    sig_ctx += 21
+            else:
+                if log2size == 3:
+                    sig_ctx += 9
+                else:
+                    sig_ctx += 12
+
+        if c_idx == 0:
+            ctx_inc = sig_ctx
+        else:
+            ctx_inc = 27 + sig_ctx
+        
+        bit = self.ctx.cabac.decode_decision("sig_coeff_flag", ctx_offset + ctx_inc)
+        log.syntax.info("sig_coeff_flag = %d", bit)
+        return bit
+
     def decode_residual_coding(self, x0, y0, log2size, c_idx):
         if self.ctx.pps.transform_skip_enabled_flag and (not self.cu.cu_transquant_bypass_flag) and (log2size==2):
-            self.transform_skip_flag = self.decode_transform_skip_flag(c_idx)
+            self.transform_skip_flag[c_idx] = self.decode_transform_skip_flag(c_idx)
 
-        self.last_sig_coeff_x_prefix = self.decode_last_sig_coeff_x_prefix(log2size, c_idx)
-        self.last_sig_coeff_y_prefix = self.decode_last_sig_coeff_y_prefix(log2size, c_idx)
-        assert self.last_sig_coeff_x_prefix in range(0, log2size<<1)
-        assert self.last_sig_coeff_y_prefix in range(0, log2size<<1)
+        self.last_sig_coeff_x_prefix[c_idx] = self.decode_last_sig_coeff_x_prefix(log2size, c_idx)
+        self.last_sig_coeff_y_prefix[c_idx] = self.decode_last_sig_coeff_y_prefix(log2size, c_idx)
+        assert self.last_sig_coeff_x_prefix[c_idx] in range(0, log2size<<1)
+        assert self.last_sig_coeff_y_prefix[c_idx] in range(0, log2size<<1)
         
-        if self.last_sig_coeff_x_prefix > 3:
-            self.last_sig_coeff_x_suffix = self.decode_last_sig_coeff_x_suffix()
-            assert self.last_sig_coeff_x_suffix in range(0, 1<<((self.last_sig_coeff_x_prefix>>1)-1))
-            last_significant_coeff_x = (1<<((self.last_sig_coeff_x_prefix>>1)-1)) * (2+(self.last_sig_coeff_x_prefix&1)) + last_sig_coeff_x_suffix
+        if self.last_sig_coeff_x_prefix[c_idx] > 3:
+            self.last_sig_coeff_x_suffix[c_idx] = self.decode_last_sig_coeff_x_suffix()
+            assert self.last_sig_coeff_x_suffix[c_idx] in range(0, 1<<((self.last_sig_coeff_x_prefix[c_idx]>>1)-1))
+            self.last_significant_coeff_x[c_idx] = (1<<((self.last_sig_coeff_x_prefix[c_idx]>>1)-1)) * (2+(self.last_sig_coeff_x_prefix[c_idx]&1)) + self.last_sig_coeff_x_suffix[c_idx]
         else:
-            last_significant_coeff_x = self.last_sig_coeff_x_prefix
+            self.last_significant_coeff_x[c_idx] = self.last_sig_coeff_x_prefix[c_idx]
 
-        if self.last_sig_coeff_y_prefix > 3:
-            self.last_sig_coeff_y_suffix = self.decode_last_sig_coeff_y_suffix()
-            assert self.last_sig_coeff_y_suffix in range(0, 1<<((self.last_sig_coeff_y_prefix>>1)-1))
-            last_significant_coeff_y = (1<<((self.last_sig_coeff_y_prefix>>1)-1)) * (2+(self.last_sig_coeff_y_prefix&1)) + last_sig_coeff_y_suffix
+        if self.last_sig_coeff_y_prefix[c_idx] > 3:
+            self.last_sig_coeff_y_suffix[c_idx] = self.decode_last_sig_coeff_y_suffix()
+            assert self.last_sig_coeff_y_suffix[c_idx] in range(0, 1<<((self.last_sig_coeff_y_prefix[c_idx]>>1)-1))
+            self.last_significant_coeff_y[c_idx] = (1<<((self.last_sig_coeff_y_prefix[c_idx]>>1)-1)) * (2+(self.last_sig_coeff_y_prefix[c_idx]&1)) + self.last_sig_coeff_y_suffix[c_idx]
         else:
-            last_significant_coeff_y = self.last_sig_coeff_y_prefix
+            self.last_significant_coeff_y[c_idx] = self.last_sig_coeff_y_prefix[c_idx]
         
-        log.main.info("log2size = %d", log2size)
+        log.main.debug("log2size = %d", log2size)
+        log.main.debug("last_significant_coeff_x/y = (%d, %d)" % (self.last_significant_coeff_x[c_idx], self.last_significant_coeff_y[c_idx]))
 
         if self.cu.pred_mode == self.cu.MODE_INTRA and (log2size == 2 or (log2size == 3 and c_idx == 0)):
-            pred_mode_intra = self.cu.intra_pred_mode_y
+            pred_mode_intra = self.cu.intra_pred_mode_y[self.cu.y][self.cu.x]
         else:
             pred_mode_intra = self.cu.intra_pred_mode_c
 
         if pred_mode_intra in range(6, 14 + 1):
             scan_idx = 2
             scan_array = scan.get_vertical_scan_order_array
-            (last_significant_coeff_x, last_significant_coeff_y) = (last_significant_coeff_y, last_significant_coeff_x)
+            (self.last_significant_coeff_x[c_idx], self.last_significant_coeff_y[c_idx]) = (self.last_significant_coeff_y[c_idx], self.last_significant_coeff_x[c_idx])
         elif pred_mode_intra in range(22, 30 + 1):
             scan_idx = 1
             scan_array = scan.get_horizontal_scan_order_array
@@ -166,8 +251,9 @@ class Tu(tree.Tree):
             scan_idx = 0
             scan_array = scan.get_upright_diagonal_scan_order_array
         
-        scan_order_subblock = scan_array(log2size - 2)
-        scan_order_4x4 = scan_array(2)
+        assert log2size >= 2
+        scan_order_subblock = scan_array(1 << (log2size - 2))
+        scan_order_4x4 = scan_array(1 << 2)
 
         last_scan_pos = 16
         last_sub_block = (1 << (log2size - 2)) * (1 << (log2size - 2)) - 1
@@ -180,22 +266,30 @@ class Tu(tree.Tree):
             ys = scan_order_subblock[last_sub_block][1]
             xc = (xs << 2) + scan_order_4x4[last_scan_pos][0]
             yc = (ys << 2) + scan_order_4x4[last_scan_pos][1]
-            if not ((xc != last_significant_coeff_x) or (yc != last_significant_coeff_y)):
+            if not ((xc != self.last_significant_coeff_x[c_idx]) or (yc != self.last_significant_coeff_y[c_idx])):
                 break
-
+        
+        log.main.debug("last_sub_block = %d", last_sub_block)
+        
+        self.coded_sub_block_flag = numpy.zeros((1<<(log2size-2), 1<<(log2size-2)), bool)
         for i in reversed(range(last_sub_block + 1)):
             xs = scan_order_subblock[i][0]
             ys = scan_order_subblock[i][1]
-            infer_sb_dc_sig_coeff_flag = 0
             if i < last_sub_block and i > 0:
-                self.decode_coded_sub_block_flag(xs, ys)
+                self.coded_sub_block_flag[xs][ys] = self.decode_coded_sub_block_flag(xs, ys) 
                 infer_sb_dc_sig_coeff_flag = 1
+            else:
+                if (xs, ys) == (0, 0) or (xs, ys) == (self.last_significant_coeff_x[c_idx] >> 2, self.last_significant_coeff_y[c_idx] >> 2):
+                    self.coded_sub_block_flag[xs][ys] = 1
+                else:
+                    self.coded_sub_block_flag[xs][ys] = 0
+                infer_sb_dc_sig_coeff_flag = 0
 
             for n in reversed(range(((last_scan_pos - 1) if (i == last_sub_block) else 15) + 1)):
                 xc = (xs << 2) + scan_order_4x4[n][0]
                 yc = (ys << 2) + scan_order_4x4[n][1]
-                if self.coded_sub_block_flag and (n > 0 or (not infer_sb_dc_sig_coeff_flag)):
-                    self.sig_coeff_flag = self.decode_sig_coeff_flag(xc, yc)
+                if self.coded_sub_block_flag[xs][ys] and (n > 0 or (not infer_sb_dc_sig_coeff_flag)):
+                    self.sig_coeff_flag = self.decode_sig_coeff_flag(xc, yc, log2size, c_idx, scan_idx)
                     if self.sig_coeff_flag:
                         infer_sb_dc_sig_coeff_flag = 0
 
