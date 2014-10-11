@@ -187,6 +187,8 @@ class Cu(tree.Tree):
                     for i in range(3):
                         if self.intra_pred_mode_y[x_pb][y_pb] >= cand_mode_list[i]:
                             self.intra_pred_mode_y[x_pb][y_pb] += 1
+        
+                assert self.intra_pred_mode_y[x_pb][y_pb] in range(0, 34 + 1)
 
         self.intra_chroma_pred_mode = self.decode_intra_chroma_pred_mode()
         if self.intra_chroma_pred_mode == 0:
@@ -201,6 +203,8 @@ class Cu(tree.Tree):
                 self.intra_pred_mode_c = self.intra_pred_mode_y
         else:
             raise ValueError("Unexpected intra_chroma_pred_mode = %d" % self.intra_chroma_pred_mode)
+
+        assert self.intra_pred_mode_c in range(0, 34 + 1)
     
     def decode_prev_intra_luma_pred_flag(self, y0, x0):
         ctx_inc = 0
