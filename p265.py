@@ -1,3 +1,5 @@
+#!/usr/bin/python -B
+
 import nalu
 import context
 import log
