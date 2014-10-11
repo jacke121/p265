@@ -264,8 +264,6 @@ class Pps:
                 sys.stdout.write("%4d " % self.min_tb_addr_zs[x][y])
             sys.stdout.write("\n")
 
-
-
 if __name__ == "__main__":
     class TestSps:
         pass
@@ -300,6 +298,3 @@ if __name__ == "__main__":
     pps.dump_tile_id()
     pps.initialize_min_tb_addr_zs_array()
     pps.dump_min_tb_addr_zs()
-    print pps.get_upright_diagonal_scan_order_array(4)
-    print pps.get_horizontal_scan_order_array(4)
-    print pps.get_vertical_scan_order_array(4)
