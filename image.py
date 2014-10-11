@@ -28,7 +28,8 @@ class Image:
                 return leave.depth
 
     def check_availability(self, x_current, y_current, x_neighbor, y_neighbor):
-        min_block_addr_current = self.ctx.pps.min_tb_addr_zs[x_current >> self.ctx.sps.log2_min_transform_block_size][y_current >> self.ctx.sps.log2_min_transform_block_size]
+        log2_min_transform_block_size = self.ctx.sps.log2_min_transform_block_size
+        min_block_addr_current = self.ctx.pps.min_tb_addr_zs[x_current >> log2_min_transform_block_size][y_current >> log2_min_transform_block_size]
         
         if x_neighbor < 0 or y_neighbor < 0: 
             return False
@@ -37,13 +38,20 @@ class Image:
         elif y_neighbor >= self.sps.pic_height_in_luma_samples: 
             return False
         else:
-            min_block_addr_neighbor = self.ctx.pps.min_tb_addr_zs[x_neighbor >> self.ctx.pps.log2_min_transform_block_size][y_neighbor >> self.ctx.sps.log2_min_transform_block_size]
+            min_block_addr_neighbor = self.ctx.pps.min_tb_addr_zs[x_neighbor >> log2_min_transform_block_size][y_neighbor >> log2_min_transform_block_size]
 
         ctb_addr_rs_current = self.get_ctb_addr_rs_from_luma_pixel_coordinates(x_current, y_current)
         ctb_addr_rs_neighbor= self.get_ctb_addr_rs_from_luma_pixel_coordinates(x_neighbor, y_neighbor)
+        
+        assert ctb_addr_rs_current == self.ctu.addr_rs
+        assert ctb_addr_rs_neighbor in self.ctus
 
-        in_different_tiles_flag = self.ctx.pps.tile_id_rs[ctb_addr_rs_current] != self.ctx.pps.tile_id_rs[ctb_addr_rs_neighbor]
-        in_different_slices_flag = self.ctx.img.ctbs[ctb_addr_rs_current].slice_addr != self.ctx.img.ctbs[ctb_addr_rs_neighbor].slice_addr
+        if ctb_addr_rs_current == ctb_addr_rs_neighbor:
+            in_different_slices_flag = False
+            in_different_tiles_flag = False
+        else:
+            in_different_tiles_flag = self.ctx.pps.tile_id_rs[ctb_addr_rs_current] != self.ctx.pps.tile_id_rs[ctb_addr_rs_neighbor]
+            in_different_slices_flag = self.ctu.slice_addr != self.ctx.img.ctbs[ctb_addr_rs_neighbor].slice_addr
 
         if min_block_addr_neighbor > min_block_addr_current:
             return False
