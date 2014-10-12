@@ -121,6 +121,9 @@ class Tu(tree.Tree):
             self.sig_coeff_flag = [0] * 3
             self.coeff_abs_level_greater1_flag = [0] * 3
             self.coeff_abs_level_greater2_flag = [0] * 3
+            self.coeff_sign_flag = [0] * 3
+            self.coeff_abs_level_remaining = [0] * 3
+            self.trans_coeff_level = [0] * 3
 
             if self.cbf_luma:
                 self.decode_residual_coding(self.x, self.y, self.log2size, 0)
@@ -279,8 +282,11 @@ class Tu(tree.Tree):
         
         self.coded_sub_block_flag[c_idx] = numpy.zeros((size_subblock, size_subblock), bool)
         self.sig_coeff_flag[c_idx] = numpy.zeros((size_subblock, size_subblock, size_4x4, size_4x4), bool)
-        self.coeff_abs_level_greater1_flag[c_idx] = numpy.zeros((size_subblock, size_subblock, size_4x4 * size_4x4))
-        self.coeff_abs_level_greater2_flag[c_idx] = numpy.zeros((size_subblock, size_subblock))
+        self.coeff_abs_level_greater1_flag[c_idx] = numpy.zeros((size_subblock, size_subblock, size_4x4 * size_4x4), bool)
+        self.coeff_abs_level_greater2_flag[c_idx] = numpy.zeros((size_subblock, size_subblock, size_4x4 * size_4x4), bool)
+        self.coeff_sign_flag[c_idx] = numpy.zeros((size_subblock, size_subblock, size_4x4 * size_4x4), bool)
+        self.coeff_abs_level_remaining[c_idx] = numpy.zeros((size_subblock, size_subblock, size_4x4 * size_4x4), int)
+        self.trans_coeff_level[c_idx] = numpy.zeros((size_subblock, size_subblock, size_4x4, size_4x4), int)
        
         greater1_context = {}
 
@@ -368,31 +374,77 @@ class Tu(tree.Tree):
 
             sign_hidden = (last_sig_scan_pos - first_sig_scan_pos > 3) and (not self.cu.cu_transquant_bypass_flag)
             if last_greater1_scan_pos != -1:
-                self.coeff_abs_level_greater2_flag[c_idx][xs][ys] = self.decode_coeff_abs_level_greater2_flag(c_idx, greater1_context)
+                self.coeff_abs_level_greater2_flag[c_idx][xs][ys][last_greater1_scan_pos] = self.decode_coeff_abs_level_greater2_flag(c_idx, greater1_context)
+            for n in range(16):
+                if n != last_greater1_scan_pos:
+                    self.coeff_abs_level_greater2_flag[c_idx][xs][ys][n] = 0
             
             for n in reversed(range(15 + 1)):
                 xc = (xs << 2) + scan_order_4x4[n][0]
                 yc = (ys << 2) + scan_order_4x4[n][1]
-                if self.sig_coeff_flag[c_idx][xs][ys][xc][yc] and ((not self.sign_data_hiding_enabled_flag) or (not sign_hidden) or (n != first_sig_scan_pos)):
-                    self.coeff_sign_flag = self.decode_coeff_sign_flag()
+                if self.sig_coeff_flag[c_idx][xs][ys][xc][yc] and ((not self.ctx.pps.sign_data_hiding_enabled_flag) or (not sign_hidden) or (n != first_sig_scan_pos)):
+                    self.coeff_sign_flag[c_idx][xs][ys][n] = self.decode_coeff_sign_flag()
+                else:
+                    self.coeff_sign_flag[c_idx][xs][ys][n] = 0
+                log.main.debug("coeff_sign_flag[%d] = %d", n, self.coeff_sign_flag[c_idx][xs][ys][n])
 
             num_sig_coeff = 0
             sum_abs_level = 0
+            self.last_abs_level = 0
+            self.last_rice_param = 0
             for n in reversed(range(15 + 1)):
                 xc = (xs << 2) + scan_order_4x4[n][0]
                 yc = (ys << 2) + scan_order_4x4[n][1]
                 if self.sig_coeff_flag[c_idx][xs][ys][xc][yc]:
-                    base_level = 1 + self.coeff_abs_level_greater1_flag + self.coeff_abs_level_greater2_flag
+                    base_level = 1 + self.coeff_abs_level_greater1_flag[c_idx][xs][ys][n] + self.coeff_abs_level_greater2_flag[c_idx][xs][ys][n]
                     if base_level == ((3 if n == last_greater1_scan_pos else 2) if num_sig_coeff < 8 else 1):
-                        self.coeff_abs_remaining = self.decode_coeff_abs_remaining()
-                    self.trans_coeff_level[xc][yc] = (self.coeff_abs_level_remaining + base_level) * (1 - (2 * self.coeff_sign_flag))
-                    if self.sign_data_hiding_enabled_flag and sign_hidden:
-                        sum_abs_level += self.coeff_abs_level_remaining + base_level
+                        self.coeff_abs_level_remaining[c_idx][xs][ys][n] = self.decode_coeff_abs_remaining(base_level)
+                    else:
+                        self.coeff_abs_level_remaining[c_idx][xs][ys][n] = 0
+
+                    self.trans_coeff_level[c_idx][xs][ys][xc][yc] = (self.coeff_abs_level_remaining[c_idx][xs][ys][n] + base_level) * (1 - (2 * self.coeff_sign_flag[c_idx][xs][ys][n]))
+                    if self.ctx.pps.sign_data_hiding_enabled_flag and sign_hidden:
+                        sum_abs_level += self.coeff_abs_level_remaining[c_idx][xs][ys][n] + base_level
                         if n == first_sig_scan_pos and ((sum_abs_level % 2) == 1):
-                            self.trans_coeff_level[xc][yc]  = -self.trans_coeff_level[xc][yc]
+                            self.trans_coeff_level[c_idx][xs][ys][xc][yc]  = -self.trans_coeff_level[c_idx][xs][ys][xc][yc]
+
                     num_sig_coeff += 1
+                else:
+                    self.coeff_abs_level_remaining[c_idx][xs][ys][n] = 0
 
         raise "over"
+
+    def decode_coeff_abs_remaining(self, base_level):
+        rice_param = min(self.last_rice_param + (1 if self.last_abs_level > (3 * (1 << self.last_rice_param)) else 0), 4)
+
+        prefix = 0
+        suffix = 0
+
+        while self.ctx.cabac.decode_bypass():
+            prefix += 1
+        assert prefix < 31
+
+        if prefix < 3:
+            for i in range(rc_rice_param):
+                suffix = (suffix << 1) | self.ctx.cabac.decode_bypass() 
+            value = (prefix << rc_rice_param) + suffix
+        else:
+            prefix_minus3 = prefix - 3
+            for i in range(prefix_minus3 + rice_param):
+                suffix = (suffix << 1) | self.ctx.cabac.decode_bypass()
+            value = (((1 << prefix_minus3) + 3 - 1) << rice_param) + suffix
+        
+
+        self.last_rice_param = rice_param
+        self.last_abs_level = base_level + value
+
+        log.syntax.info("coeff_abs_remaining = %d", value)
+        return value;
+
+    def decode_coeff_sign_flag(self):
+        bit = self.ctx.cabac.decode_bypass()
+        log.syntax.info("coeff_sign_flag = %d", bit)
+        return bit
 
     def decode_coeff_abs_level_greater1_flag(self, c_idx, i, n, first_invocation_in_4x4_subblock_flag, greater1_context):
         if self.ctx.img.slice_hdr.init_type == 0:
