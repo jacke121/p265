@@ -110,13 +110,17 @@ class Tu(tree.Tree):
                 if self.cu_qp_delta_abs:
                     self.cu_qp_delta_sign_flag = self.decode_cu_qp_delta_sign_flag()
             
-            self.transform_skip_flag = [0] * 3
-            self.last_sig_coeff_x_prefix = [0] * 3
-            self.last_sig_coeff_y_prefix = [0] * 3
-            self.last_sig_coeff_x_suffix = [0] * 3
-            self.last_sig_coeff_y_suffix = [0] * 3
-            self.last_significant_coeff_x = [0] * 3
-            self.last_significant_coeff_y = [0] * 3
+            self.transform_skip_flag = numpy.zeros(3, bool)
+            self.last_sig_coeff_x_prefix = numpy.zeros(3, int)
+            self.last_sig_coeff_y_prefix = numpy.zeros(3, int)
+            self.last_sig_coeff_x_suffix = numpy.zeros(3, int)
+            self.last_sig_coeff_y_suffix = numpy.zeros(3, int)
+            self.last_significant_coeff_x = numpy.zeros(3, int)
+            self.last_significant_coeff_y = numpy.zeros(3, int)
+            self.coded_sub_block_flag = [0] * 3
+            self.sig_coeff_flag = [0] * 3
+            self.coeff_abs_level_greater1_flag = [0] * 3
+            self.coeff_abs_level_greater2_flag = [0] * 3
 
             if self.cbf_luma:
                 self.decode_residual_coding(self.x, self.y, self.log2size, 0)
@@ -173,9 +177,9 @@ class Tu(tree.Tree):
             (xs, ys) = (xc >> 2, yc >> 2)
             prev_csbf = 0
             if xs < ((1 << (log2size - 2)) - 1):
-                prev_csbf += self.coded_sub_block_flag[xs + 1][ys]
+                prev_csbf += self.coded_sub_block_flag[c_idx][xs + 1][ys]
             if ys < ((1 << (log2size - 2)) - 1):
-                prev_csbf += (self.coded_sub_block_flag[xs][ys + 1] << 1)
+                prev_csbf += (self.coded_sub_block_flag[c_idx][xs][ys + 1] << 1)
             (xp, yp) = (xc & 3, yc & 3)
 
             if prev_csbf == 0:
@@ -252,11 +256,14 @@ class Tu(tree.Tree):
             scan_array = scan.get_upright_diagonal_scan_order_array
         
         assert log2size >= 2
-        scan_order_subblock = scan_array(1 << (log2size - 2))
-        scan_order_4x4 = scan_array(1 << 2)
+        size_subblock = 1 << (log2size - 2)
+        size_4x4 = 1 << 2
+        scan_order_subblock = scan_array(size_subblock)
+        scan_order_4x4 = scan_array(size_4x4)
 
+        # Determin the index of the last subblock which contains significant coefficient
         last_scan_pos = 16
-        last_sub_block = (1 << (log2size - 2)) * (1 << (log2size - 2)) - 1
+        last_sub_block = size_subblock * size_subblock - 1
         while True:
             if last_scan_pos == 0:
                 last_scan_pos = 16
@@ -268,55 +275,105 @@ class Tu(tree.Tree):
             yc = (ys << 2) + scan_order_4x4[last_scan_pos][1]
             if not ((xc != self.last_significant_coeff_x[c_idx]) or (yc != self.last_significant_coeff_y[c_idx])):
                 break
-        
         log.main.debug("last_sub_block = %d", last_sub_block)
         
-        self.coded_sub_block_flag = numpy.zeros((1<<(log2size-2), 1<<(log2size-2)), bool)
+        self.coded_sub_block_flag[c_idx] = numpy.zeros((size_subblock, size_subblock), bool)
+        self.sig_coeff_flag[c_idx] = numpy.zeros((size_subblock, size_subblock, size_4x4, size_4x4), bool)
+        self.coeff_abs_level_greater1_flag[c_idx] = numpy.zeros((size_subblock, size_subblock, size_4x4 * size_4x4))
+        self.coeff_abs_level_greater2_flag[c_idx] = numpy.zeros((size_subblock, size_subblock))
+       
+        greater1_context = {}
+
+        greater1_context["greater1_ctx_of_last_invocation_in_a_previous_4x4_subblock"] = 0
+        greater1_context["coeff_abs_level_greater1_flag_of_last_invocation_in_a_previous_4x4_subblock"] = 0
+
+        greater1_context["greater1_ctx_of_previous_invocation_in_current_4x4_subblock"] = 0
+        greater1_context["ctx_set_of_previous_invocation_in_current_4x4_subblock"] = 0
+        greater1_context["coeff_abs_level_greater1_flag_of_previous_invocation_in_current_4x4_subblock"] = 0
+
+        greater1_context["first_invocation_in_tu_flag"] = 1
+
+        # Loop each 4x4 subblock reversely from the last subblock contain significant coefficients
+        # 'i' is the index of the subblock in corresponding scan order determined by scan_idx
         for i in reversed(range(last_sub_block + 1)):
+
+            # Coodinates of the subblock relative to the top-left point of the current TU
             xs = scan_order_subblock[i][0]
             ys = scan_order_subblock[i][1]
+
             if i < last_sub_block and i > 0:
-                self.coded_sub_block_flag[xs][ys] = self.decode_coded_sub_block_flag(xs, ys) 
+                self.coded_sub_block_flag[c_idx][xs][ys] = self.decode_coded_sub_block_flag(xs, ys) 
                 infer_sb_dc_sig_coeff_flag = 1
             else:
                 if (xs, ys) == (0, 0) or (xs, ys) == (self.last_significant_coeff_x[c_idx] >> 2, self.last_significant_coeff_y[c_idx] >> 2):
-                    self.coded_sub_block_flag[xs][ys] = 1
+                    self.coded_sub_block_flag[c_idx][xs][ys] = 1
                 else:
-                    self.coded_sub_block_flag[xs][ys] = 0
+                    self.coded_sub_block_flag[c_idx][xs][ys] = 0
                 infer_sb_dc_sig_coeff_flag = 0
 
+            # Loop each node of subblock i, if it is the last significant block, loop starts from the last significant coefficient
             for n in reversed(range(((last_scan_pos - 1) if (i == last_sub_block) else 15) + 1)):
                 xc = (xs << 2) + scan_order_4x4[n][0]
                 yc = (ys << 2) + scan_order_4x4[n][1]
-                if self.coded_sub_block_flag[xs][ys] and (n > 0 or (not infer_sb_dc_sig_coeff_flag)):
-                    self.sig_coeff_flag = self.decode_sig_coeff_flag(xc, yc, log2size, c_idx, scan_idx)
-                    if self.sig_coeff_flag:
+                if self.coded_sub_block_flag[c_idx][xs][ys] and (n > 0 or (not infer_sb_dc_sig_coeff_flag)):
+                    self.sig_coeff_flag[c_idx][xs][ys][xc][yc] = self.decode_sig_coeff_flag(xc, yc, log2size, c_idx, scan_idx)
+                    if self.sig_coeff_flag[c_idx][xs][ys][xc][yc]:
                         infer_sb_dc_sig_coeff_flag = 0
+                else:
+                    if i == last_sub_block and (xc, yc) == (self.last_significant_coeff_x[c_idx], last_significant_coeff_y[c_idx]):
+                        self.sig_coeff_flag[c_idx][xs][ys][xc][yc] = 1
+                    elif (xc & 3, yc & 3) == (0, 0) and infer_sb_dc_sig_coeff_flag == 1 and self.coded_sub_block_flag[c_idx][xs][ys] == 1:
+                        self.sig_coeff_flag[c_idx][xs][ys][xc][yc] = 1
+                    else:
+                        self.sig_coeff_flag[c_idx][xs][ys][xc][yc] = 0
+                log.main.debug("sig_coeff_flag[%d] = %d" % (n, self.sig_coeff_flag[c_idx][xs][ys][xc][yc]))
+            
+            #TODO: merge this loop with the previous one
+            for n in reversed(range(last_scan_pos if (i == last_sub_block) else 16, 16)):
+                xc = (xs << 2) + scan_order_4x4[n][0]
+                yc = (ys << 2) + scan_order_4x4[n][1]
+                if i == last_sub_block and (xc, yc) == (self.last_significant_coeff_x[c_idx], self.last_significant_coeff_y[c_idx]):
+                    self.sig_coeff_flag[c_idx][xs][ys][xc][yc] = 1
+                elif (xc & 3, yc & 3) == (0, 0) and infer_sb_dc_sig_coeff_flag == 1 and self.coded_sub_block_flag[c_idx][xs][ys] == 1:
+                    self.sig_coeff_flag[c_idx][xs][ys][xc][yc] = 1
+                else:
+                    self.sig_coeff_flag[c_idx][xs][ys][xc][yc] = 0
+                log.main.debug("sig_coeff_flag[%d] = %d" % (n, self.sig_coeff_flag[c_idx][xs][ys][xc][yc]))
 
-            first_sig_scan_pos = 16
-            last_sig_scan_pos = -1
-            num_greater1_flag = 0
-            last_greater1_scan_pos = -1
+            first_sig_scan_pos = 16 # Indicates the position which contains the first significant coefficient in the current 4x4 subblock
+            last_sig_scan_pos = -1 # Indicates the position which contains the last significant coefficient in the current 4x4 subblock
+            num_greater1_flag = 0 # Indicates how many greater than 1 coefficients existed in the current 4x4 subblock
+            last_greater1_scan_pos = -1 # Indicates the position where it is the last coefficient that is greater than 1 in the current 4x4 subblock
             for n in reversed(range(15 + 1)):
                 xc = (xs << 2) + scan_order_4x4[n][0]
                 yc = (ys << 2) + scan_order_4x4[n][1]
-                if self.sig_coeff_flag:
+                if self.sig_coeff_flag[c_idx][xs][ys][xc][yc]:
                     if num_greater1_flag < 8:
-                        self.coeff_abs_level_greater1_flag = self.decode_coeff_abs_level_greater1_flag()
+                        self.coeff_abs_level_greater1_flag[c_idx][xs][ys][n] = self.decode_coeff_abs_level_greater1_flag(c_idx, i, n, num_greater1_flag==0, greater1_context)
+                        greater1_context["first_invocation_in_tu_flag"] = 0
                         num_greater1_flag += 1
-                        if self.coeff_abs_level_greater1_flag and (last_greater1_scan_pos == -1):
+                        if self.coeff_abs_level_greater1_flag[c_idx][xs][ys][n] and (last_greater1_scan_pos == -1):
                             last_greater1_scan_pos = n
+                    else:
+                        self.coeff_abs_level_greater1_flag[c_idx][xs][ys][n] = 0
+
                     if last_sig_scan_pos == -1:
                         last_sig_scan_pos = n
                     first_sig_scan_pos = n
+                else:
+                    self.coeff_abs_level_greater1_flag[c_idx][xs][ys][n] = 0
+
+            greater1_context["greater1_ctx_of_last_invocation_in_a_previous_4x4_subblock"] = greater1_context["greater1_ctx_of_previous_invocation_in_current_4x4_subblock"]
+            greater1_context["coeff_abs_level_greater1_flag_of_last_invocation_in_a_previous_4x4_subblock"] = greater1_context["coeff_abs_level_greater1_flag_of_previous_invocation_in_current_4x4_subblock"]
+
             sign_hidden = (last_sig_scan_pos - first_sig_scan_pos > 3) and (not self.cu.cu_transquant_bypass_flag)
             if last_greater1_scan_pos != -1:
-                self.coeff_abs_level_greater2_flag = self.decode_coeff_abs_level_greater2_flag()
+                self.coeff_abs_level_greater2_flag[c_idx][xs][ys] = self.decode_coeff_abs_level_greater2_flag(c_idx, greater1_context)
             
             for n in reversed(range(15 + 1)):
                 xc = (xs << 2) + scan_order_4x4[n][0]
                 yc = (ys << 2) + scan_order_4x4[n][1]
-                if self.sig_coeff_flag and ((not self.sign_data_hiding_enabled_flag) or (not sign_hidden) or (n != first_sig_scan_pos)):
+                if self.sig_coeff_flag[c_idx][xs][ys][xc][yc] and ((not self.sign_data_hiding_enabled_flag) or (not sign_hidden) or (n != first_sig_scan_pos)):
                     self.coeff_sign_flag = self.decode_coeff_sign_flag()
 
             num_sig_coeff = 0
@@ -324,7 +381,7 @@ class Tu(tree.Tree):
             for n in reversed(range(15 + 1)):
                 xc = (xs << 2) + scan_order_4x4[n][0]
                 yc = (ys << 2) + scan_order_4x4[n][1]
-                if self.sig_coeff_flag:
+                if self.sig_coeff_flag[c_idx][xs][ys][xc][yc]:
                     base_level = 1 + self.coeff_abs_level_greater1_flag + self.coeff_abs_level_greater2_flag
                     if base_level == ((3 if n == last_greater1_scan_pos else 2) if num_sig_coeff < 8 else 1):
                         self.coeff_abs_remaining = self.decode_coeff_abs_remaining()
@@ -336,6 +393,86 @@ class Tu(tree.Tree):
                     num_sig_coeff += 1
 
         raise "over"
+
+    def decode_coeff_abs_level_greater1_flag(self, c_idx, i, n, first_invocation_in_4x4_subblock_flag, greater1_context):
+        if self.ctx.img.slice_hdr.init_type == 0:
+            ctx_offset = 0
+        elif self.ctx.img.slice_hdr.init_type == 1:
+            ctx_offset = 24
+        elif self.ctx.img.slice_hdr.init_type == 2:
+            ctx_offset = 48
+        else:
+            raise ValueError("Unexpected init_type.")
+        
+        if first_invocation_in_4x4_subblock_flag == 1:
+            if i == 0 or c_idx > 0:
+                ctx_set = 0
+            else:
+                ctx_set = 2
+
+            if greater1_context["first_invocation_in_tu_flag"] == 1:
+                last_greater1_ctx = 1
+            else:
+                last_greater1_ctx = greater1_context["greater1_ctx_of_last_invocation_in_a_previous_4x4_subblock"]
+                if last_greater1_ctx > 0:
+                    last_greater1_flag = greater1_context["coeff_abs_level_greater1_flag_of_last_invocation_in_previous_4x4_subblock"]
+                if last_greater1_flag == 1:
+                    last_greater1_ctx = 0
+                else:
+                    last_greater1_ctx += 1
+
+            if last_greater1_ctx == 0:
+                ctx_set = ctx_set + 1
+            
+            greater1_ctx = 1
+        else:
+            ctx_set = greater1_context["ctx_set_of_previous_invocation_in_current_4x4_subblock"]
+
+            greater1_ctx = greater1_context["greater1_ctx_of_previous_invocation_in_current_4x4_subblock"]
+            if greater1_ctx > 0:
+                last_greater1_flag = greater1_context["coeff_abs_level_greater1_flag_of_previous_invocation_in_current_4x4_subblock"]
+            if last_greater1_flag == 1:
+                greater1_ctx = 0
+            else:
+                greater1_ctx += 1
+
+        ctx_inc = ctx_set * 4 + min(3, greater1_ctx)
+        if c_idx > 0:
+            ctx_inc += 16
+        
+        ctx_idx = ctx_offset + ctx_inc
+        
+        bit = self.ctx.cabac.decode_decision("coeff_abs_level_greater1_flag", ctx_idx)
+
+        greater1_context["coeff_abs_level_greater1_flag_of_previous_invocation_in_current_4x4_subblock"] = bit
+        greater1_context["greater1_ctx_of_previous_invocation_in_current_4x4_subblock"] = greater1_ctx
+        greater1_context["ctx_set_of_previous_invocation_in_current_4x4_subblock"] = ctx_set
+
+        log.syntax.info("coeff_abs_level_greater1_flag = %d", bit)
+        return bit
+
+    def decode_coeff_abs_level_greater2_flag(self, c_idx, greater1_context):
+        ctx_set = greater1_context["ctx_set_of_previous_invocation_in_current_4x4_subblock"]
+        ctx_inc = ctx_set
+
+        if c_idx > 0:
+            ctx_inc += 4
+
+        if self.ctx.img.slice_hdr.init_type == 0:
+            ctx_offset = 0
+        elif self.ctx.img.slice_hdr.init_type == 1:
+            ctx_offset = 6
+        elif self.ctx.img.slice_hdr.init_type == 2:
+            ctx_offset = 12
+        else:
+            raise ValueError("Unexpected init_type.")
+        
+        ctx_idx = ctx_offset + ctx_inc
+
+        bit = self.ctx.cabac.decode_decision("coeff_abs_level_greater2_flag", ctx_idx)
+
+        log.syntax.info("coeff_abs_level_greater2_flag = %d", bit)
+        return bit
 
     def decode_transform_skip_flag(c_idx):
         ctx_inc = 0
