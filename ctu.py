@@ -1,5 +1,6 @@
 import cu
 import sao
+import log
 
 class Ctu(cu.Cu):
     def __init__(self, ctx, addr_rs):
@@ -20,6 +21,7 @@ class Ctu(cu.Cu):
         self.sao = sao.Sao(self.ctx, self.x_ctb, self.y_ctb)
 
     def decode(self):
+        log.main.info("======= Start decoding CTU at addr_rs = %d ======", self.addr_rs)
         if self.ctx.img.slice_hdr.slice_sao_luma_flag or self.ctx.img.slice_hdr.slice_sao_chroma_flag:
             self.sao.decode()
         
