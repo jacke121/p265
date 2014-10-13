@@ -394,7 +394,7 @@ class Tu(tree.Tree):
                 if self.sig_coeff_flag[c_idx][xs][ys][xc][yc]:
                     base_level = 1 + self.coeff_abs_level_greater1_flag[c_idx][xs][ys][n] + self.coeff_abs_level_greater2_flag[c_idx][xs][ys][n]
                     if base_level == ((3 if n == last_greater1_scan_pos else 2) if num_sig_coeff < 8 else 1):
-                        self.coeff_abs_level_remaining[c_idx][xs][ys][n] = self.decode_coeff_abs_remaining(base_level)
+                        self.coeff_abs_level_remaining[c_idx][xs][ys][n] = self.decode_coeff_abs_level_remaining(base_level)
                     else:
                         self.coeff_abs_level_remaining[c_idx][xs][ys][n] = 0
 
@@ -435,7 +435,7 @@ class Tu(tree.Tree):
         log.syntax.info("coded_sub_block_flag = %d", bit)
         return bit
 
-    def decode_coeff_abs_remaining(self, base_level):
+    def decode_coeff_abs_level_remaining(self, base_level):
         rice_param = min(self.last_rice_param + (1 if self.last_abs_level > (3 * (1 << self.last_rice_param)) else 0), 4)
 
         prefix = 0
@@ -446,9 +446,9 @@ class Tu(tree.Tree):
         assert prefix < 31
 
         if prefix < 3:
-            for i in range(rc_rice_param):
+            for i in range(rice_param):
                 suffix = (suffix << 1) | self.ctx.cabac.decode_bypass() 
-            value = (prefix << rc_rice_param) + suffix
+            value = (prefix << rice_param) + suffix
         else:
             prefix_minus3 = prefix - 3
             for i in range(prefix_minus3 + rice_param):
@@ -459,7 +459,7 @@ class Tu(tree.Tree):
         self.last_rice_param = rice_param
         self.last_abs_level = base_level + value
 
-        log.syntax.info("coeff_abs_remaining = %d", value)
+        log.syntax.info("coeff_abs_level_remaining = %d", value)
         return value;
 
     def decode_coeff_sign_flag(self):
@@ -488,7 +488,7 @@ class Tu(tree.Tree):
             else:
                 last_greater1_ctx = greater1_context["greater1_ctx_of_last_invocation_in_a_previous_4x4_subblock"]
                 if last_greater1_ctx > 0:
-                    last_greater1_flag = greater1_context["coeff_abs_level_greater1_flag_of_last_invocation_in_previous_4x4_subblock"]
+                    last_greater1_flag = greater1_context["coeff_abs_level_greater1_flag_of_last_invocation_in_a_previous_4x4_subblock"]
                 if last_greater1_flag == 1:
                     last_greater1_ctx = 0
                 else:
