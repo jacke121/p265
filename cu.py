@@ -1,8 +1,10 @@
 import sys
 import random
 import math
+import numpy
 import tree
 import tu
+import utils
 import log
 
 class IntraPartMode:
@@ -29,6 +31,8 @@ class Cu(tree.Tree):
 
     def decode_leaf(self):
         assert self.is_leaf() == True
+
+        log.main.info("====== Start decoding CU at (x,y) = (%d, %d), size = %d ======" % (self.x, self.y, self.size))
 
         if self.ctx.pps.transquant_bypass_enabled_flag:
             self.cu_transquant_bypass_flag = self.decode_cu_transquant_bypass_flag()
@@ -107,26 +111,23 @@ class Cu(tree.Tree):
         else:
             pb_offset = self.size
 
-        self.prev_intra_luma_pred_flag = {}
+        self.pb_size = pb_offset
+
+        #TODO: find a more efficient way to store these four syntax elements
+        self.prev_intra_luma_pred_flag = utils.md_dict()
+        self.mpm_idx = utils.md_dict()
+        self.rem_intra_luma_pred_mode = utils.md_dict()
+        self.intra_pred_mode_y = utils.md_dict()
+
         for j in range(0, self.size, pb_offset):
-            self.prev_intra_luma_pred_flag[self.y + j] = {}
             for i in range(0, self.size, pb_offset):
-                self.prev_intra_luma_pred_flag[self.y + j][self.x + i] = self.decode_prev_intra_luma_pred_flag(self.y + j, self.x + i)
-        
-        self.mpm_idx = {}
-        self.rem_intra_luma_pred_mode = {}
-        for j in range(0, self.size, pb_offset):
-            self.mpm_idx[self.y + j] = {}
-            self.rem_intra_luma_pred_mode[self.y + j] = {}
-            for i in range(0, self.size, pb_offset):
-                if self.prev_intra_luma_pred_flag[self.y + j][self.x + j]:
-                    self.mpm_idx[self.y + j][self.x + i] = self.decode_mpm_idx()
+                self.prev_intra_luma_pred_flag[self.x + i][self.y + j] = self.decode_prev_intra_luma_pred_flag(self.y + j, self.x + i)
+                if self.prev_intra_luma_pred_flag[self.x + i][self.y + j]:
+                    self.mpm_idx[self.x + i][self.y + j] = self.decode_mpm_idx()
                 else:
-                    self.rem_intra_luma_pred_mode[self.y + j][self.x + i] = self.decode_rem_intra_luma_pred_mode()
+                    self.rem_intra_luma_pred_mode[self.x + i][self.y + j] = self.decode_rem_intra_luma_pred_mode()
         
-        self.intra_pred_mode_y = {}
         for j in range(0, self.size, pb_offset):
-            self.intra_pred_mode_y[self.y + j] = {}
             for i in range(0, self.size, pb_offset):
                 x_pb = self.x + i
                 y_pb = self.y + j
@@ -141,14 +142,14 @@ class Cu(tree.Tree):
 
                 if available_a == False:
                     cand_intra_pred_mode_a = 1
-                elif self.ctx.img.get_pred_mode(x_neighbor_a, y_neighbor_a) != self.MODE_INTRA or self.ctx.img.get_pcm_flag(x_neighbor_a, y_neighbor_a) == 1:
+                elif self.ctx.img.get("pred_mode", x_neighbor_a, y_neighbor_a) != self.MODE_INTRA or self.ctx.img.get("pcm_flag", x_neighbor_a, y_neighbor_a) == 1:
                     cand_intra_pred_mode_a = 1
                 else:
                     cand_intra_pred_mode_a = self.ctx.img.get_intra_pred_mode_y(x_neighbor_a, y_neighbor_a)
 
                 if available_b == False:
                     cand_intra_pred_mode_b = 1
-                elif self.ctx.img.get_pred_mode(x_neighbor_b, y_neighbor_b) != self.MODE_INTRA or self.ctx.img.get_pcm_flag(x_neighbor_b, y_neighbor_b) == 1:
+                elif self.ctx.img.get("pred_mode", x_neighbor_b, y_neighbor_b) != self.MODE_INTRA or self.ctx.img.get("pcm_flag", x_neighbor_b, y_neighbor_b) == 1:
                     cand_intra_pred_mode_b = 1
                 elif (y_pb - 1) < ((y_pb >> self.ctx.sps.ctb_log2_size_y) << self.ctx.sps.ctb_log2_size_y):
                     cand_intra_pred_mode_b = 1
@@ -313,8 +314,8 @@ class Cu(tree.Tree):
         if self.split_cu_flag:
             x0 = self.x
             y0 = self.y
-            x1 = self.x + (1 << self.log2size)
-            y1 = self.y + (1 << self.log2size)
+            x1 = self.x + (1 << (self.log2size - 1))
+            y1 = self.y + (1 << (self.log2size - 1))
 
             sub_cu = [None] * 4
             sub_cu[0] = Cu(x0, y0, self.log2size-1, self.depth+1, self); 

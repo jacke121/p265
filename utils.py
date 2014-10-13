@@ -1,0 +1,36 @@
+'''
+class md_dict(dict):
+    def __getitem__(self, item):
+        try:
+            return dict.__getitem__(self, item)
+        except KeyError:
+            value = self[item] = type(self)()
+            return value
+'''
+
+class md_dict(dict):
+    def __missing__(self, key):
+        value = self[key] = type(self)()
+        return value
+
+'''
+import collections
+def md_dict():
+    return collections.defaultdict(md_dict)
+'''
+
+if __name__ == "__main__":
+    d = md_dict()
+    print d
+
+    d[0][1] = 7
+    d[0][1] = 8
+    d[0][8] = 9
+    d[0]["test1"] = "hello"
+    d["test2"] = 'T'
+    
+    print d
+    print d[2]
+
+    import pprint
+    print d
