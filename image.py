@@ -49,8 +49,8 @@ class Image:
             ctu = self.ctus[ctb_addr_rs]
         for leave in ctu.get_leaves():
             if leave.contain(x, y):
-                x_pb = x / leave.pb_size
-                y_pb = y / leave.pb_size
+                x_pb = x - (x % leave.pb_size)
+                y_pb = y - (y % leave.pb_size)
                 return leave.intra_pred_mode_y[x_pb][y_pb]
 
     def check_availability(self, x_current, y_current, x_neighbor, y_neighbor):
