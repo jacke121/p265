@@ -58,7 +58,7 @@ class Cu(tree.Tree):
                     self.pred_mode = self.MODE_INTRA
 
             if self.pred_mode != self.MODE_INTRA or self.log2size == self.ctx.sps.min_cb_log2_size_y:
-                self.decode_part_mode()
+                self.part_mode = self.decode_part_mode()
                 if self.pred_mode == self.MODE_INTRA:
                     if self.part_mode == IntraPartMode.PART_2Nx2N:
                         self.intra_split_flag = 0
@@ -139,7 +139,8 @@ class Cu(tree.Tree):
 
                 available_a = self.ctx.img.check_availability(x_pb, y_pb, x_neighbor_a, y_neighbor_a)
                 available_b = self.ctx.img.check_availability(x_pb, y_pb, x_neighbor_b, y_neighbor_b)
-
+                
+                print "debug ", self.intra_pred_mode_y
                 if available_a == False:
                     cand_intra_pred_mode_a = 1
                 elif self.ctx.img.get("pred_mode", x_neighbor_a, y_neighbor_a) != self.MODE_INTRA or self.ctx.img.get("pcm_flag", x_neighbor_a, y_neighbor_a) == 1:
@@ -190,16 +191,16 @@ class Cu(tree.Tree):
                             self.intra_pred_mode_y[x_pb][y_pb] += 1
         
                 assert self.intra_pred_mode_y[x_pb][y_pb] in range(0, 34 + 1)
-
+        
         self.intra_chroma_pred_mode = self.decode_intra_chroma_pred_mode()
         if self.intra_chroma_pred_mode == 0:
-            self.intra_pred_mode_c = (34 if self.intra_pred_mode_y == 0 else 0)
+            self.intra_pred_mode_c = (34 if self.intra_pred_mode_y[self.x][self.y] == 0 else 0)
         elif self.intra_chroma_pred_mode == 1:
-            self.intra_pred_mode_c = (34 if self.intra_pred_mode_y == 26 else 26)
+            self.intra_pred_mode_c = (34 if self.intra_pred_mode_y[self.x][self.y] == 26 else 26)
         elif self.intra_chroma_pred_mode == 2:
-            self.intra_pred_mode_c = (34 if self.intra_pred_mode_y == 10 else 10)
+            self.intra_pred_mode_c = (34 if self.intra_pred_mode_y[self.x][self.y] == 10 else 10)
         elif self.intra_chroma_pred_mode == 3:
-            self.intra_pred_mode_c = (34 if self.intra_pred_mode_y == 1 else 1)
+            self.intra_pred_mode_c = (34 if self.intra_pred_mode_y[self.x][self.y] == 1 else 1)
         elif self.intra_chroma_pred_mode == 4:
                 self.intra_pred_mode_c = self.intra_pred_mode_y[self.x][self.y]
         else:
@@ -299,7 +300,7 @@ class Cu(tree.Tree):
         if right_boundary_within_pic_flag and bottom_boundary_within_pic_flag and (not minimum_cb_flag):
             self.decode_split_cu_flag()
         else:
-            if log2size > self.ctx.sps.min_cb_log2_size_y:
+            if self.log2size > self.ctx.sps.min_cb_log2_size_y:
                 self.split_cu_flag = 1
             else:
                 self.split_cu_flag = 0
@@ -366,18 +367,79 @@ class Cu(tree.Tree):
         self.split_cu_flag = self.ctx.cabac.decode_bin("split_cu_flag", context_idx, 0)
         log.syntax.info("split_cu_flag = %d" % self.split_cu_flag)
     
-    def check_part_mode(self):
+    def check_part_mode(self, part_mode):
         if self.pred_mode == self.MODE_INTRA:
-            assert self.part_mode in (0, 1)
+            assert part_mode in (0, 1)
         else:
             if self.log2size > self.ctx.sps.min_cb_log2_size_y and self.ctx.sps.amp_enabled_flag == 1:
-                assert self.part_mode in (0,1,2,4,5,6,7)
+                assert part_mode in (0,1,2,4,5,6,7)
             elif (self.log2size > self.ctx.sps.min_cb_log2_size_y and self.ctx.sps.amp_enabled_flag == 0) or self.log2size == 3:
-                assert self.part_mode in (0,1,2)
+                assert part_mode in (0,1,2)
             else:
-                assert self.part_mode in (0,1,2,3)
+                assert part_mode in (0,1,2,3)
 
     def decode_part_mode(self):
-        self.check_part_mode()
-        pass
+        if self.ctx.img.slice_hdr.init_type == 0:
+            ctx_offset = 0
+        elif self.ctx.img.slice_hdr.init_type == 1:
+            ctx_offset = 1
+        elif self.ctx.img.slice_hdr.init_type == 2:
+            ctx_offset = 5
+        else:
+            raise ValueError("Unexpected init type.")
+
+        #TODO: check this with SPEC
+        loop = 0
+        value = -1
+        while loop < 1:
+            if self.pred_mode == self.MODE_INTRA: 
+                bit = self.ctx.cabac.decode_decision("part_mode", ctx_offset + 0)
+                value = IntraPartMode.PART_2Nx2N if bit else IntraPartMode.PART_NxN
+                break
+            else: 
+                bit0 = self.ctx.cabac.decode_decision("part_mode", ctx_offset + 0)
+                if bit0:
+                    value = InterPartMode.PART_2Nx2N
+                    break
+
+                bit1 = self.ctx.cabac.decode_decision("part_mode", ctx_offset + 1)
+                if self.log2size > self.ctx.sps.min_cb_log2_size_y:
+                    if not self.ctx.sps.amp_enabled_flag: 
+                        value = InterPartMode.PART_2NxN if bit1 else InterPartMode.PART_Nx2N
+                        break
+                    else:
+                        bit3 = self.ctx.cabac.decode_decision("part_mode", ctx_offset + 3)
+                        if bit3:
+                            value = InterPartMode.PART_2NxN if bit1 else InterPartMode.PART_Nx2N
+                            break
+
+                        bit4 = self.ctx.cabac.decode_bypass()
+                        if     bit1 and     bit4: value = InterPartMode.PART_2NxnD; break
+                        if     bit1 and not bit4: value = InterPartMode.PART_2NxnU; break
+                        if not bit1 and not bit4: value = InterPartMode.PART_nLx2N; break
+                        if not bit1 and     bit4: value = InterPartMode.PART_nRx2N; break
+                else:
+                    if bit1: 
+                        value = InterPartMode.PART_2NxN
+                        break
+
+                    if self.log2size == 3:
+                        value = InterPartMode.PART_Nx2N
+                        break
+                    else:
+                        bit2 = self.ctx.cabac.decode_decision("part_mode", ctx_offset + 2)
+                        if bit2:
+                            value = InterPartMode.PART_Nx2N
+                        else:
+                            value = InterPartMode.PART_NxN
+                        break
+            loop += 1
+        
+        if value == -1:
+            raise ValueError("Unexpected partition mode = %d" % value)
+
+        self.check_part_mode(value)
+
+        log.syntax.info("part_mode = %d", value)
+        return value
 
