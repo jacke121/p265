@@ -23,8 +23,8 @@ class Tu(tree.Tree):
         if self.split_transform_flag:
             x0 = self.x
             y0 = self.y
-            x1 = x0 + (1 << self.log2size)
-            y1 = y0 + (1 << self.log2size)
+            x1 = x0 + (1 << (self.log2size - 1))
+            y1 = y0 + (1 << (self.log2size - 1))
 
             sub_tu = [None] * 4
             sub_tu[0] = Tu(x0, y0, self.log2size-1, self.depth+1, self)
@@ -142,25 +142,21 @@ class Tu(tree.Tree):
                     self.decode_redidual_coding(sister[0].x, sister[0].y, self.log2size, 2)
 
     def decode_last_sig_coeff_x_suffix(self, c_idx):
-        length = (self.last_sig_coeff_x_prefix[c_idx] >> 1) - 1;
-        value = self.ctx.cabac.decode_bypass()
+        return self.decode_last_sig_coeff_xy_suffix(c_idx, "last_sig_coeff_x_suffix")
 
-        for i in range(1, length):
-            value = (value << 1) | self.ctx.cabac.decode_bypass()
+    def decode_last_sig_coeff_y_suffix(self, c_idx):
+        return self.decode_last_sig_coeff_xy_suffix(c_idx, "last_sig_coeff_y_suffix")
 
-        log.syntax.info("last_sig_coeff_x_prefix = %d" % value)
-        return value;
-
-    def decode_last_sig_coeff_y_suffix(self):
+    def decode_last_sig_coeff_xy_suffix(self, c_idx, name):
         length = (self.last_sig_coeff_y_prefix[c_idx] >> 1) - 1;
         value = self.ctx.cabac.decode_bypass()
 
         for i in range(1, length):
             value = (value << 1) | self.ctx.cabac.decode_bypass()
 
-        log.syntax.info("last_sig_coeff_y_prefix = %d" % value)
+        log.syntax.info("%s = %d", name, value)
         return value;
-    
+
     def decode_sig_coeff_flag(self, xc, yc, log2size, c_idx, scan_idx):
         if self.ctx.img.slice_hdr.init_type == 0:
             ctx_offset = 0
@@ -226,14 +222,14 @@ class Tu(tree.Tree):
         assert self.last_sig_coeff_y_prefix[c_idx] in range(0, log2size<<1)
         
         if self.last_sig_coeff_x_prefix[c_idx] > 3:
-            self.last_sig_coeff_x_suffix[c_idx] = self.decode_last_sig_coeff_x_suffix()
+            self.last_sig_coeff_x_suffix[c_idx] = self.decode_last_sig_coeff_x_suffix(c_idx)
             assert self.last_sig_coeff_x_suffix[c_idx] in range(0, 1<<((self.last_sig_coeff_x_prefix[c_idx]>>1)-1))
             self.last_significant_coeff_x[c_idx] = (1<<((self.last_sig_coeff_x_prefix[c_idx]>>1)-1)) * (2+(self.last_sig_coeff_x_prefix[c_idx]&1)) + self.last_sig_coeff_x_suffix[c_idx]
         else:
             self.last_significant_coeff_x[c_idx] = self.last_sig_coeff_x_prefix[c_idx]
 
         if self.last_sig_coeff_y_prefix[c_idx] > 3:
-            self.last_sig_coeff_y_suffix[c_idx] = self.decode_last_sig_coeff_y_suffix()
+            self.last_sig_coeff_y_suffix[c_idx] = self.decode_last_sig_coeff_y_suffix(c_idx)
             assert self.last_sig_coeff_y_suffix[c_idx] in range(0, 1<<((self.last_sig_coeff_y_prefix[c_idx]>>1)-1))
             self.last_significant_coeff_y[c_idx] = (1<<((self.last_sig_coeff_y_prefix[c_idx]>>1)-1)) * (2+(self.last_sig_coeff_y_prefix[c_idx]&1)) + self.last_sig_coeff_y_suffix[c_idx]
         else:
@@ -411,8 +407,6 @@ class Tu(tree.Tree):
                     num_sig_coeff += 1
                 else:
                     self.coeff_abs_level_remaining[c_idx][xs][ys][n] = 0
-
-        raise "over"
 
     def decode_coeff_abs_remaining(self, base_level):
         rice_param = min(self.last_rice_param + (1 if self.last_abs_level > (3 * (1 << self.last_rice_param)) else 0), 4)
