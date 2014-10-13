@@ -277,12 +277,12 @@ class Tu(tree.Tree):
         log.main.debug("last_sub_block = %d", last_sub_block)
         
         self.coded_sub_block_flag[c_idx] = numpy.zeros((size_subblock, size_subblock), bool)
-        self.sig_coeff_flag[c_idx] = numpy.zeros((size_subblock, size_subblock, size_4x4, size_4x4), bool)
-        self.coeff_abs_level_greater1_flag[c_idx] = numpy.zeros((size_subblock, size_subblock, size_4x4 * size_4x4), bool)
-        self.coeff_abs_level_greater2_flag[c_idx] = numpy.zeros((size_subblock, size_subblock, size_4x4 * size_4x4), bool)
-        self.coeff_sign_flag[c_idx] = numpy.zeros((size_subblock, size_subblock, size_4x4 * size_4x4), bool)
-        self.coeff_abs_level_remaining[c_idx] = numpy.zeros((size_subblock, size_subblock, size_4x4 * size_4x4), int)
-        self.trans_coeff_level[c_idx] = numpy.zeros((size_subblock, size_subblock, size_4x4, size_4x4), int)
+        self.sig_coeff_flag[c_idx] = numpy.zeros((size_subblock, size_subblock, self.size, self.size), bool)
+        self.coeff_abs_level_greater1_flag[c_idx] = numpy.zeros((size_subblock, size_subblock, self.size * self.size), bool)
+        self.coeff_abs_level_greater2_flag[c_idx] = numpy.zeros((size_subblock, size_subblock, self.size * self.size), bool)
+        self.coeff_sign_flag[c_idx] = numpy.zeros((size_subblock, size_subblock, self.size * self.size), bool)
+        self.coeff_abs_level_remaining[c_idx] = numpy.zeros((size_subblock, size_subblock, self.size * self.size), int)
+        self.trans_coeff_level[c_idx] = numpy.zeros((size_subblock, size_subblock, self.size, self.size), int)
        
         greater1_context = {}
 
@@ -304,7 +304,7 @@ class Tu(tree.Tree):
             ys = scan_order_subblock[i][1]
 
             if i < last_sub_block and i > 0:
-                self.coded_sub_block_flag[c_idx][xs][ys] = self.decode_coded_sub_block_flag(xs, ys) 
+                self.coded_sub_block_flag[c_idx][xs][ys] = self.decode_coded_sub_block_flag(c_idx, xs, ys, log2size) 
                 infer_sb_dc_sig_coeff_flag = 1
             else:
                 if (xs, ys) == (0, 0) or (xs, ys) == (self.last_significant_coeff_x[c_idx] >> 2, self.last_significant_coeff_y[c_idx] >> 2):
@@ -407,6 +407,33 @@ class Tu(tree.Tree):
                     num_sig_coeff += 1
                 else:
                     self.coeff_abs_level_remaining[c_idx][xs][ys][n] = 0
+    
+    def decode_coded_sub_block_flag(self, c_idx, xs, ys, log2size):
+        if self.ctx.img.slice_hdr.init_type == 0:
+            ctx_offset = 0
+        elif self.ctx.img.slice_hdr.init_type == 1:
+            ctx_offset = 4
+        elif self.ctx.img.slice_hdr.init_type == 2:
+            ctx_offset = 8
+        else:
+            raise ValueError("Unexpected init_type.")
+
+        #TODO: check the csbf_ctx calculation process with SPEC
+        csbf_ctx = 0
+        if xs < ((1 << (log2size - 2)) - 1):
+            csbf_ctx += self.coded_sub_block_flag[c_idx][xs + 1][ys]
+        if ys < ((1 << (log2size - 2)) - 1):
+            csbf_ctx += self.coded_sub_block_flag[c_idx][xs][ys + 1]
+
+        if c_idx == 0:
+            ctx_inc = min(csbf_ctx, 1)
+        else:
+            ctx_inc = 2 + min(csbf_ctx, 1)
+
+        ctx_idx = ctx_offset + ctx_inc
+        bit = self.ctx.cabac.decode_decision("coded_sub_block_flag", ctx_idx)
+        log.syntax.info("coded_sub_block_flag = %d", bit)
+        return bit
 
     def decode_coeff_abs_remaining(self, base_level):
         rice_param = min(self.last_rice_param + (1 if self.last_abs_level > (3 * (1 << self.last_rice_param)) else 0), 4)
