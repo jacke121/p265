@@ -111,7 +111,7 @@ class Cu(tree.Tree):
         else:
             pb_offset = self.size
 
-        self.pb_size = pb_offset
+        self.intra_pb_size = pb_offset
 
         #TODO: find a more efficient way to store these four syntax elements
         self.prev_intra_luma_pred_flag = utils.md_dict()
