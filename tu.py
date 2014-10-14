@@ -170,13 +170,13 @@ class Tu(tree.Tree):
                     self.decode_redidual_coding(sisters[0].x, sisters[0].y, self.log2size, 2)
 
     def decode_last_sig_coeff_x_suffix(self, c_idx):
-        return self.decode_last_sig_coeff_xy_suffix(c_idx, "last_sig_coeff_x_suffix")
+        return self.decode_last_sig_coeff_xy_suffix("last_sig_coeff_x_suffix", self.last_sig_coeff_x_prefix[c_idx])
 
     def decode_last_sig_coeff_y_suffix(self, c_idx):
-        return self.decode_last_sig_coeff_xy_suffix(c_idx, "last_sig_coeff_y_suffix")
+        return self.decode_last_sig_coeff_xy_suffix("last_sig_coeff_y_suffix", self.last_sig_coeff_y_prefix[c_idx])
 
-    def decode_last_sig_coeff_xy_suffix(self, c_idx, name):
-        length = (self.last_sig_coeff_y_prefix[c_idx] >> 1) - 1;
+    def decode_last_sig_coeff_xy_suffix(self, name, last_sig_coeff_xy_prefix):
+        length = (last_sig_coeff_xy_prefix >> 1) - 1;
         value = self.ctx.cabac.decode_bypass()
 
         for i in range(1, length):
@@ -517,10 +517,10 @@ class Tu(tree.Tree):
                 last_greater1_ctx = greater1_context["greater1_ctx_of_last_invocation_in_a_previous_4x4_subblock"]
                 if last_greater1_ctx > 0:
                     last_greater1_flag = greater1_context["coeff_abs_level_greater1_flag_of_last_invocation_in_a_previous_4x4_subblock"]
-                if last_greater1_flag == 1:
-                    last_greater1_ctx = 0
-                else:
-                    last_greater1_ctx += 1
+                    if last_greater1_flag == 1:
+                        last_greater1_ctx = 0
+                    else:
+                        last_greater1_ctx += 1
 
             if last_greater1_ctx == 0:
                 ctx_set = ctx_set + 1
@@ -532,10 +532,10 @@ class Tu(tree.Tree):
             greater1_ctx = greater1_context["greater1_ctx_of_previous_invocation_in_current_4x4_subblock"]
             if greater1_ctx > 0:
                 last_greater1_flag = greater1_context["coeff_abs_level_greater1_flag_of_previous_invocation_in_current_4x4_subblock"]
-            if last_greater1_flag == 1:
-                greater1_ctx = 0
-            else:
-                greater1_ctx += 1
+                if last_greater1_flag == 1:
+                    greater1_ctx = 0
+                else:
+                    greater1_ctx += 1
 
         ctx_inc = ctx_set * 4 + min(3, greater1_ctx)
         if c_idx > 0:
