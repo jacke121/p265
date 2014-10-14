@@ -8,17 +8,45 @@ class Tu(tree.Tree):
         tree.Tree.__init__(self, x, y, log2size, depth, parent)
 
     def decode(self):
+        if self.ctx.sps.max_transform_hierarchy_depth_inter == 0 and \
+                self.cu.pred_mode == self.MODE_INTER and \
+                self.cu.part_mode != InterPartMode.PART_2Nx2N and \
+                self.depth == 0:
+            self.inter_split_flag = 1
+        else:
+            self.inter_split_flag = 0
+
         if self.log2size <= self.ctx.sps.log2_max_transform_block_size and \
                 self.log2size > self.ctx.sps.log2_min_transform_block_size and \
                 self.depth < self.cu.max_transform_depth and \
                 not (self.cu.intra_split_flag == 1 and self.depth == 0):
             self.split_transform_flag = self.decode_split_transform_flag()
+        else:
+            if self.log2size > self.ctx.sps.log2_max_transform_block_size or \
+                    (self.cu.intra_split_flag == 1 and self.depth == 0) or \
+                    self.inter_split_flag == 1:
+                self.split_transform_flag = 1
+            else:
+                self.split_transform_flag = 0
         
         if self.log2size > 2:
             if self.depth == 0 or self.parent.cbf_cb == 1:
                 self.cbf_cb = self.decode_cbf_cb()
+            else:
+                self.cbf_cb = 0
+
             if self.depth == 0 or self.parent.cbf_cr == 1:
                 self.cbf_cr = self.decode_cbf_cr()
+            else:
+                self.cbf_cr = 0
+        else:
+            if self.depth > 0 and self.log2size == 2:
+                self.cbf_cb = self.parent.cbf_cb
+                self.cbf_cr = self.parent.cbf_cr
+            else:
+                self.cbf_cb = 0
+                self.cbf_cr = 0
+
 
         if self.split_transform_flag:
             x0 = self.x
@@ -134,12 +162,12 @@ class Tu(tree.Tree):
                 if self.cbf_cr:
                     self.decode_residual_coding(self.x, self.y, self.log2size-1, 2)
             elif self.idx == 3:
-                raise "I am here!"
+                #raise "I am here!"
                 sisters  = self.get_sisters()
                 if sisters[0].cbf_cb:
-                    self.decode_residual_coding(sister[0].x, sister[0].y, self.log2size, 1)
+                    self.decode_residual_coding(sisters[0].x, sisters[0].y, self.log2size, 1)
                 if sisters[0].cbf_cr:
-                    self.decode_redidual_coding(sister[0].x, sister[0].y, self.log2size, 2)
+                    self.decode_redidual_coding(sisters[0].x, sisters[0].y, self.log2size, 2)
 
     def decode_last_sig_coeff_x_suffix(self, c_idx):
         return self.decode_last_sig_coeff_xy_suffix(c_idx, "last_sig_coeff_x_suffix")
@@ -547,7 +575,7 @@ class Tu(tree.Tree):
         log.syntax.info("coeff_abs_level_greater2_flag = %d", bit)
         return bit
 
-    def decode_transform_skip_flag(c_idx):
+    def decode_transform_skip_flag(self, c_idx):
         ctx_inc = 0
 
         if c_idx == 0:
@@ -572,7 +600,7 @@ class Tu(tree.Tree):
         ctx_idx = ctx_offset + ctx_inc
 
         bit = self.ctx.cabac.decode_decision("transform_skip_flag", ctx_idx)
-        log.syntax.info("transform_skip = %d", bit)
+        log.syntax.info("transform_skip_flag = %d", bit)
         return bit
 
     def decode_last_sig_coeff_xy_prefix(self, log2size, c_idx, xy):
