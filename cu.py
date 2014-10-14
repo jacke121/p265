@@ -122,6 +122,9 @@ class Cu(tree.Tree):
         for j in range(0, self.size, pb_offset):
             for i in range(0, self.size, pb_offset):
                 self.prev_intra_luma_pred_flag[self.x + i][self.y + j] = self.decode_prev_intra_luma_pred_flag(self.y + j, self.x + i)
+
+        for j in range(0, self.size, pb_offset):
+            for i in range(0, self.size, pb_offset):
                 if self.prev_intra_luma_pred_flag[self.x + i][self.y + j]:
                     self.mpm_idx[self.x + i][self.y + j] = self.decode_mpm_idx()
                 else:
