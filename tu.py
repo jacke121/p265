@@ -132,6 +132,8 @@ class Tu(tree.Tree):
     def decode_leaf(self):
         assert self.is_leaf() == True
 
+        log.main.debug("tu.decode_leaf: (x, y) = (%d, %d), log2size = %d", self.x, self.y, self.log2size)
+
         if self.cbf_luma or self.cbf_cb or self.cbf_cr:
             if self.ctx.pps.cu_qp_delta_enabled_flag and not self.cu.is_cu_qp_delta_coded:
                 self.cu_qp_delta_abs = self.decode_cu_qp_delta_abs()
@@ -263,24 +265,27 @@ class Tu(tree.Tree):
         else:
             self.last_significant_coeff_y[c_idx] = self.last_sig_coeff_y_prefix[c_idx]
         
-        log.main.debug("log2size = %d", log2size)
-        log.main.debug("last_significant_coeff_x/y = (%d, %d)" % (self.last_significant_coeff_x[c_idx], self.last_significant_coeff_y[c_idx]))
-
         if self.cu.pred_mode == self.cu.MODE_INTRA and (log2size == 2 or (log2size == 3 and c_idx == 0)):
-            pred_mode_intra = self.cu.intra_pred_mode_y[self.cu.y][self.cu.x]
-        else:
-            pred_mode_intra = self.cu.intra_pred_mode_c
+            if c_idx == 0:
+                pred_mode_intra = self.cu.intra_pred_mode_y[self.cu.y][self.cu.x]
+            else:
+                pred_mode_intra = self.cu.intra_pred_mode_c
 
-        if pred_mode_intra in range(6, 14 + 1):
-            scan_idx = 2
-            scan_array = scan.get_vertical_scan_order_array
-            (self.last_significant_coeff_x[c_idx], self.last_significant_coeff_y[c_idx]) = (self.last_significant_coeff_y[c_idx], self.last_significant_coeff_x[c_idx])
-        elif pred_mode_intra in range(22, 30 + 1):
-            scan_idx = 1
-            scan_array = scan.get_horizontal_scan_order_array
+            if pred_mode_intra in range(6, 14 + 1):
+                scan_idx = 2
+                scan_array = scan.get_vertical_scan_order_array
+            elif pred_mode_intra in range(22, 30 + 1):
+                scan_idx = 1
+                scan_array = scan.get_horizontal_scan_order_array
+            else:
+                scan_idx = 0
+                scan_array = scan.get_upright_diagonal_scan_order_array
         else:
             scan_idx = 0
             scan_array = scan.get_upright_diagonal_scan_order_array
+
+        if scan_idx == 2:
+            (self.last_significant_coeff_x[c_idx], self.last_significant_coeff_y[c_idx]) = (self.last_significant_coeff_y[c_idx], self.last_significant_coeff_x[c_idx])
         
         assert log2size >= 2
         size_subblock = 1 << (log2size - 2)
@@ -302,7 +307,6 @@ class Tu(tree.Tree):
             yc = (ys << 2) + scan_order_4x4[last_scan_pos][1]
             if not ((xc != self.last_significant_coeff_x[c_idx]) or (yc != self.last_significant_coeff_y[c_idx])):
                 break
-        log.main.debug("last_sub_block = %d", last_sub_block)
         
         self.coded_sub_block_flag[c_idx] = numpy.zeros((size_subblock, size_subblock), bool)
         self.sig_coeff_flag[c_idx] = numpy.zeros((size_subblock, size_subblock, self.size, self.size), bool)
@@ -330,14 +334,18 @@ class Tu(tree.Tree):
             # Coodinates of the subblock relative to the top-left point of the current TU
             xs = scan_order_subblock[i][0]
             ys = scan_order_subblock[i][1]
-
+            
+            # For the sub blocks between [1, last_sub_block-1] inclusive, there is a flag to indicate whether the coefficients in these subblocks are all zero.
             if i < last_sub_block and i > 0:
                 self.coded_sub_block_flag[c_idx][xs][ys] = self.decode_coded_sub_block_flag(c_idx, xs, ys, log2size) 
                 infer_sb_dc_sig_coeff_flag = 1
             else:
+                # For the 1st subblock, it is very likely to contain significant coefficients 
+                # For the last significant block, it will surely contain significant coefficients
                 if (xs, ys) == (0, 0) or (xs, ys) == (self.last_significant_coeff_x[c_idx] >> 2, self.last_significant_coeff_y[c_idx] >> 2):
                     self.coded_sub_block_flag[c_idx][xs][ys] = 1
                 else:
+                    # For the subblocks after the last significant subblock, their coefficients are all zero
                     self.coded_sub_block_flag[c_idx][xs][ys] = 0
                 infer_sb_dc_sig_coeff_flag = 0
 
@@ -356,7 +364,6 @@ class Tu(tree.Tree):
                         self.sig_coeff_flag[c_idx][xs][ys][xc][yc] = 1
                     else:
                         self.sig_coeff_flag[c_idx][xs][ys][xc][yc] = 0
-                log.main.debug("sig_coeff_flag[%d] = %d" % (n, self.sig_coeff_flag[c_idx][xs][ys][xc][yc]))
             
             #TODO: merge this loop with the previous one
             for n in reversed(range(last_scan_pos if (i == last_sub_block) else 16, 16)):
@@ -368,7 +375,6 @@ class Tu(tree.Tree):
                     self.sig_coeff_flag[c_idx][xs][ys][xc][yc] = 1
                 else:
                     self.sig_coeff_flag[c_idx][xs][ys][xc][yc] = 0
-                log.main.debug("sig_coeff_flag[%d] = %d" % (n, self.sig_coeff_flag[c_idx][xs][ys][xc][yc]))
 
             first_sig_scan_pos = 16 # Indicates the position which contains the first significant coefficient in the current 4x4 subblock
             last_sig_scan_pos = -1 # Indicates the position which contains the last significant coefficient in the current 4x4 subblock
@@ -410,7 +416,6 @@ class Tu(tree.Tree):
                     self.coeff_sign_flag[c_idx][xs][ys][n] = self.decode_coeff_sign_flag()
                 else:
                     self.coeff_sign_flag[c_idx][xs][ys][n] = 0
-                log.main.debug("coeff_sign_flag[%d] = %d", n, self.coeff_sign_flag[c_idx][xs][ys][n])
 
             num_sig_coeff = 0
             sum_abs_level = 0
