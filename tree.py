@@ -1,3 +1,7 @@
+import random
+import matplotlib.patches as patches
+import matplotlib.pyplot as plt
+
 class Tree:
     def __init__(self, x, y, log2size, depth=0, parent=None):
         self.x = x
@@ -69,35 +73,34 @@ class Tree:
                 if n is not None:
                     n.dump_leaves()
 
-    def split(self, size, depth):
+    def split(self, log2size, depth):
         if len(self.children) == 4: 
             raise ValueError("Already split.")
-        cb = [None] * 4
-        cb[0] = Cb(self.x, self.y, size, depth, self)
-        cb[1] = Cb(self.x+size, self.y, size, depth, self)
-        cb[2] = Cb(self.x, self.y+size, size, depth, self)
-        cb[3] = Cb(self.x+size, self.y+size, size, depth, self)
+        size = 1 << log2size
+        t = [None] * 4
+        t[0] = Tree(self.x, self.y, log2size, depth, self)
+        t[1] = Tree(self.x+size, self.y, log2size, depth, self)
+        t[2] = Tree(self.x, self.y+size, log2size, depth, self)
+        t[3] = Tree(self.x+size, self.y+size, log2size, depth, self)
         #if random.randint(0,1):
         #    not_exist_idx = random.randint(0,3)
         #    cb[not_exist_idx] = None
         for i in range(4):
-            self.add_child(cb[i])
+            self.add_child(t[i])
 
     def populate(self, max_depth):
-        if self.depth > max_depth: 
+        if self.depth >= max_depth: 
             return
         self.split_cu_flag = random.randint(0, 1)
         if self.split_cu_flag == 1:
-            self.split(self.size/2, self.depth + 1)
+            self.split(self.log2size - 1, self.depth + 1)
         for n in self.children:
             if n is not None:
                 n.populate(max_depth)
 
     def __str__(self):
         a = [[' ' for i in range(self.size)] for j in range(self.size)]
-        print "leaves = ", self.get_leaves()
         for n in self.get_leaves():
-            print "%dx%d(%d)" % (n.x, n.y, n.size)
             x0 = n.x - self.x
             y0 = n.y - self.y
             for i in range(x0, x0+n.size):
@@ -114,16 +117,39 @@ class Tree:
             s += "\n"
         return s
 
+    def draw(self, ax):
+        rect = patches.Rectangle((self.x, self.y), self.size, self.size, edgecolor='black', facecolor='white')
+        ax.add_patch(rect)
+        for node in self.children:
+            node.draw(ax)
+
 if __name__ == "__main__":
-    ctb = Tree(0, 0, 64)
-    ctb.populate(2)
+    ctb = Tree(0, 0, 6)
+    ctb.populate(3)
+
+    print ctb
     ctb.dump()
     ctb.dump_leaves()
+
+    fig = plt.figure(1)
+    ax = fig.add_subplot(111)
+    ax.set_xticks([0, 8, 16, 24, 32, 40, 48, 56, 64])
+    ax.set_yticks([0, 8, 16, 24, 32, 40, 48, 56, 64])
+    ax.xaxis.tick_top()
+    ax.invert_yaxis()
+    ax.set_xlim(0, 64)
+    ax.set_ylim(64, 0)
+
+    ctb.draw(ax)
+    plt.show()
+
+    exit()
+
     
     for i in ctb.traverse():
         print "%s%dx%d(%d)" % (' '*4*i.depth, i.x, i.y, i.size)
     
-    cb0 = Tree(0, 0, 32)
+    cb0 = Tree(0, 0, 5)
     assert cb0.contain(31, 31) == True
     assert cb0.contain(32, 32) == False
     assert cb0.contain(1,2) == True
