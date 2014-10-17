@@ -19,7 +19,7 @@ class Ctu(cu.Cu):
         self.x_ctb = self.x >> self.ctx.sps.ctb_log2_size_y
         self.y_ctb = self.y >> self.ctx.sps.ctb_log2_size_y
 
-        self.sao = sao.Sao(self.ctx, self.x_ctb, self.y_ctb)
+        self.sao = sao.Sao(self.ctx)
 
     def decode(self):
         log.main.info("======= Start decoding CTU at addr_rs = %d ======", self.addr_rs)

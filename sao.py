@@ -1,7 +1,8 @@
+import numpy as np
 import log
 
 class Sao:
-    def __init__(self, ctx, x, y):
+    def __init__(self, ctx):
         self.ctx = ctx
 
         self.cabac = self.ctx.cabac
@@ -18,8 +19,8 @@ class Sao:
         self.ctu = self.img.ctu
         self.ctus = self.img.ctus
 
-        rx = self.ctu.x
-        ry = self.ctu.y
+        rx = self.ctu.x_ctb
+        ry = self.ctu.y_ctb
 
         # Decode sao_merge_left_flag
         if rx > 0:
@@ -39,10 +40,13 @@ class Sao:
         else:
             self.sao_merge_up_flag = 0
         
-        self.sao_type_idx = [0] * 3
-        self.sao_offset_abs = [[0] * 4] * 3
-        self.sao_offset_sign = [[0] * 4] * 3
-        self.sao_band_position= [0] * 3
+        self.sao_type_idx = np.zeros(3, int) #[0] * 3
+        self.sao_offset_abs = np.zeros((3, 4), int) #[[0] * 4] * 3
+        self.sao_offset_sign = np.zeros((3, 4), int) #[[0] * 4] * 3
+        self.sao_band_position = np.zeros(3, int) #[0] * 3
+        self.sao_eo_class = np.zeros(3, int) #[0] * 3
+
+        #TODO: check default value assignments
         if (not self.sao_merge_up_flag) and (not self.sao_merge_left_flag):
             for c_idx in range(3):
                 if (self.slice_hdr.slice_sao_luma_flag and c_idx == 0) or (self.slice_hdr.slice_sao_chroma_flag and c_idx > 0):
@@ -66,33 +70,44 @@ class Sao:
                         else:
                             if c_idx == 0:
                                 self.sao_eo_class_luma = self.decode_sao_eo_class_luma()
+                                self.sao_eo_class[0] = self.sao_eo_class_luma
                             elif c_idx == 1:
                                 self.sao_eo_class_chroma = self.decode_sao_eo_class_chroma()
+                                self.sao_eo_class[1] = self.sao_eo_class_chroma
+                                self.sao_eo_class[2] = self.sao_eo_class_chroma
         else:
+            if self.sao_merge_left_flag:
+                left_addr = self.ctu.addr_rs - 1 #(rx - 1) + ry * self.ctx.sps.pic_width_in_ctbs_y
+                assert left_addr in self.ctx.img.ctus
+
+            if self.sao_merge_up_flag:
+                up_addr = self.ctu.addr_rs - self.pic_width_in_ctbs_y #rx + (ry - 1) * self.ctx.sps.pic_width_in_ctbs_y
+                assert up_addr in self.ctx.img.ctus
+
             # Set default value of sao_type_idx
             for c_idx in range(3):
                 if self.sao_merge_left_flag:
-                    self.sao_type_idx[c_idx] = self.ctus[rx - 1][ry].sao.sao_tpe_idx[c_idx]
+                    self.sao_type_idx[c_idx] = self.ctx.img.ctus[left_addr].sao.sao_type_idx[c_idx]
                 elif self.sao_merge_up_flag:
-                    self.sao_type_idx[c_idx] = self.ctus[rx][ry - 1].sao.sao_tpe_idx[c_idx]
+                    self.sao_type_idx[c_idx] = self.ctx.img.ctus[up_addr].sao.sao_type_idx[c_idx]
                 else:
                     self.sao_type_idx[c_idx] = 0
 
             # Set default value of sao_offset_abs
             for c_idx in range(3):
                 if self.sao_merge_left_flag:
-                    self.sao_offset_abs[c_idx] = self.ctus[rx - 1][ry].sao.sao_offset_abs[c_idx]
+                    self.sao_offset_abs[c_idx] = self.ctx.img.ctus[left_addr].sao.sao_offset_abs[c_idx]
                 elif self.sao_merge_up_flag:
-                    self.sao_offset_abs[c_idx] = self.ctus[rx][ry - 1].sao.sao_offset_abs[c_idx]
+                    self.sao_offset_abs[c_idx] = self.ctx.img.ctus[up_addr].sao.sao_offset_abs[c_idx]
                 else:
                     self.sao_offset_abs[c_idx] = [0] * 4
 
             # Set default value of sao_offset_sign
             for c_idx in range(3):
                 if self.sao_merge_left_flag:
-                    self.sao_offset_sign[c_idx] = self.ctus[rx - 1][ry].sao.sao_offset_sign[c_idx]
+                    self.sao_offset_sign[c_idx] = self.ctx.img.ctus[left_addr].sao.sao_offset_sign[c_idx]
                 elif self.sao_merge_up_flag:
-                    self.sao_offset_sign[c_idx] = self.ctus[rx][ry - 1].sao.sao_offset_sign[c_idx]
+                    self.sao_offset_sign[c_idx] = self.ctx.img.ctus[up_addr].sao.sao_offset_sign[c_idx]
                 elif self.sao_type_idx[c_idx] == 2:
                     for i in range(4):
                         if i == 0 or i == 1:
@@ -105,28 +120,28 @@ class Sao:
             # Set defualt value of sao_band_position
             for c_idx in range(3):
                 if self.sao_merge_left_flag:
-                    self.sao_band_position[c_idx] = self.ctus[rx - 1][ry].sao.sao_band_position[c_idx]
+                    self.sao_band_position[c_idx] = self.ctx.img.ctus[left_addr].sao.sao_band_position[c_idx]
                 elif self.sao_merge_up_flag:
-                    self.sao_band_position[c_idx] = self.ctus[rx][ry - 1].sao.sao_band_position[c_idx]
+                    self.sao_band_position[c_idx] = self.ctx.img.ctus[up_addr].sao.sao_band_position[c_idx]
                 else:
                     self.sao_band_position[c_idx] = 0
             
             # Set default value of sao_eo_class
             for c_idx in range(3):
                 if self.sao_merge_left_flag:
-                    self.sao_eo_class[c_idx] = self.ctus[rx - 1][ry].sao.sao_eo_class[c_idx]
+                    self.sao_eo_class[c_idx] = self.ctx.img.ctus[left_addr].sao.sao_eo_class[c_idx]
                 elif self.sao_merge_up_flag:
-                    self.sao_eo_class[c_idx] = self.ctus[rx][ry - 1].sao.sao_eo_class[c_idx]
+                    self.sao_eo_class[c_idx] = self.ctx.img.ctus[up_addr].sao.sao_eo_class[c_idx]
                 else:
                     self.sao_eo_class[c_idx] = 0
 
     def decode_sao_merge_left_flag(self):
-        bit = self.cabac.decode_decision("sao_merge_left_flag", 0)
+        bit = self.cabac.decode_decision("sao_merge_leftup_flag", 0)
         log.syntax.info("sao_merge_left_flag = %d" % bit)
         return bit
 
     def decode_sao_merge_up_flag(self):
-        bit = self.cabac.decode_decision("sao_merge_up_flag", 0)
+        bit = self.cabac.decode_decision("sao_merge_leftup_flag", 0)
         log.syntax.info("sao_merge_up_flag = %d" % bit)
         return bit
 
