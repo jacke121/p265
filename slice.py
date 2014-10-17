@@ -35,8 +35,6 @@ class SliceSegmentHeader:
         log.main.info("============= Slice Header =============")
 
         self.first_slice_segment_in_pic_flag = bs.u(1, "first_slice_segment_in_pic_flag")
-        if self.first_slice_segment_in_pic_flag:
-            self.ctx.img.ctu = ctu.Ctu(self.ctx, addr_rs=0) # The first CTB in the picture is created with ctb_addr_rs = 0
 
         if self.ctx.naluh.nal_unit_type >= self.ctx.naluh.BLA_W_LP and self.ctx.naluh.nal_unit_type <= self.ctx.naluh.RSV_IRAP_VCL23:
             self.no_output_of_prior_pics_flag = bs.u(1, "no_output_of_prior_pics_flag")
@@ -213,6 +211,9 @@ class SliceSegmentData:
     def decode(self):
         bs = self.bs
 
+        if self.ctx.img.slice_hdrs[-1].first_slice_segment_in_pic_flag:
+            self.ctx.img.ctu = ctu.Ctu(self.ctx, addr_rs=0) # The first CTB in the picture is created with ctb_addr_rs = 0
+
         log.main.info("============= Slice Segment Data =============")
 
         if not self.ctx.img.slice_hdrs[-1].dependent_slice_segment_flag:
@@ -229,23 +230,26 @@ class SliceSegmentData:
 
         while True:
             self.ctx.img.ctu.decode()
-            raise "The first CTU is parsed!"
 
-            self.decode_end_of_slice_segment_flag()
+            self.end_of_slice_segment_flag = self.decode_end_of_slice_segment_flag()
             self.ctx.img.next_ctu() # Switching to next CTB
             
             switching_tile_flag = self.ctx.pps.tiles_enabled_flag and (self.ctx.pps.tile_id[self.ctx.img.ctu.addr_ts] != self.ctx.pps.tile_id[self.ctx.img.ctu.addr_ts - 1])
-            if (not self.end_of_slice_segment_flag) and (switching_tile_flag or (self.ctx.pps.entropy_coding_sync_enabled_flag and (self.ctx.img.ctu.addr_ts % self.ctx.sps.pic_width_in_ctbs_y))):
+            if (not self.end_of_slice_segment_flag) and \
+                    (switching_tile_flag or (self.ctx.pps.entropy_coding_sync_enabled_flag and (self.ctx.img.ctu.addr_ts % self.ctx.sps.pic_width_in_ctbs_y))):
                 self.decode_end_of_sub_stream_one_bit()
                 self.ctx.bs.byte_alignment()
-            else:
-                break
+
+            if self.end_of_slice_segment_flag:
+                break # End of slice segment decoding
 
     def decode_end_of_slice_segment_flag(self):
-        pass
+        bit = self.ctx.cabac.decode_terminate()
+        log.syntax.info("end_of_slice_segment_flag = %d" % bit)
+        return bit
 
     def decode_end_of_sub_stream_one_bit(self):
-        pass
+        raise
 
 class SliceSegment:
     def __init__(self, ctx):

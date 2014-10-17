@@ -14,6 +14,7 @@ class Ctu(cu.Cu):
         self.sps = self.ctx.sps
         self.pps = self.ctx.pps
         self.addr_rs = addr_rs
+        self.addr_ts = self.ctx.pps.ctb_addr_rs2ts[self.addr_rs]
 
         self.x_ctb = self.x >> self.ctx.sps.ctb_log2_size_y
         self.y_ctb = self.y >> self.ctx.sps.ctb_log2_size_y
