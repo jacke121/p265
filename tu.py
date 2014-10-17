@@ -169,7 +169,7 @@ class Tu(tree.Tree):
                 if sisters[0].cbf_cb:
                     self.decode_residual_coding(sisters[0].x, sisters[0].y, self.log2size, 1)
                 if sisters[0].cbf_cr:
-                    self.decode_redidual_coding(sisters[0].x, sisters[0].y, self.log2size, 2)
+                    self.decode_residual_coding(sisters[0].x, sisters[0].y, self.log2size, 2)
 
     def decode_last_sig_coeff_x_suffix(self, c_idx):
         return self.decode_last_sig_coeff_xy_suffix("last_sig_coeff_x_suffix", self.last_sig_coeff_x_prefix[c_idx])
@@ -348,6 +348,8 @@ class Tu(tree.Tree):
                     # For the subblocks after the last significant subblock, their coefficients are all zero
                     self.coded_sub_block_flag[c_idx][xs][ys] = 0
                 infer_sb_dc_sig_coeff_flag = 0
+            
+            log.main.debug("c_idx = %d, log2size = %d" % (c_idx, log2size))
 
             # Loop each node of subblock i, if it is the last significant block, loop starts from the last significant coefficient
             for n in reversed(range(((last_scan_pos - 1) if (i == last_sub_block) else 15) + 1)):
