@@ -78,7 +78,7 @@ class Image:
         else:
             assert ctb_addr_rs_neighbor in self.ctus
             in_different_tiles_flag = self.ctx.pps.tile_id_rs[ctb_addr_rs_current] != self.ctx.pps.tile_id_rs[ctb_addr_rs_neighbor]
-            in_different_slices_flag = self.ctu.slice_addr != self.ctx.img.ctbs[ctb_addr_rs_neighbor].slice_addr
+            in_different_slices_flag = self.ctu.slice_addr != self.ctx.img.ctus[ctb_addr_rs_neighbor].slice_addr
 
         if min_block_addr_neighbor > min_block_addr_current:
             return False
