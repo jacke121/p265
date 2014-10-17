@@ -293,12 +293,14 @@ class Cabac:
         return bin_val
 
     def decode_terminate(self):
+        log.syntax.info("enter decode_terminate: ivl_curr_range = %d, ivl_offset = %d" % (self.ivl_curr_range, self.ivl_offset))
         self.ivl_curr_range -= 2
         if self.ivl_offset >= self.ivl_curr_range:
             bin_val = 1
         else:
             bin_val = 0
-            self.renomalization_process()
+            self.renormalization_process()
 
+        log.syntax.info("exit  decode_terminate: ivl_curr_range = %d, ivl_offset = %d, bin = %d" % (self.ivl_curr_range, self.ivl_offset, bin_val))
         return bin_val
     
