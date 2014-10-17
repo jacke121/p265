@@ -267,7 +267,7 @@ class Tu(tree.Tree):
         
         if self.cu.pred_mode == self.cu.MODE_INTRA and (log2size == 2 or (log2size == 3 and c_idx == 0)):
             if c_idx == 0:
-                pred_mode_intra = self.cu.intra_pred_mode_y[self.cu.y][self.cu.x]
+                pred_mode_intra = self.cu.intra_pred_mode_y[x0][y0] #[self.cu.y][self.cu.x]
             else:
                 pred_mode_intra = self.cu.intra_pred_mode_c
 
