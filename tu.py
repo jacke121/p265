@@ -2,7 +2,7 @@ import numpy
 import tree
 import scan
 import log
-import pdb
+#import pdb
 
 class Tu(tree.Tree):
     def __init__(self, x, y, log2size, depth=0, parent=None):
@@ -11,8 +11,8 @@ class Tu(tree.Tree):
     def decode(self):
         log.syntax.info("++++++ Start decoding TU: (x, y) = (%d, %d), size = %d, depth = %d", self.x, self.y, self.size, self.depth)
 
-        if self.x==184 and self.y==48 and self.size==4 and self.depth==2:
-            pdb.set_trace()
+        #if self.x==184 and self.y==48 and self.size==4 and self.depth==2:
+        #    pdb.set_trace()
 
         if self.ctx.sps.max_transform_hierarchy_depth_inter == 0 and \
                 self.cu.pred_mode == self.MODE_INTER and \
