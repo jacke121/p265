@@ -81,7 +81,7 @@ class Sao:
                 assert left_addr in self.ctx.img.ctus
 
             if self.sao_merge_up_flag:
-                up_addr = self.ctu.addr_rs - self.pic_width_in_ctbs_y #rx + (ry - 1) * self.ctx.sps.pic_width_in_ctbs_y
+                up_addr = self.ctu.addr_rs - self.ctx.sps.pic_width_in_ctbs_y #rx + (ry - 1) * self.ctx.sps.pic_width_in_ctbs_y
                 assert up_addr in self.ctx.img.ctus
 
             # Set default value of sao_type_idx
