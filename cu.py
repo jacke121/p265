@@ -349,7 +349,8 @@ class Cu(tree.Tree):
                 self.add_child(sub_cu[i])
 
             for child in self.children:
-                child.decode()
+                if child.within_boundary_flag:
+                    child.decode()
         else:
             self.decode_leaf()
 

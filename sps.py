@@ -144,12 +144,14 @@ class Sps:
 
         self.min_cb_size_y = 1 << self.min_cb_log2_size_y
         self.ctb_size_y = 1 << self.ctb_log2_size_y
-
+        
+        assert self.pic_width_in_luma_samples % self.min_cb_size_y == 0
         self.pic_width_in_min_cbs_y = self.pic_width_in_luma_samples / self.min_cb_size_y
-        self.pic_width_in_ctbs_y = self.pic_width_in_luma_samples / self.ctb_size_y
+        self.pic_width_in_ctbs_y = int(math.ceil(float(self.pic_width_in_luma_samples) / self.ctb_size_y))
 
+        assert self.pic_height_in_luma_samples % self.min_cb_size_y == 0
         self.pic_height_in_min_cbs_y = self.pic_height_in_luma_samples / self.min_cb_size_y
-        self.pic_height_in_ctbs_y = self.pic_height_in_luma_samples / self.ctb_size_y
+        self.pic_height_in_ctbs_y = int(math.ceil(float(self.pic_height_in_luma_samples) / self.ctb_size_y))
 
         self.pic_size_in_min_cbs_y = self.pic_width_in_min_cbs_y * self.pic_height_in_min_cbs_y
         self.pic_size_in_ctbs_y = self.pic_width_in_ctbs_y * self.pic_height_in_ctbs_y
