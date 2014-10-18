@@ -24,7 +24,7 @@ class Sps:
     def parse(self):
         bs = self.ctx.bs
 
-        log.main.info("============= Sequence Parameter Set =============")
+        log.main.info("++++++ Start decoding SPS ++++++")
 
         self.sps_video_parameter_set_id = bs.u(4, "sps_video_parameter_set_id")
         self.activate_vps() # Activate VPS

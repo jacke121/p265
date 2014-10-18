@@ -16,7 +16,7 @@ class Pps:
     def parse(self):
         bs = self.ctx.bs
 
-        log.main.info("============= Picture Parameter Set =============")
+        log.main.info("++++++ Start decoding PPS ++++++")
 
         self.pps_pic_parameter_set_id = bs.ue("pps_pic_parameter_set_id")
         self.pps_seq_parameter_set_id = bs.ue("pps_seq_parameter_set_id")

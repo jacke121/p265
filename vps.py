@@ -9,7 +9,7 @@ class Vps:
     def parse(self):
         bs = self.ctx.bs
 
-        log.main.info("============= Video Parameter Set =============")
+        log.main.info("++++++ Start decoding VPS ++++++")
 
         self.vps_video_parameter_set_id = bs.u(4, "vps_video_parameter_set_id")
 
