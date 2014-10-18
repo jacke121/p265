@@ -241,6 +241,7 @@ class SliceSegmentData:
                 self.ctx.bs.byte_alignment()
 
             if self.end_of_slice_segment_flag:
+                raise
                 break # End of slice segment decoding
 
     def decode_end_of_slice_segment_flag(self):
