@@ -202,9 +202,6 @@ class Cabac:
         if not (self.context_models[ctx_table][ctx_idx].p_state_idx <= 62):
             raise "Unexpected probability state."
 
-        if ctx_table == "split_cu_flag":
-            log.syntax.info("%s: ctx_idx = %d, p_state_idx = %d, val_mps = %d, qp = %d" % (ctx_table, ctx_idx, p_state_idx, val_mps, slice_header.slice_qp_y))
-
             #if slice_header.slice_type == slice_header.I_SLICE:
             #    self.init_type = 0
             #elif slice_header.slice_type == slice_header.P_SLICE:
