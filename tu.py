@@ -2,12 +2,18 @@ import numpy
 import tree
 import scan
 import log
+import pdb
 
 class Tu(tree.Tree):
     def __init__(self, x, y, log2size, depth=0, parent=None):
         tree.Tree.__init__(self, x, y, log2size, depth, parent)
 
     def decode(self):
+        log.syntax.info("++++++ Start decoding TU: (x, y) = (%d, %d), size = %d, depth = %d", self.x, self.y, self.size, self.depth)
+
+        if self.x==184 and self.y==48 and self.size==4 and self.depth==2:
+            pdb.set_trace()
+
         if self.ctx.sps.max_transform_hierarchy_depth_inter == 0 and \
                 self.cu.pred_mode == self.MODE_INTER and \
                 self.cu.part_mode != InterPartMode.PART_2Nx2N and \
@@ -243,6 +249,8 @@ class Tu(tree.Tree):
         return bit
 
     def decode_residual_coding(self, x0, y0, log2size, c_idx):
+        log.syntax.info("++++++ Start decoding residual: c_idx = %d", c_idx)
+
         if self.ctx.pps.transform_skip_enabled_flag and (not self.cu.cu_transquant_bypass_flag) and (log2size==2):
             self.transform_skip_flag[c_idx] = self.decode_transform_skip_flag(c_idx)
 
@@ -267,9 +275,11 @@ class Tu(tree.Tree):
         
         if self.cu.pred_mode == self.cu.MODE_INTRA and (log2size == 2 or (log2size == 3 and c_idx == 0)):
             if c_idx == 0:
-                pred_mode_intra = self.cu.intra_pred_mode_y[x0][y0] #[self.cu.y][self.cu.x]
+                pred_mode_intra = self.cu.get_intra_pred_mode_y(x0, y0) #[self.cu.y][self.cu.x]
             else:
                 pred_mode_intra = self.cu.intra_pred_mode_c
+
+            assert pred_mode_intra in range(0, 34 + 1)
 
             if pred_mode_intra in range(6, 14 + 1):
                 scan_idx = 2

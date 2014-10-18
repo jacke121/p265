@@ -32,8 +32,6 @@ class Cu(tree.Tree):
     def decode_leaf(self):
         assert self.is_leaf() == True
 
-        log.main.info("====== Start decoding CU at (x,y) = (%d, %d), size = %d ======" % (self.x, self.y, self.size))
-
         if self.ctx.pps.transquant_bypass_enabled_flag:
             self.cu_transquant_bypass_flag = self.decode_cu_transquant_bypass_flag()
         else:
@@ -211,6 +209,16 @@ class Cu(tree.Tree):
 
         assert self.intra_pred_mode_c in range(0, 34 + 1)
     
+    def get_intra_pred_mode_y(self, x, y):
+        assert self.is_leaf() == True
+        assert self.contain(x, y) == True
+
+        x = (x / self.intra_pb_size) * self.intra_pb_size
+        y = (y / self.intra_pb_size) * self.intra_pb_size
+
+        assert self.intra_pred_mode_y[x][y] in range(0, 34 + 1)
+        return self.intra_pred_mode_y[x][y]
+
     def decode_prev_intra_luma_pred_flag(self, y0, x0):
         ctx_inc = 0
 
@@ -295,7 +303,9 @@ class Cu(tree.Tree):
             self.decode_prediction_unit(self.x, self.y+self.size/2, self.size/2, self.size/2)
             self.decode_prediction_unit(self.x+self.size/2, self.y+self.size/2, self.size/2, self.size/2)
 
-    def decode_coding_quadtree(self):
+    def decode(self):
+        log.syntax.info("++++++ Start decoding CU: (x, y) = (%d, %d), size = %d, depth = %d", self.x, self.y, self.size, self.depth)
+
         right_boundary_within_pic_flag = (self.x + (1 << self.log2size)) <= self.ctx.sps.pic_width_in_luma_samples
         bottom_boundary_within_pic_flag = (self.y + (1 << self.log2size)) <= self.ctx.sps.pic_height_in_luma_samples
         minimum_cb_flag = self.log2size <= self.ctx.sps.min_cb_log2_size_y
@@ -339,7 +349,7 @@ class Cu(tree.Tree):
                 self.add_child(sub_cu[i])
 
             for child in self.children:
-                child.decode_coding_quadtree()
+                child.decode()
         else:
             self.decode_leaf()
 
