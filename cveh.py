@@ -1,8 +1,8 @@
 #!/usr/bin/python -B
 
-import p265.nalu as nalu
-import p265.context as context
-import p265.log as log
+import cveh.nalu as nalu
+import cveh.context as context
+import cveh.log as log
 
 class P265:
     def __init__(self, bs_file= "str.bin"):
