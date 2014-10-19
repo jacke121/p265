@@ -29,7 +29,7 @@ class Ctu(cu.Cu):
         
         cu.Cu.decode(self)
 
-        print(self)
+        #print(self)
 
 if __name__ == "__main__":
     class Sps:
