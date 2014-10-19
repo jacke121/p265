@@ -239,7 +239,7 @@ class Cabac:
 
     def decode_decision(self, ctx_table, ctx_idx):
         ctx_model = self.context_models[ctx_table][ctx_idx]
-        log.syntax.info("enter decode_decision: p_state_idx = %d, val_mps = %d, ivl_curr_range = %d, ivl_offset = %d" % (ctx_model.p_state_idx, ctx_model.val_mps, self.ivl_curr_range, self.ivl_offset))
+        log.cabac.info("enter decode_decision: p_state_idx = %d, val_mps = %d, ivl_curr_range = %d, ivl_offset = %d" % (ctx_model.p_state_idx, ctx_model.val_mps, self.ivl_curr_range, self.ivl_offset))
 
         q_range_idx = (self.ivl_curr_range >> 6) & 3
         ivl_lps_range = self.tables.lps_range_table[ctx_model.p_state_idx][q_range_idx]
@@ -255,7 +255,7 @@ class Cabac:
         self.state_transition_process(ctx_table, ctx_idx, bin_val)
         self.renormalization_process()
 
-        log.syntax.info("exit  decode_decision: p_state_idx = %d, val_mps = %d, ivl_curr_range = %d, ivl_offset = %d, bin = %d" % (ctx_model.p_state_idx, ctx_model.val_mps, self.ivl_curr_range, self.ivl_offset, bin_val))
+        log.cabac.info("exit  decode_decision: p_state_idx = %d, val_mps = %d, ivl_curr_range = %d, ivl_offset = %d, bin = %d" % (ctx_model.p_state_idx, ctx_model.val_mps, self.ivl_curr_range, self.ivl_offset, bin_val))
         return bin_val
 
     def state_transition_process(self, ctx_table, ctx_idx, bin_val):
@@ -273,7 +273,7 @@ class Cabac:
             self.ivl_offset |= self.bs.read_bits(1)
 
     def decode_bypass(self):
-        log.syntax.info("enter decode_bypass: ivl_curr_range = %d, ivl_offset = %d" % (self.ivl_curr_range, self.ivl_offset))
+        log.cabac.info("enter decode_bypass: ivl_curr_range = %d, ivl_offset = %d" % (self.ivl_curr_range, self.ivl_offset))
         self.ivl_offset <<= 1
         self.ivl_offset |= self.bs.read_bits(1)
 
@@ -286,11 +286,11 @@ class Cabac:
         if self.ivl_offset >= self.ivl_curr_range:
             raise "Unexpected interval offset."
 
-        log.syntax.info("exit  decode_bypass: ivl_curr_range = %d, ivl_offset = %d, bin = %d" % (self.ivl_curr_range, self.ivl_offset, bin_val))
+        log.cabac.info("exit  decode_bypass: ivl_curr_range = %d, ivl_offset = %d, bin = %d" % (self.ivl_curr_range, self.ivl_offset, bin_val))
         return bin_val
 
     def decode_terminate(self):
-        log.syntax.info("enter decode_terminate: ivl_curr_range = %d, ivl_offset = %d" % (self.ivl_curr_range, self.ivl_offset))
+        log.cabac.info("enter decode_terminate: ivl_curr_range = %d, ivl_offset = %d" % (self.ivl_curr_range, self.ivl_offset))
         self.ivl_curr_range -= 2
         if self.ivl_offset >= self.ivl_curr_range:
             bin_val = 1
@@ -298,6 +298,6 @@ class Cabac:
             bin_val = 0
             self.renormalization_process()
 
-        log.syntax.info("exit  decode_terminate: ivl_curr_range = %d, ivl_offset = %d, bin = %d" % (self.ivl_curr_range, self.ivl_offset, bin_val))
+        log.cabac.info("exit  decode_terminate: ivl_curr_range = %d, ivl_offset = %d, bin = %d" % (self.ivl_curr_range, self.ivl_offset, bin_val))
         return bin_val
     

@@ -9,7 +9,7 @@ class Tu(tree.Tree):
         tree.Tree.__init__(self, x, y, log2size, depth, parent)
 
     def decode(self):
-        log.syntax.info("++++++ Start decoding TU: (x, y) = (%d, %d), size = %d, depth = %d", self.x, self.y, self.size, self.depth)
+        log.location.info("Start decoding TU: (x, y) = (%d, %d), size = %d, depth = %d", self.x, self.y, self.size, self.depth)
 
         #if self.x==184 and self.y==48 and self.size==4 and self.depth==2:
         #    pdb.set_trace()
@@ -138,8 +138,6 @@ class Tu(tree.Tree):
     def decode_leaf(self):
         assert self.is_leaf() == True
 
-        log.main.debug("tu.decode_leaf: (x, y) = (%d, %d), log2size = %d", self.x, self.y, self.log2size)
-
         if self.cbf_luma or self.cbf_cb or self.cbf_cr:
             if self.ctx.pps.cu_qp_delta_enabled_flag and not self.cu.is_cu_qp_delta_coded:
                 self.cu_qp_delta_abs = self.decode_cu_qp_delta_abs()
@@ -249,7 +247,7 @@ class Tu(tree.Tree):
         return bit
 
     def decode_residual_coding(self, x0, y0, log2size, c_idx):
-        log.syntax.info("++++++ Start decoding residual: c_idx = %d", c_idx)
+        log.location.info("Start decoding residual: c_idx = %d", c_idx)
 
         if self.ctx.pps.transform_skip_enabled_flag and (not self.cu.cu_transquant_bypass_flag) and (log2size==2):
             self.transform_skip_flag[c_idx] = self.decode_transform_skip_flag(c_idx)
@@ -359,8 +357,6 @@ class Tu(tree.Tree):
                     self.coded_sub_block_flag[c_idx][xs][ys] = 0
                 infer_sb_dc_sig_coeff_flag = 0
             
-            log.main.debug("c_idx = %d, log2size = %d" % (c_idx, log2size))
-
             # Loop each node of subblock i, if it is the last significant block, loop starts from the last significant coefficient
             for n in reversed(range(((last_scan_pos - 1) if (i == last_sub_block) else 15) + 1)):
                 xc = (xs << 2) + scan_order_4x4[n][0]

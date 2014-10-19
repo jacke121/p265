@@ -98,7 +98,7 @@ class Nalu:
         return naluh
 
     def decode_slice_seg(self):
-        self.slice_seg.decode()
+        return self.slice_seg.decode()
 
     def decode_vps(self):
         v = vps.Vps(self.ctx)

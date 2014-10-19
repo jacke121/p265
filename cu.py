@@ -304,7 +304,7 @@ class Cu(tree.Tree):
             self.decode_prediction_unit(self.x+self.size/2, self.y+self.size/2, self.size/2, self.size/2)
 
     def decode(self):
-        log.syntax.info("++++++ Start decoding CU: (x, y) = (%d, %d), size = %d, depth = %d", self.x, self.y, self.size, self.depth)
+        log.location.info("Start decoding CU: (x, y) = (%d, %d), size = %d, depth = %d", self.x, self.y, self.size, self.depth)
 
         right_boundary_within_pic_flag = (self.x + (1 << self.log2size)) <= self.ctx.sps.pic_width_in_luma_samples
         bottom_boundary_within_pic_flag = (self.y + (1 << self.log2size)) <= self.ctx.sps.pic_height_in_luma_samples
