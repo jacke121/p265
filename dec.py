@@ -1,5 +1,3 @@
-#!/usr/bin/python -B
-
 import decoder.nalu as nalu
 import decoder.context as context
 import decoder.log as log
@@ -77,7 +75,3 @@ class Decoder:
                 log.main.error("Reserved NALU type -- RSV_UNSPEC48~RSV_UNSPEC49.")
             else:
                 log.main.error("NALU type should be within 0~63, but got %d." % nalu_type)
-
-if __name__ == "__main__":
-    d = Decoder("str.bin")
-    d.decode()
