@@ -9,10 +9,11 @@ class Image:
         self.ctu = None
         self.ctus = {}
     
-    def next_ctu(self):
+    def next_ctu(self, end_of_slice_segment_flag):
         assert self.ctu.addr_rs not in self.ctus
         self.ctus[self.ctu.addr_rs] = self.ctu # Save the previously decoded CTU
-        self.ctu = ctu.Ctu(self.ctx, self.ctx.pps.ctb_addr_ts2rs[self.ctu.addr_ts + 1]) # Create a new CTU instance
+        if not end_of_slice_segment_flag:
+            self.ctu = ctu.Ctu(self.ctx, self.ctx.pps.ctb_addr_ts2rs[self.ctu.addr_ts + 1]) # Create a new CTU instance
 
     def get_ctb_addr_rs_from_luma_pixel_coordinates(self, x, y):
         assert x >= 0 and y >= 0

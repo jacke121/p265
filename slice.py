@@ -230,9 +230,8 @@ class SliceSegmentData:
 
         while True:
             self.ctx.img.ctu.decode()
-
             self.end_of_slice_segment_flag = self.decode_end_of_slice_segment_flag()
-            self.ctx.img.next_ctu() # Switching to next CTB
+            self.ctx.img.next_ctu(self.end_of_slice_segment_flag) # Switching to next CTB in the current slice segment
             
             switching_tile_flag = self.ctx.pps.tiles_enabled_flag and (self.ctx.pps.tile_id[self.ctx.img.ctu.addr_ts] != self.ctx.pps.tile_id[self.ctx.img.ctu.addr_ts - 1])
             if (not self.end_of_slice_segment_flag) and \
@@ -241,8 +240,12 @@ class SliceSegmentData:
                 self.ctx.bs.byte_alignment()
 
             if self.end_of_slice_segment_flag:
-                raise
-                break # End of slice segment decoding
+                if self.ctx.img.ctu.addr_rs == (self.ctx.sps.pic_size_in_ctbs_y - 1):
+                    raise ValueError("Congratulations! The end of slice segment!")
+                    self.end_of_picture_flag = 1
+                else:
+                    self.end_of_picture_flag = 0
+                return self.end_of_picture_flag
 
     def decode_end_of_slice_segment_flag(self):
         bit = self.ctx.cabac.decode_terminate()
