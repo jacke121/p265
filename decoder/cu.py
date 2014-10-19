@@ -141,7 +141,6 @@ class Cu(tree.Tree):
                 available_a = self.ctx.img.check_availability(x_pb, y_pb, x_neighbor_a, y_neighbor_a)
                 available_b = self.ctx.img.check_availability(x_pb, y_pb, x_neighbor_b, y_neighbor_b)
                 
-                print "debug ", self.intra_pred_mode_y
                 if available_a == False:
                     cand_intra_pred_mode_a = 1
                 elif self.ctx.img.get("pred_mode", x_neighbor_a, y_neighbor_a) != self.MODE_INTRA or self.ctx.img.get("pcm_flag", x_neighbor_a, y_neighbor_a) == 1:
