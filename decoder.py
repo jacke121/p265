@@ -9,6 +9,10 @@ class Decoder:
         self.ctx = context.Context(bs_file)
         self.nalu = nalu.Nalu(self.ctx)
         self.frame_cnt = 0
+        log.main.disabled = True
+        log.syntax.disabled = True
+        log.cabac.disabled = True
+        log.location.disabled = True
 
     def decode(self):
         while True:
@@ -36,8 +40,12 @@ class Decoder:
                     nalu_type == nalu.NaluHeader.CRA_NUT:
                 end_of_picture_flag = self.nalu.decode_slice_seg()
                 if end_of_picture_flag:
+                    log.main.disabled = False
+                    log.syntax.disabled = False
+                    log.cabac.disabled = False
+                    log.location.disabled = False
                     log.location.info("Frame %d decoded" % self.frame_cnt)
-                    raise ValueError("Congratulations! The first frame decoded!")
+                    #raise ValueError("Congratulations! The first frame decoded!")
                     self.frame_cnt += 1
             elif nalu_type == nalu.NaluHeader.VPS_NUT:
                 self.nalu.decode_vps()
