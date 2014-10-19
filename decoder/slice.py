@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import math
 import copy
 import nalu
+import image
 import st_rps
 import cabac
 import ctu
@@ -53,6 +54,7 @@ class SliceSegmentHeader:
         else:
             self.dependent_slice_segment_flag = 0
             self.slice_segment_address = 0
+            self.ctx.img = image.Image(self.ctx) # Allocate image container
 
         if not self.dependent_slice_segment_flag:
             self.slice_reserved_flag = [0] * self.pps.num_extra_slice_header_bits
@@ -278,6 +280,11 @@ class SliceSegmentData:
                     self.end_of_picture_flag = 1
                 else:
                     self.end_of_picture_flag = 0
+
+                if self.end_of_picture_flag:
+                    self.ctx.dpb.images.append(copy.deepcopy(self.ctx.img))
+                    self.ctx.img = image.Image(self.ctx)
+
                 return self.end_of_picture_flag
 
     def decode_end_of_slice_segment_flag(self):

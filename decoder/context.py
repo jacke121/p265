@@ -11,7 +11,7 @@ class Context:
     def __init__(self, bs_file = "str.bin"):
         self.bs = bsb.BitStreamBuffer(bs_file)
 
-        self.img = image.Image(self) # The current image being decoded
+        self.img = None #image.Image(self) # The current image being decoded
         self.dpb = dpb.Dpb() # Decoded picture buffer
 
         self.vps_list = [None] * MAX_VPS_COUNT
