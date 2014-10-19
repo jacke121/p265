@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import math
 import copy
+import nalu
 import st_rps
 import cabac
 import ctu
@@ -70,61 +71,50 @@ class SliceSegmentHeader:
                 self.colour_plane_id = bs.u(2, "colour_plane_id")
                 assert self.colour_plane_id in [0, 1, 2]
 
-            if self.ctx.naluh.nal_unit_type != self.ctx.naluh.IDR_W_RADL and self.ctx.naluh.nal_unit_type != self.ctx.naluh.IDR_N_LP:
+            if self.ctx.naluh.nal_unit_type != nalu.NaluHeader.IDR_W_RADL and self.ctx.naluh.nal_unit_type != nalu.NaluHeader.IDR_N_LP:
                 self.slice_pic_order_cnt_lsb = bs.u(self.sps.log2_max_pic_order_cnt_lsb_minus4 + 4, "slice_pic_order_cnt_lsb")
 
                 self.short_term_ref_pic_set_sps_flag = bs.u(1, "short_term_ref_pic_set_sps_flag")
-                self.short_term_ref_pic_set_idx = 0
                 if not self.short_term_ref_pic_set_sps_flag:
+                    # if short term reference picture set is not presented in SPS, there will be one in slice header
                     self.short_term_ref_pic_set.decode(self.sps.num_short_term_ref_pic_sets)
-                elif self.sps.num_short_term_ref_pic_sets > 1:
-                    self.short_term_ref_pic_set_idx = bs.u(math.ceil(math.log(self.sps.num_short_term_ref_pic_sets, 2)), "short_term_ref_pic_set_idx")
+                else:
+                    # will use the short term reference picture set in SPS
+                    if self.sps.num_short_term_ref_pic_sets > 1:
+                        # if there are multiple short term reference picture set, this syntax element will say which one should be used
+                        self.short_term_ref_pic_set_idx = bs.u(int(math.ceil(math.log(self.sps.num_short_term_ref_pic_sets, 2))), "short_term_ref_pic_set_idx")
+                    else:
+                        self.short_term_ref_pic_set_idx = 0
+                    assert self.short_term_ref_pic_set_idx in range(0, self.sps.num_short_term_ref_pic_sets)
 
                 if self.short_term_ref_pic_set_sps_flag:
                     self.curr_rps_idx = self.short_term_ref_pic_set_idx
                 else:
+                    # The short term reference picture set in slice header is appended after the last one in SPS
                     self.curr_rps_idx = self.sps.num_short_term_ref_pic_sets
 
-                st_rps = [0] * (self.sps.num_short_term_ref_pic_sets + 1)
+                # This array contains all the short term reference picture sets
+                st_rps = []
                 for i in range(self.sps.num_short_term_ref_pic_sets):
                     st_rps.append(self.sps.short_term_ref_pic_set[i])
-                st_rps.append(self.short_term_ref_pic_set)
+                st_rps.append(self.short_term_ref_pic_set) # The last one is from slice header
 
                 self.num_poc_total_curr = 0
                 for i in range(st_rps[self.curr_rps_idx].num_negative_pics):
                     if st_rps[self.curr_rps_idx].used_by_curr_pic_s0[i]:
                         self.num_poc_total_curr += 1
-                for i in range(st_rps[self.curr_rps_idx].num_postive_pics):
+                for i in range(st_rps[self.curr_rps_idx].num_positive_pics):
                     if st_rps[self.curr_rps_idx].used_by_curr_pic_s1[i]:
                         self.num_poc_total_curr += 1
-
-                if self.sps.long_term_ref_pics_present_flag:
-                    if self.sps.num_long_term_ref_pic_sps > 0:
-                        self.num_long_term_sps = bs.ue("num_long_term_sps")
-                    self.num_long_term_pics = bs.ue("num_long_term_pics")
-
-                    self.lt_idx_sps = [0] * (self.sps.num_long_term_sps + self.sps.num_long_term_pics)
-                    self.poc_lsb_lt = [0] * (self.sps.num_long_term_sps + self.sps.num_long_term_pics)
-                    self.used_by_curr_pic_lt_flag = [0] * (self.sps.num_long_term_sps + self.sps.num_long_term_pics)
-                    self.delta_poc_msb_present_flag = [0] * (self.sps.num_long_term_sps + self.sps.num_long_term_pics)
-                    self.delta_poc_msb_cycle_lt = [0] * (self.sps.num_long_term_sps + self.sps.num_long_term_pics)
-                    for i in range(self.sps.num_long_term_sps + self.sps.num_long_term_pics):
-                        if i < self.num_long_term_sps:
-                            if self.sps.num_long_term_ref_pics_sps > 1:
-                                self.lt_idx_sps[i] = bs.u(math.ceil(math.log(self.sps.num_long_term_ref_pics_sps, 2)), "lt_idx_sps[%d]" % i)
-                        else:
-                            self.poc_lsb_lt[i] = bs.u(self.sps.log2_max_pic_order_cnt_lsb_minus4+4, "poc_lsb_lt[%d]" % i)
-                            self.used_by_curr_pic_lt_flag[i] = bs.u(1, "used_by_curr_pic_lt_flag[%d]" % i)
-                        self.delta_poc_msb_present_flag[i] = bs.u(1, "delta_poc_msb_present_flag[%d]" % i)
-                        if self.delta_poc_msb_present_flag[i]:
-                            self.delta_poc_msb_cycle_lt[i] = bs.ue("delta_poc_msb_cycle_lt[%d]" % i)
+                
+                self.decode_long_term_ref_pics_syntax_elements()
 
                 for i in range(self.num_long_term_sps + self.num_long_term_pics):
                     if self.used_by_curr_pic_lt_flag[i]:
                         self.num_poc_total_curr += 1
 
                 if self.sps.sps_temporal_mvp_enabled_flag:
-                    slef.slice_temporal_mvp_enabled_flag = bs.u(1, "slice_temporal_mvp_enabled_flag")
+                    self.slice_temporal_mvp_enabled_flag = bs.u(1, "slice_temporal_mvp_enabled_flag")
 
             if self.sps.sample_adaptive_offset_enabled_flag:
                 self.slice_sao_luma_flag = bs.u(1, "slice_sao_luma_flag")
@@ -197,6 +187,36 @@ class SliceSegmentHeader:
             raise "Unimplemented yet"
 
         bs.byte_alignment()
+
+    def decode_long_term_ref_pics_syntax_elements(self):
+        if self.sps.long_term_ref_pics_present_flag:
+            if self.sps.num_long_term_ref_pics_sps > 0:
+                self.num_long_term_sps = bs.ue("num_long_term_sps")
+                assert self.num_long_term_sps in range(0, self.sps.num_long_term_ref_pics_sps + 1)
+            else:
+                self.num_long_term_sps = 0
+
+            self.num_long_term_pics = bs.ue("num_long_term_pics")
+
+            self.lt_idx_sps = [0] * (self.sps.num_long_term_sps + self.sps.num_long_term_pics)
+            self.poc_lsb_lt = [0] * (self.sps.num_long_term_sps + self.sps.num_long_term_pics)
+            self.used_by_curr_pic_lt_flag = [0] * (self.sps.num_long_term_sps + self.sps.num_long_term_pics)
+            self.delta_poc_msb_present_flag = [0] * (self.sps.num_long_term_sps + self.sps.num_long_term_pics)
+            self.delta_poc_msb_cycle_lt = [0] * (self.sps.num_long_term_sps + self.sps.num_long_term_pics)
+            for i in range(self.sps.num_long_term_sps + self.sps.num_long_term_pics):
+                if i < self.num_long_term_sps:
+                    if self.sps.num_long_term_ref_pics_sps > 1:
+                        self.lt_idx_sps[i] = bs.u(math.ceil(math.log(self.sps.num_long_term_ref_pics_sps, 2)), "lt_idx_sps[%d]" % i)
+                else:
+                    self.poc_lsb_lt[i] = bs.u(self.sps.log2_max_pic_order_cnt_lsb_minus4+4, "poc_lsb_lt[%d]" % i)
+                    self.used_by_curr_pic_lt_flag[i] = bs.u(1, "used_by_curr_pic_lt_flag[%d]" % i)
+                self.delta_poc_msb_present_flag[i] = bs.u(1, "delta_poc_msb_present_flag[%d]" % i)
+                if self.delta_poc_msb_present_flag[i]:
+                    self.delta_poc_msb_cycle_lt[i] = bs.ue("delta_poc_msb_cycle_lt[%d]" % i)
+        else:
+            self.num_long_term_sps = 0
+            self.num_long_term_pics = 0
+
 
 class SliceSegmentData:
     def __init__(self, ctx):

@@ -108,6 +108,7 @@ class Sps:
         self.long_term_ref_pics_present_flag = bs.u(1, "long_term_ref_pics_present_flag")
         if self.long_term_ref_pics_present_flag:
             self.num_long_term_ref_pics_sps = bs.ue("num_long_term_ref_pics_sps")
+            assert self.num_long_term_ref_pics_sps in range(0, 32+1)
             
             self.lt_ref_pic_poc_lsb_sps = [0] * self.num_long_term_ref_pics_sps
             self.used_by_curr_pic_lt_sps_flag = [0] * self.num_long_term_ref_pics_sps
