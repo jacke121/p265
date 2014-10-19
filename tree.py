@@ -118,7 +118,11 @@ class Tree:
         return s
 
     def draw(self, ax):
-        rect = patches.Rectangle((self.x, self.y), self.size, self.size, edgecolor='black', facecolor='white')
+        if self.is_root():
+            edgecolor = 'blue'
+        else:
+            edgecolor = 'black'
+        rect = patches.Rectangle((self.x, self.y), self.size, self.size, edgecolor=edgecolor, facecolor='white')
         ax.add_patch(rect)
         for node in self.children:
             node.draw(ax)

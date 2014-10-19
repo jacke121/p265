@@ -1,3 +1,5 @@
+import matplotlib.patches as patches
+import matplotlib.pyplot as plt
 import ctu
 
 class Image:
@@ -14,6 +16,10 @@ class Image:
         self.ctus[self.ctu.addr_rs] = self.ctu # Save the previously decoded CTU
         if not end_of_slice_segment_flag:
             self.ctu = ctu.Ctu(self.ctx, self.ctx.pps.ctb_addr_ts2rs[self.ctu.addr_ts + 1]) # Create a new CTU instance
+
+    def draw(self, ax):
+        for i in self.ctus:
+            self.ctus[i].draw(ax)
 
     def get_ctb_addr_rs_from_luma_pixel_coordinates(self, x, y):
         assert x >= 0 and y >= 0

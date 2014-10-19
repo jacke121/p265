@@ -1,3 +1,4 @@
+import matplotlib.pyplot as plt
 import math
 import copy
 import st_rps
@@ -241,6 +242,18 @@ class SliceSegmentData:
 
             if self.end_of_slice_segment_flag:
                 if self.ctx.img.ctu.addr_rs == (self.ctx.sps.pic_size_in_ctbs_y - 1):
+                    #fig = plt.figure(1)
+                    #ax = fig.add_subplot(111)
+                    #ax.set_xticks(range(0, self.ctx.sps.pic_width_in_ctbs_y * self.ctx.sps.ctb_size_y, 8))
+                    #ax.set_yticks(range(0, self.ctx.sps.pic_height_in_ctbs_y * self.ctx.sps.ctb_size_y, 8))
+                    #ax.xaxis.tick_top()
+                    #ax.invert_yaxis()
+                    #ax.set_xlim(0, self.ctx.sps.pic_width_in_ctbs_y * self.ctx.sps.ctb_size_y)
+                    #ax.set_ylim(self.ctx.sps.pic_height_in_ctbs_y * self.ctx.sps.ctb_size_y, 0)
+
+                    #self.ctx.img.draw(ax)
+                    #plt.show()
+
                     raise ValueError("Congratulations! The end of slice segment!")
                     self.end_of_picture_flag = 1
                 else:
