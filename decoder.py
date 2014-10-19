@@ -4,7 +4,7 @@ import decoder.nalu as nalu
 import decoder.context as context
 import decoder.log as log
 
-class P265:
+class Decoder:
     def __init__(self, bs_file= "str.bin"):
         self.ctx = context.Context(bs_file)
         self.nalu = nalu.Nalu(self.ctx)
@@ -71,5 +71,5 @@ class P265:
                 log.main.error("NALU type should be within 0~63, but got %d." % nalu_type)
 
 if __name__ == "__main__":
-    p265 = P265("str.bin")
-    p265.decode()
+    d = Decoder("str.bin")
+    d.decode()
