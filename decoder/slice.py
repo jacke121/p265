@@ -282,7 +282,7 @@ class SliceSegmentData:
                     self.end_of_picture_flag = 0
 
                 if self.end_of_picture_flag:
-                    self.ctx.dpb.images.append(copy.deepcopy(self.ctx.img))
+                    self.ctx.dpb.images.append(self.ctx.img) #copy.deepcopy(self.ctx.img))
                     self.ctx.img = image.Image(self.ctx)
 
                 return self.end_of_picture_flag
@@ -298,11 +298,13 @@ class SliceSegmentData:
 class SliceSegment:
     def __init__(self, ctx):
         self.ctx = ctx
-        self.slice_hdr = SliceSegmentHeader(self.ctx)
-        self.slice_data = SliceSegmentData(self.ctx)
 
     def decode(self):
+        self.slice_hdr = SliceSegmentHeader(self.ctx)
         self.slice_hdr.decode()
-        self.ctx.img.slice_hdrs.append(copy.deepcopy(self.slice_hdr))
-        return self.slice_data.decode()
+        self.ctx.img.slice_hdrs.append(self.slice_hdr) #copy.deepcopy(self.slice_hdr))
+
+        self.slice_data = SliceSegmentData(self.ctx)
+        end_of_picture_flag = self.slice_data.decode()
+        return end_of_picture_flag
 
