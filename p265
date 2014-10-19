@@ -8,11 +8,11 @@ def parse_cmd():
     parser.add_argument("-b", "--bitstream", required = True, help = "The h.265 bitstream to be decoded.")
     parser.add_argument("-o", "--output", help = "The reconstructed YUV output.")
     parser.add_argument("--plot", choices = ['png', 'gui', 'text'], help = "Plotting CTU tree to PNG file, or interactively start matplotlib show GUI, or text rectangle.")
-    parser.add_argument("--skip-syntax-dump", type = int, help = "Skip syntax element dumppint of the first N frames.")
+    parser.add_argument("--skip-syntax-dump", type = int, default = 0, help = "Skip syntax element dumppint of the first N frames.")
     args = parser.parse_args()
     return args
 
 args = parse_cmd()
 
-d = dec.Decoder(args.bitstream)
+d = dec.Decoder(args)
 d.decode()
