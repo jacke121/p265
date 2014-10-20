@@ -21,7 +21,7 @@ class BitStreamBuffer:
         self.length = len(self.bytes)
 
     def report_position(self):
-        log.main.info("Bit stream position: byte_idx = %d, bit_idx = %d, addr = 0x%x, colum = %d" % (self.byte_idx, self.bit_idx, (self.byte_idx / 16) << 4, (self.byte_idx % 16 )))
+        log.main.debug("Bit stream position: byte_idx = %d, bit_idx = %d, addr = 0x%x, colum = %d" % (self.byte_idx, self.bit_idx, (self.byte_idx / 16) << 4, (self.byte_idx % 16 )))
 
     def reset(self):
         self.bit_idx = 0
