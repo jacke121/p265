@@ -74,7 +74,7 @@ class NaluHeader:
         self.bs = bs
 
     def decode(self):
-        log.main.info("============= NALU Header =============")
+        log.location.info("Start decoding NALU header")
 
         self.forbidden_zero_bit = self.bs.u(1, "forbidden_zero_bit")
         assert(self.forbidden_zero_bit == 0)
