@@ -9,7 +9,7 @@ class Tu(tree.Tree):
         tree.Tree.__init__(self, x, y, log2size, depth, parent)
 
     def decode(self):
-        log.location.info("Start decoding TU: (x, y) = (%d, %d), size = %d, depth = %d", self.x, self.y, self.size, self.depth)
+        log.location.debug("Start decoding TU: (x, y) = (%d, %d), size = %d, depth = %d", self.x, self.y, self.size, self.depth)
 
         #if self.x==184 and self.y==48 and self.size==4 and self.depth==2:
         #    pdb.set_trace()
@@ -247,7 +247,7 @@ class Tu(tree.Tree):
         return bit
 
     def decode_residual_coding(self, x0, y0, log2size, c_idx):
-        log.location.info("Start decoding residual: c_idx = %d", c_idx)
+        log.location.debug("Start decoding residual: c_idx = %d", c_idx)
 
         if self.ctx.pps.transform_skip_enabled_flag and (not self.cu.cu_transquant_bypass_flag) and (log2size==2):
             self.transform_skip_flag[c_idx] = self.decode_transform_skip_flag(c_idx)
