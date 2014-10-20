@@ -135,7 +135,7 @@ class Sps:
         bs.rbsp_trailing_bits()
         '''
 
-        self.log_derived_picture_info()
+        #self.log_derived_picture_info()
 
         #raise "TODO @ SPS"
 
