@@ -1,4 +1,5 @@
 import math
+import exception
 import log
 
 #TODO: use get_byte() instead of directly accessing bytes list
@@ -49,24 +50,29 @@ class BitStreamBuffer:
         return self.bit_idx == 0
 
     def get_byte(self, idx):
-        if idx > self.length:
-            raise "Error: out of range."
+        if idx >= self.length:
+            raise exception.EndOfBitStreamFileError
         else:
             return self.bytes[idx]
 
     def search_start_code(self):
         watch_dog_counter = 0
         while True:
-            byte0 = self.get_byte(self.byte_idx)
-            byte1 = self.get_byte(self.byte_idx - 1) if self.byte_idx >= 2 else 0xff
-            byte2 = self.get_byte(self.byte_idx - 2) if self.byte_idx >= 2 else 0xff
+            try:
+                byte0 = self.get_byte(self.byte_idx)
+                byte1 = self.get_byte(self.byte_idx - 1) if self.byte_idx >= 2 else 0xff
+                byte2 = self.get_byte(self.byte_idx - 2) if self.byte_idx >= 2 else 0xff
+            except exception.EndOfBitStreamFileError:
+                log.main.info("End of bitstream file when searching start code. Stopped.")
+                exit()
+
             self.byte_idx += 1
             if (byte2==0x00 and byte1==0x00 and byte0==0x01):
                 self.bit_idx = 0
                 break
             watch_dog_counter += 1
             if (watch_dog_counter == 1024):
-                raise "Error: can not find start code after 1024 bytes were searched, stopped."
+                raise exception.WatchDogTimerError("Can not find start code after 1024 bytes were searched, stopped.")
     
     def read_bits(self, n):
         spare_bits_cnt = 8 - self.bit_idx
