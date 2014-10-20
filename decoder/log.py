@@ -1,30 +1,46 @@
 import sys
 import logging
 
-logging.basicConfig(level=logging.DEBUG, format="%(message)s")
-#logging.basicConfig(level=logging.DEBUG)
-
-class P265Formatter(logging.Formatter):
+class MainFormatter(logging.Formatter):
     def format(self, record):
         if record.name == "p265":
             return "%s" % record.getMessage()
-        elif record.name == "p265.syntax_element":
-            return "[syntax_element] %s" % record.getMessage()
         elif record.name == "p265.location":
             return "[location] %s" % record.getMessage()
+        elif record.name == "p265.syntax_element":
+            return "[syntax_element] %s" % record.getMessage()
         elif record.name == "p265.cabac":
             return "[cabac] %s" % record.getMessage()
 
-formatter = P265Formatter()
+class MainStreamFilter(logging.Filter):
+    def filter(self, record):
+        if record.name == "p265":
+            return 1
+        elif record.name == "p265.location":
+            return 1
+        elif record.name == "p265.syntax_element":
+            return 0
+        elif record.name == "p265.cabac":
+            return 0
 
 def create_main_logger():
     main = logging.getLogger("p265")
+    main.setLevel(logging.DEBUG)
+
     f_handler = logging.FileHandler(filename="logs/p265.log", mode='w')
-    #s_handler = logging.StreamHandler(stream = sys.stdout)
+    f_handler.setLevel(logging.DEBUG)
+    s_handler = logging.StreamHandler(stream = sys.stdout)
+    s_handler.setLevel(logging.INFO)
+
+    formatter = MainFormatter()
     f_handler.setFormatter(formatter)
-    #s_handler.setFormatter(formatter)
+    s_handler.setFormatter(formatter)
+    
+    s_filter = MainStreamFilter()
+    s_handler.addFilter(s_filter) # Only location information will be output to sys.stdout
+
     main.addHandler(f_handler)
-    #main.addHandler(s_handler)
+    main.addHandler(s_handler)
     return main
 
 def create_location_logger():
@@ -54,6 +70,15 @@ syntax = create_syntax_logger()
 cabac = create_cabac_logger()
 
 if __name__ == "__main__":
+    import os
+    if not os.path.exists("./logs"):
+        os.mkdir("./logs")
+    print main.handlers
+    print syntax.handlers
+    print location.handlers
+    print cabac.handlers
+    print main.level
     main.info("Hello main")
+    main.error("Hello main error")
     syntax.info("pps_id = %d" % 1)
     location.info("hello location")
