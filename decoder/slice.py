@@ -35,7 +35,7 @@ class SliceSegmentHeader:
     def decode(self):
         bs = self.ctx.bs
 
-        log.main.info("++++++ Start decoding Slice Header ++++++")
+        log.location.info("Start decoding Slice Header")
 
         self.first_slice_segment_in_pic_flag = bs.u(1, "first_slice_segment_in_pic_flag")
 
@@ -237,7 +237,7 @@ class SliceSegmentData:
         if self.ctx.img.slice_hdrs[-1].first_slice_segment_in_pic_flag:
             self.ctx.img.ctu = ctu.Ctu(self.ctx, addr_rs=0) # The first CTB in the picture is created with ctb_addr_rs = 0
 
-        log.main.info("++++++ Start decoding Slice Segment Data ++++++") 
+        log.location.info("Start decoding Slice Segment Data") 
 
         if not self.ctx.img.slice_hdrs[-1].dependent_slice_segment_flag:
             self.ctx.img.slice_hdr = self.ctx.img.slice_hdrs[-1]
