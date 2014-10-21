@@ -1,0 +1,688 @@
+enter decode_decision: p_state_idx = 6, val_mps = 0, ivl_curr_range = 476, ivl_offset = 195
+exit  decode_decision: p_state_idx = 7, val_mps = 0, ivl_curr_range = 301, ivl_offset = 195, bin = 0
+sao_merge_left_flag = 0
+enter decode_decision: p_state_idx = 7, val_mps = 0, ivl_curr_range = 301, ivl_offset = 195
+exit  decode_decision: p_state_idx = 8, val_mps = 0, ivl_curr_range = 402, ivl_offset = 391, bin = 0
+sao_merge_up_flag = 0
+enter decode_decision: p_state_idx = 15, val_mps = 1, ivl_curr_range = 402, ivl_offset = 391
+exit  decode_decision: p_state_idx = 12, val_mps = 1, ivl_curr_range = 380, ivl_offset = 337, bin = 0
+sao_type_idx_luma = 0
+enter decode_decision: p_state_idx = 12, val_mps = 1, ivl_curr_range = 380, ivl_offset = 337
+exit  decode_decision: p_state_idx = 9, val_mps = 1, ivl_curr_range = 376, ivl_offset = 204, bin = 0
+sao_type_idx_chroma = 0
+Start decoding CU: (x, y) = (64, 256), size = 64, depth = 0
+Start decoding CU: (x, y) = (64, 256), size = 32, depth = 1
+enter decode_decision: p_state_idx = 20, val_mps = 1, ivl_curr_range = 376, ivl_offset = 204
+exit  decode_decision: p_state_idx = 21, val_mps = 1, ivl_curr_range = 314, ivl_offset = 204, bin = 1
+split_cu_flag = 1
+Start decoding CU: (x, y) = (64, 256), size = 16, depth = 2
+enter decode_decision: p_state_idx = 1, val_mps = 1, ivl_curr_range = 314, ivl_offset = 204
+exit  decode_decision: p_state_idx = 0, val_mps = 1, ivl_curr_range = 256, ivl_offset = 37, bin = 0
+split_cu_flag = 0
+enter decode_decision: p_state_idx = 22, val_mps = 1, ivl_curr_range = 256, ivl_offset = 37
+exit  decode_decision: p_state_idx = 23, val_mps = 1, ivl_curr_range = 420, ivl_offset = 75, bin = 1
+prev_intra_luma_pred_flag = 1
+enter decode_bypass: ivl_curr_range = 420, ivl_offset = 75
+exit  decode_bypass: ivl_curr_range = 420, ivl_offset = 151, bin = 0
+mpm_idx = 0
+enter decode_decision: p_state_idx = 11, val_mps = 0, ivl_curr_range = 420, ivl_offset = 151
+exit  decode_decision: p_state_idx = 12, val_mps = 0, ivl_curr_range = 303, ivl_offset = 151, bin = 0
+intra_chroma_pred_mode = 4
+Start decoding TU: (x, y) = (64, 256), size = 16, depth = 0
+enter decode_decision: p_state_idx = 9, val_mps = 0, ivl_curr_range = 303, ivl_offset = 151
+exit  decode_decision: p_state_idx = 10, val_mps = 0, ivl_curr_range = 426, ivl_offset = 303, bin = 0
+split_transform_flag = 0
+enter decode_decision: p_state_idx = 22, val_mps = 0, ivl_curr_range = 426, ivl_offset = 303
+exit  decode_decision: p_state_idx = 23, val_mps = 0, ivl_curr_range = 360, ivl_offset = 303, bin = 0
+cbf_cb = 0
+enter decode_decision: p_state_idx = 23, val_mps = 0, ivl_curr_range = 360, ivl_offset = 303
+exit  decode_decision: p_state_idx = 24, val_mps = 0, ivl_curr_range = 307, ivl_offset = 303, bin = 0
+cbf_cr = 0
+enter decode_decision: p_state_idx = 28, val_mps = 1, ivl_curr_range = 307, ivl_offset = 303
+exit  decode_decision: p_state_idx = 22, val_mps = 1, ivl_curr_range = 264, ivl_offset = 236, bin = 0
+cbf_luma = 0
+Start decoding CU: (x, y) = (80, 256), size = 16, depth = 2
+enter decode_decision: p_state_idx = 0, val_mps = 1, ivl_curr_range = 264, ivl_offset = 236
+exit  decode_decision: p_state_idx = 0, val_mps = 0, ivl_curr_range = 256, ivl_offset = 200, bin = 0
+split_cu_flag = 0
+enter decode_decision: p_state_idx = 23, val_mps = 1, ivl_curr_range = 256, ivl_offset = 200
+exit  decode_decision: p_state_idx = 24, val_mps = 1, ivl_curr_range = 426, ivl_offset = 401, bin = 1
+prev_intra_luma_pred_flag = 1
+enter decode_bypass: ivl_curr_range = 426, ivl_offset = 401
+exit  decode_bypass: ivl_curr_range = 426, ivl_offset = 376, bin = 1
+enter decode_bypass: ivl_curr_range = 426, ivl_offset = 376
+exit  decode_bypass: ivl_curr_range = 426, ivl_offset = 327, bin = 1
+mpm_idx = 2
+enter decode_decision: p_state_idx = 12, val_mps = 0, ivl_curr_range = 426, ivl_offset = 327
+exit  decode_decision: p_state_idx = 9, val_mps = 0, ivl_curr_range = 444, ivl_offset = 49, bin = 1
+enter decode_bypass: ivl_curr_range = 444, ivl_offset = 49
+exit  decode_bypass: ivl_curr_range = 444, ivl_offset = 99, bin = 0
+enter decode_bypass: ivl_curr_range = 444, ivl_offset = 99
+exit  decode_bypass: ivl_curr_range = 444, ivl_offset = 199, bin = 0
+intra_chroma_pred_mode = 0
+Start decoding TU: (x, y) = (80, 256), size = 16, depth = 0
+enter decode_decision: p_state_idx = 10, val_mps = 0, ivl_curr_range = 444, ivl_offset = 199
+exit  decode_decision: p_state_idx = 11, val_mps = 0, ivl_curr_range = 321, ivl_offset = 199, bin = 0
+split_transform_flag = 0
+enter decode_decision: p_state_idx = 24, val_mps = 0, ivl_curr_range = 321, ivl_offset = 199
+exit  decode_decision: p_state_idx = 25, val_mps = 0, ivl_curr_range = 271, ivl_offset = 199, bin = 0
+cbf_cb = 0
+enter decode_decision: p_state_idx = 25, val_mps = 0, ivl_curr_range = 271, ivl_offset = 199
+exit  decode_decision: p_state_idx = 26, val_mps = 0, ivl_curr_range = 464, ivl_offset = 399, bin = 0
+cbf_cr = 0
+enter decode_decision: p_state_idx = 22, val_mps = 1, ivl_curr_range = 464, ivl_offset = 399
+exit  decode_decision: p_state_idx = 18, val_mps = 1, ivl_curr_range = 304, ivl_offset = 47, bin = 0
+cbf_luma = 0
+Start decoding CU: (x, y) = (64, 272), size = 16, depth = 2
+enter decode_decision: p_state_idx = 5, val_mps = 0, ivl_curr_range = 304, ivl_offset = 47
+exit  decode_decision: p_state_idx = 6, val_mps = 0, ivl_curr_range = 386, ivl_offset = 95, bin = 0
+split_cu_flag = 0
+enter decode_decision: p_state_idx = 24, val_mps = 1, ivl_curr_range = 386, ivl_offset = 95
+exit  decode_decision: p_state_idx = 25, val_mps = 1, ivl_curr_range = 327, ivl_offset = 95, bin = 1
+prev_intra_luma_pred_flag = 1
+enter decode_bypass: ivl_curr_range = 327, ivl_offset = 95
+exit  decode_bypass: ivl_curr_range = 327, ivl_offset = 190, bin = 0
+mpm_idx = 0
+enter decode_decision: p_state_idx = 9, val_mps = 0, ivl_curr_range = 327, ivl_offset = 190
+exit  decode_decision: p_state_idx = 10, val_mps = 0, ivl_curr_range = 434, ivl_offset = 381, bin = 0
+intra_chroma_pred_mode = 4
+Start decoding TU: (x, y) = (64, 272), size = 16, depth = 0
+enter decode_decision: p_state_idx = 11, val_mps = 0, ivl_curr_range = 434, ivl_offset = 381
+exit  decode_decision: p_state_idx = 9, val_mps = 0, ivl_curr_range = 468, ivl_offset = 258, bin = 1
+split_transform_flag = 1
+enter decode_decision: p_state_idx = 26, val_mps = 0, ivl_curr_range = 468, ivl_offset = 258
+exit  decode_decision: p_state_idx = 27, val_mps = 0, ivl_curr_range = 406, ivl_offset = 258, bin = 0
+cbf_cb = 0
+enter decode_decision: p_state_idx = 27, val_mps = 0, ivl_curr_range = 406, ivl_offset = 258
+exit  decode_decision: p_state_idx = 28, val_mps = 0, ivl_curr_range = 355, ivl_offset = 258, bin = 0
+cbf_cr = 0
+Start decoding TU: (x, y) = (64, 272), size = 8, depth = 1
+enter decode_decision: p_state_idx = 17, val_mps = 0, ivl_curr_range = 355, ivl_offset = 258
+exit  decode_decision: p_state_idx = 18, val_mps = 0, ivl_curr_range = 283, ivl_offset = 258, bin = 0
+split_transform_flag = 0
+enter decode_decision: p_state_idx = 6, val_mps = 1, ivl_curr_range = 283, ivl_offset = 258
+exit  decode_decision: p_state_idx = 4, val_mps = 1, ivl_curr_range = 420, ivl_offset = 322, bin = 0
+cbf_luma = 0
+Start decoding TU: (x, y) = (72, 272), size = 8, depth = 1
+enter decode_decision: p_state_idx = 18, val_mps = 0, ivl_curr_range = 420, ivl_offset = 322
+exit  decode_decision: p_state_idx = 19, val_mps = 0, ivl_curr_range = 339, ivl_offset = 322, bin = 0
+split_transform_flag = 0
+enter decode_decision: p_state_idx = 4, val_mps = 1, ivl_curr_range = 339, ivl_offset = 322
+exit  decode_decision: p_state_idx = 2, val_mps = 1, ivl_curr_range = 284, ivl_offset = 251, bin = 0
+cbf_luma = 0
+Start decoding TU: (x, y) = (64, 280), size = 8, depth = 1
+enter decode_decision: p_state_idx = 19, val_mps = 0, ivl_curr_range = 284, ivl_offset = 251
+exit  decode_decision: p_state_idx = 15, val_mps = 0, ivl_curr_range = 424, ivl_offset = 164, bin = 1
+split_transform_flag = 1
+Start decoding TU: (x, y) = (64, 280), size = 4, depth = 2
+enter decode_decision: p_state_idx = 2, val_mps = 1, ivl_curr_range = 424, ivl_offset = 164
+exit  decode_decision: p_state_idx = 3, val_mps = 1, ivl_curr_range = 474, ivl_offset = 329, bin = 1
+cbf_luma = 1
+Start decoding residual: c_idx = 0
+enter decode_decision: p_state_idx = 62, val_mps = 0, ivl_curr_range = 474, ivl_offset = 329
+exit  decode_decision: p_state_idx = 62, val_mps = 0, ivl_curr_range = 465, ivl_offset = 329, bin = 0
+transform_skip_flag = 0
+enter decode_decision: p_state_idx = 6, val_mps = 1, ivl_curr_range = 465, ivl_offset = 329
+exit  decode_decision: p_state_idx = 4, val_mps = 1, ivl_curr_range = 350, ivl_offset = 79, bin = 0
+last_sig_coeff_x_prefix = 0
+enter decode_decision: p_state_idx = 0, val_mps = 0, ivl_curr_range = 350, ivl_offset = 79
+exit  decode_decision: p_state_idx = 1, val_mps = 0, ivl_curr_range = 348, ivl_offset = 159, bin = 0
+last_sig_coeff_y_prefix = 0
+enter decode_decision: p_state_idx = 32, val_mps = 0, ivl_curr_range = 348, ivl_offset = 159
+exit  decode_decision: p_state_idx = 33, val_mps = 0, ivl_curr_range = 315, ivl_offset = 159, bin = 0
+coeff_abs_level_greater1_flag = 0
+enter decode_bypass: ivl_curr_range = 315, ivl_offset = 159
+exit  decode_bypass: ivl_curr_range = 315, ivl_offset = 4, bin = 1
+coeff_sign_flag = 1
+Start decoding TU: (x, y) = (68, 280), size = 4, depth = 2
+enter decode_decision: p_state_idx = 3, val_mps = 1, ivl_curr_range = 315, ivl_offset = 4
+exit  decode_decision: p_state_idx = 4, val_mps = 1, ivl_curr_range = 384, ivl_offset = 8, bin = 1
+cbf_luma = 1
+Start decoding residual: c_idx = 0
+enter decode_decision: p_state_idx = 62, val_mps = 0, ivl_curr_range = 384, ivl_offset = 8
+exit  decode_decision: p_state_idx = 62, val_mps = 0, ivl_curr_range = 376, ivl_offset = 8, bin = 0
+transform_skip_flag = 0
+enter decode_decision: p_state_idx = 4, val_mps = 1, ivl_curr_range = 376, ivl_offset = 8
+exit  decode_decision: p_state_idx = 5, val_mps = 1, ivl_curr_range = 468, ivl_offset = 16, bin = 1
+enter decode_decision: p_state_idx = 3, val_mps = 0, ivl_curr_range = 468, ivl_offset = 16
+exit  decode_decision: p_state_idx = 4, val_mps = 0, ivl_curr_range = 263, ivl_offset = 16, bin = 0
+last_sig_coeff_x_prefix = 1
+enter decode_decision: p_state_idx = 1, val_mps = 0, ivl_curr_range = 263, ivl_offset = 16
+exit  decode_decision: p_state_idx = 2, val_mps = 0, ivl_curr_range = 270, ivl_offset = 33, bin = 0
+last_sig_coeff_y_prefix = 0
+enter decode_decision: p_state_idx = 14, val_mps = 1, ivl_curr_range = 270, ivl_offset = 33
+exit  decode_decision: p_state_idx = 15, val_mps = 1, ivl_curr_range = 402, ivl_offset = 66, bin = 1
+sig_coeff_flag = 1
+enter decode_decision: p_state_idx = 33, val_mps = 0, ivl_curr_range = 402, ivl_offset = 66
+exit  decode_decision: p_state_idx = 34, val_mps = 0, ivl_curr_range = 365, ivl_offset = 66, bin = 0
+coeff_abs_level_greater1_flag = 0
+enter decode_decision: p_state_idx = 26, val_mps = 0, ivl_curr_range = 365, ivl_offset = 66
+exit  decode_decision: p_state_idx = 27, val_mps = 0, ivl_curr_range = 320, ivl_offset = 66, bin = 0
+coeff_abs_level_greater1_flag = 0
+enter decode_bypass: ivl_curr_range = 320, ivl_offset = 66
+exit  decode_bypass: ivl_curr_range = 320, ivl_offset = 132, bin = 0
+coeff_sign_flag = 0
+enter decode_bypass: ivl_curr_range = 320, ivl_offset = 132
+exit  decode_bypass: ivl_curr_range = 320, ivl_offset = 265, bin = 0
+coeff_sign_flag = 0
+Start decoding TU: (x, y) = (64, 284), size = 4, depth = 2
+enter decode_decision: p_state_idx = 4, val_mps = 1, ivl_curr_range = 320, ivl_offset = 265
+exit  decode_decision: p_state_idx = 2, val_mps = 1, ivl_curr_range = 284, ivl_offset = 175, bin = 0
+cbf_luma = 0
+Start decoding TU: (x, y) = (68, 284), size = 4, depth = 2
+enter decode_decision: p_state_idx = 2, val_mps = 1, ivl_curr_range = 284, ivl_offset = 175
+exit  decode_decision: p_state_idx = 1, val_mps = 1, ivl_curr_range = 256, ivl_offset = 39, bin = 0
+cbf_luma = 0
+Start decoding TU: (x, y) = (72, 280), size = 8, depth = 1
+enter decode_decision: p_state_idx = 15, val_mps = 0, ivl_curr_range = 256, ivl_offset = 39
+exit  decode_decision: p_state_idx = 16, val_mps = 0, ivl_curr_range = 380, ivl_offset = 78, bin = 0
+split_transform_flag = 0
+enter decode_decision: p_state_idx = 1, val_mps = 1, ivl_curr_range = 380, ivl_offset = 78
+exit  decode_decision: p_state_idx = 2, val_mps = 1, ivl_curr_range = 426, ivl_offset = 157, bin = 1
+cbf_luma = 1
+Start decoding residual: c_idx = 0
+enter decode_decision: p_state_idx = 5, val_mps = 1, ivl_curr_range = 426, ivl_offset = 157
+exit  decode_decision: p_state_idx = 6, val_mps = 1, ivl_curr_range = 266, ivl_offset = 157, bin = 1
+enter decode_decision: p_state_idx = 6, val_mps = 1, ivl_curr_range = 266, ivl_offset = 157
+exit  decode_decision: p_state_idx = 7, val_mps = 1, ivl_curr_range = 322, ivl_offset = 315, bin = 1
+enter decode_decision: p_state_idx = 39, val_mps = 1, ivl_curr_range = 322, ivl_offset = 315
+exit  decode_decision: p_state_idx = 29, val_mps = 1, ivl_curr_range = 368, ivl_offset = 269, bin = 0
+last_sig_coeff_x_prefix = 2
+enter decode_decision: p_state_idx = 1, val_mps = 1, ivl_curr_range = 368, ivl_offset = 269
+exit  decode_decision: p_state_idx = 0, val_mps = 1, ivl_curr_range = 334, ivl_offset = 137, bin = 0
+last_sig_coeff_y_prefix = 0
+enter decode_decision: p_state_idx = 20, val_mps = 0, ivl_curr_range = 334, ivl_offset = 137
+exit  decode_decision: p_state_idx = 21, val_mps = 0, ivl_curr_range = 272, ivl_offset = 137, bin = 0
+sig_coeff_flag = 0
+enter decode_decision: p_state_idx = 15, val_mps = 1, ivl_curr_range = 272, ivl_offset = 137
+exit  decode_decision: p_state_idx = 16, val_mps = 1, ivl_curr_range = 412, ivl_offset = 275, bin = 1
+sig_coeff_flag = 1
+enter decode_decision: p_state_idx = 34, val_mps = 0, ivl_curr_range = 412, ivl_offset = 275
+exit  decode_decision: p_state_idx = 35, val_mps = 0, ivl_curr_range = 377, ivl_offset = 275, bin = 0
+coeff_abs_level_greater1_flag = 0
+enter decode_decision: p_state_idx = 27, val_mps = 0, ivl_curr_range = 377, ivl_offset = 275
+exit  decode_decision: p_state_idx = 28, val_mps = 0, ivl_curr_range = 334, ivl_offset = 275, bin = 0
+coeff_abs_level_greater1_flag = 0
+enter decode_bypass: ivl_curr_range = 334, ivl_offset = 275
+exit  decode_bypass: ivl_curr_range = 334, ivl_offset = 216, bin = 1
+coeff_sign_flag = 1
+enter decode_bypass: ivl_curr_range = 334, ivl_offset = 216
+exit  decode_bypass: ivl_curr_range = 334, ivl_offset = 98, bin = 1
+coeff_sign_flag = 1
+Start decoding CU: (x, y) = (80, 272), size = 16, depth = 2
+enter decode_decision: p_state_idx = 6, val_mps = 0, ivl_curr_range = 334, ivl_offset = 98
+exit  decode_decision: p_state_idx = 7, val_mps = 0, ivl_curr_range = 412, ivl_offset = 197, bin = 0
+split_cu_flag = 0
+enter decode_decision: p_state_idx = 25, val_mps = 1, ivl_curr_range = 412, ivl_offset = 197
+exit  decode_decision: p_state_idx = 26, val_mps = 1, ivl_curr_range = 356, ivl_offset = 197, bin = 1
+prev_intra_luma_pred_flag = 1
+enter decode_bypass: ivl_curr_range = 356, ivl_offset = 197
+exit  decode_bypass: ivl_curr_range = 356, ivl_offset = 38, bin = 1
+enter decode_bypass: ivl_curr_range = 356, ivl_offset = 38
+exit  decode_bypass: ivl_curr_range = 356, ivl_offset = 76, bin = 0
+mpm_idx = 1
+enter decode_decision: p_state_idx = 10, val_mps = 0, ivl_curr_range = 356, ivl_offset = 76
+exit  decode_decision: p_state_idx = 11, val_mps = 0, ivl_curr_range = 504, ivl_offset = 153, bin = 0
+intra_chroma_pred_mode = 4
+Start decoding TU: (x, y) = (80, 272), size = 16, depth = 0
+enter decode_decision: p_state_idx = 9, val_mps = 0, ivl_curr_range = 504, ivl_offset = 153
+exit  decode_decision: p_state_idx = 10, val_mps = 0, ivl_curr_range = 354, ivl_offset = 153, bin = 0
+split_transform_flag = 0
+enter decode_decision: p_state_idx = 28, val_mps = 0, ivl_curr_range = 354, ivl_offset = 153
+exit  decode_decision: p_state_idx = 29, val_mps = 0, ivl_curr_range = 313, ivl_offset = 153, bin = 0
+cbf_cb = 0
+enter decode_decision: p_state_idx = 29, val_mps = 0, ivl_curr_range = 313, ivl_offset = 153
+exit  decode_decision: p_state_idx = 30, val_mps = 0, ivl_curr_range = 281, ivl_offset = 153, bin = 0
+cbf_cr = 0
+enter decode_decision: p_state_idx = 18, val_mps = 1, ivl_curr_range = 281, ivl_offset = 153
+exit  decode_decision: p_state_idx = 19, val_mps = 1, ivl_curr_range = 450, ivl_offset = 306, bin = 1
+cbf_luma = 1
+Start decoding residual: c_idx = 0
+enter decode_decision: p_state_idx = 21, val_mps = 1, ivl_curr_range = 450, ivl_offset = 306
+exit  decode_decision: p_state_idx = 22, val_mps = 1, ivl_curr_range = 370, ivl_offset = 306, bin = 1
+enter decode_decision: p_state_idx = 22, val_mps = 1, ivl_curr_range = 370, ivl_offset = 306
+exit  decode_decision: p_state_idx = 23, val_mps = 1, ivl_curr_range = 314, ivl_offset = 306, bin = 1
+enter decode_decision: p_state_idx = 62, val_mps = 1, ivl_curr_range = 314, ivl_offset = 306
+exit  decode_decision: p_state_idx = 62, val_mps = 1, ivl_curr_range = 308, ivl_offset = 306, bin = 1
+enter decode_decision: p_state_idx = 62, val_mps = 1, ivl_curr_range = 308, ivl_offset = 306
+exit  decode_decision: p_state_idx = 38, val_mps = 1, ivl_curr_range = 384, ivl_offset = 257, bin = 0
+last_sig_coeff_x_prefix = 3
+enter decode_decision: p_state_idx = 7, val_mps = 1, ivl_curr_range = 384, ivl_offset = 257
+exit  decode_decision: p_state_idx = 5, val_mps = 1, ivl_curr_range = 288, ivl_offset = 35, bin = 0
+last_sig_coeff_y_prefix = 0
+enter decode_decision: p_state_idx = 30, val_mps = 0, ivl_curr_range = 288, ivl_offset = 35
+exit  decode_decision: p_state_idx = 31, val_mps = 0, ivl_curr_range = 258, ivl_offset = 35, bin = 0
+sig_coeff_flag = 0
+enter decode_decision: p_state_idx = 31, val_mps = 0, ivl_curr_range = 258, ivl_offset = 35
+exit  decode_decision: p_state_idx = 32, val_mps = 0, ivl_curr_range = 458, ivl_offset = 71, bin = 0
+sig_coeff_flag = 0
+enter decode_decision: p_state_idx = 32, val_mps = 0, ivl_curr_range = 458, ivl_offset = 71
+exit  decode_decision: p_state_idx = 33, val_mps = 0, ivl_curr_range = 413, ivl_offset = 71, bin = 0
+sig_coeff_flag = 0
+enter decode_decision: p_state_idx = 6, val_mps = 0, ivl_curr_range = 413, ivl_offset = 71
+exit  decode_decision: p_state_idx = 7, val_mps = 0, ivl_curr_range = 261, ivl_offset = 71, bin = 0
+sig_coeff_flag = 0
+enter decode_decision: p_state_idx = 7, val_mps = 0, ivl_curr_range = 261, ivl_offset = 71
+exit  decode_decision: p_state_idx = 8, val_mps = 0, ivl_curr_range = 322, ivl_offset = 142, bin = 0
+sig_coeff_flag = 0
+enter decode_decision: p_state_idx = 8, val_mps = 0, ivl_curr_range = 322, ivl_offset = 142
+exit  decode_decision: p_state_idx = 9, val_mps = 0, ivl_curr_range = 412, ivl_offset = 285, bin = 0
+sig_coeff_flag = 0
+enter decode_decision: p_state_idx = 9, val_mps = 0, ivl_curr_range = 412, ivl_offset = 285
+exit  decode_decision: p_state_idx = 7, val_mps = 0, ivl_curr_range = 260, ivl_offset = 7, bin = 1
+sig_coeff_flag = 1
+enter decode_decision: p_state_idx = 7, val_mps = 0, ivl_curr_range = 260, ivl_offset = 7
+exit  decode_decision: p_state_idx = 8, val_mps = 0, ivl_curr_range = 320, ivl_offset = 14, bin = 0
+sig_coeff_flag = 0
+enter decode_decision: p_state_idx = 16, val_mps = 1, ivl_curr_range = 320, ivl_offset = 14
+exit  decode_decision: p_state_idx = 17, val_mps = 1, ivl_curr_range = 488, ivl_offset = 29, bin = 1
+sig_coeff_flag = 1
+enter decode_decision: p_state_idx = 35, val_mps = 0, ivl_curr_range = 488, ivl_offset = 29
+exit  decode_decision: p_state_idx = 36, val_mps = 0, ivl_curr_range = 449, ivl_offset = 29, bin = 0
+coeff_abs_level_greater1_flag = 0
+enter decode_decision: p_state_idx = 28, val_mps = 0, ivl_curr_range = 449, ivl_offset = 29
+exit  decode_decision: p_state_idx = 29, val_mps = 0, ivl_curr_range = 393, ivl_offset = 29, bin = 0
+coeff_abs_level_greater1_flag = 0
+enter decode_decision: p_state_idx = 19, val_mps = 0, ivl_curr_range = 393, ivl_offset = 29
+exit  decode_decision: p_state_idx = 20, val_mps = 0, ivl_curr_range = 316, ivl_offset = 29, bin = 0
+coeff_abs_level_greater1_flag = 0
+enter decode_bypass: ivl_curr_range = 316, ivl_offset = 29
+exit  decode_bypass: ivl_curr_range = 316, ivl_offset = 58, bin = 0
+coeff_sign_flag = 0
+enter decode_bypass: ivl_curr_range = 316, ivl_offset = 58
+exit  decode_bypass: ivl_curr_range = 316, ivl_offset = 116, bin = 0
+coeff_sign_flag = 0
+Start decoding CU: (x, y) = (96, 256), size = 32, depth = 1
+enter decode_decision: p_state_idx = 21, val_mps = 1, ivl_curr_range = 316, ivl_offset = 116
+exit  decode_decision: p_state_idx = 22, val_mps = 1, ivl_curr_range = 268, ivl_offset = 116, bin = 1
+split_cu_flag = 1
+Start decoding CU: (x, y) = (96, 256), size = 16, depth = 2
+enter decode_decision: p_state_idx = 0, val_mps = 0, ivl_curr_range = 268, ivl_offset = 116
+exit  decode_decision: p_state_idx = 1, val_mps = 0, ivl_curr_range = 280, ivl_offset = 232, bin = 0
+split_cu_flag = 0
+enter decode_decision: p_state_idx = 26, val_mps = 1, ivl_curr_range = 280, ivl_offset = 232
+exit  decode_decision: p_state_idx = 27, val_mps = 1, ivl_curr_range = 486, ivl_offset = 464, bin = 1
+prev_intra_luma_pred_flag = 1
+enter decode_bypass: ivl_curr_range = 486, ivl_offset = 464
+exit  decode_bypass: ivl_curr_range = 486, ivl_offset = 442, bin = 1
+enter decode_bypass: ivl_curr_range = 486, ivl_offset = 442
+exit  decode_bypass: ivl_curr_range = 486, ivl_offset = 399, bin = 1
+mpm_idx = 2
+enter decode_decision: p_state_idx = 11, val_mps = 0, ivl_curr_range = 486, ivl_offset = 399
+exit  decode_decision: p_state_idx = 9, val_mps = 0, ivl_curr_range = 270, ivl_offset = 97, bin = 1
+enter decode_bypass: ivl_curr_range = 270, ivl_offset = 97
+exit  decode_bypass: ivl_curr_range = 270, ivl_offset = 194, bin = 0
+enter decode_bypass: ivl_curr_range = 270, ivl_offset = 194
+exit  decode_bypass: ivl_curr_range = 270, ivl_offset = 119, bin = 1
+intra_chroma_pred_mode = 1
+Start decoding TU: (x, y) = (96, 256), size = 16, depth = 0
+enter decode_decision: p_state_idx = 10, val_mps = 0, ivl_curr_range = 270, ivl_offset = 119
+exit  decode_decision: p_state_idx = 11, val_mps = 0, ivl_curr_range = 370, ivl_offset = 239, bin = 0
+split_transform_flag = 0
+enter decode_decision: p_state_idx = 30, val_mps = 0, ivl_curr_range = 370, ivl_offset = 239
+exit  decode_decision: p_state_idx = 31, val_mps = 0, ivl_curr_range = 333, ivl_offset = 239, bin = 0
+cbf_cb = 0
+enter decode_decision: p_state_idx = 31, val_mps = 0, ivl_curr_range = 333, ivl_offset = 239
+exit  decode_decision: p_state_idx = 32, val_mps = 0, ivl_curr_range = 298, ivl_offset = 239, bin = 0
+cbf_cr = 0
+enter decode_decision: p_state_idx = 19, val_mps = 1, ivl_curr_range = 298, ivl_offset = 239
+exit  decode_decision: p_state_idx = 20, val_mps = 1, ivl_curr_range = 490, ivl_offset = 478, bin = 1
+cbf_luma = 1
+Start decoding residual: c_idx = 0
+enter decode_decision: p_state_idx = 23, val_mps = 1, ivl_curr_range = 490, ivl_offset = 478
+exit  decode_decision: p_state_idx = 18, val_mps = 1, ivl_curr_range = 288, ivl_offset = 242, bin = 0
+last_sig_coeff_x_prefix = 0
+enter decode_decision: p_state_idx = 5, val_mps = 1, ivl_curr_range = 288, ivl_offset = 242
+exit  decode_decision: p_state_idx = 4, val_mps = 1, ivl_curr_range = 444, ivl_offset = 260, bin = 0
+last_sig_coeff_y_prefix = 0
+enter decode_decision: p_state_idx = 36, val_mps = 0, ivl_curr_range = 444, ivl_offset = 260
+exit  decode_decision: p_state_idx = 37, val_mps = 0, ivl_curr_range = 412, ivl_offset = 260, bin = 0
+coeff_abs_level_greater1_flag = 0
+enter decode_bypass: ivl_curr_range = 412, ivl_offset = 260
+exit  decode_bypass: ivl_curr_range = 412, ivl_offset = 109, bin = 1
+coeff_sign_flag = 1
+Start decoding CU: (x, y) = (112, 256), size = 16, depth = 2
+enter decode_decision: p_state_idx = 1, val_mps = 0, ivl_curr_range = 412, ivl_offset = 109
+exit  decode_decision: p_state_idx = 2, val_mps = 0, ivl_curr_range = 430, ivl_offset = 218, bin = 0
+split_cu_flag = 0
+enter decode_decision: p_state_idx = 27, val_mps = 1, ivl_curr_range = 430, ivl_offset = 218
+exit  decode_decision: p_state_idx = 28, val_mps = 1, ivl_curr_range = 379, ivl_offset = 218, bin = 1
+prev_intra_luma_pred_flag = 1
+enter decode_bypass: ivl_curr_range = 379, ivl_offset = 218
+exit  decode_bypass: ivl_curr_range = 379, ivl_offset = 58, bin = 1
+enter decode_bypass: ivl_curr_range = 379, ivl_offset = 58
+exit  decode_bypass: ivl_curr_range = 379, ivl_offset = 117, bin = 0
+mpm_idx = 1
+enter decode_decision: p_state_idx = 9, val_mps = 0, ivl_curr_range = 379, ivl_offset = 117
+exit  decode_decision: p_state_idx = 10, val_mps = 0, ivl_curr_range = 269, ivl_offset = 117, bin = 0
+intra_chroma_pred_mode = 4
+Start decoding TU: (x, y) = (112, 256), size = 16, depth = 0
+enter decode_decision: p_state_idx = 11, val_mps = 0, ivl_curr_range = 269, ivl_offset = 117
+exit  decode_decision: p_state_idx = 12, val_mps = 0, ivl_curr_range = 376, ivl_offset = 234, bin = 0
+split_transform_flag = 0
+enter decode_decision: p_state_idx = 32, val_mps = 0, ivl_curr_range = 376, ivl_offset = 234
+exit  decode_decision: p_state_idx = 33, val_mps = 0, ivl_curr_range = 343, ivl_offset = 234, bin = 0
+cbf_cb = 0
+enter decode_decision: p_state_idx = 33, val_mps = 0, ivl_curr_range = 343, ivl_offset = 234
+exit  decode_decision: p_state_idx = 34, val_mps = 0, ivl_curr_range = 312, ivl_offset = 234, bin = 0
+cbf_cr = 0
+enter decode_decision: p_state_idx = 20, val_mps = 1, ivl_curr_range = 312, ivl_offset = 234
+exit  decode_decision: p_state_idx = 21, val_mps = 1, ivl_curr_range = 261, ivl_offset = 234, bin = 1
+cbf_luma = 1
+Start decoding residual: c_idx = 0
+enter decode_decision: p_state_idx = 18, val_mps = 1, ivl_curr_range = 261, ivl_offset = 234
+exit  decode_decision: p_state_idx = 15, val_mps = 1, ivl_curr_range = 448, ivl_offset = 235, bin = 0
+last_sig_coeff_x_prefix = 0
+enter decode_decision: p_state_idx = 4, val_mps = 1, ivl_curr_range = 448, ivl_offset = 235
+exit  decode_decision: p_state_idx = 5, val_mps = 1, ivl_curr_range = 506, ivl_offset = 471, bin = 1
+enter decode_decision: p_state_idx = 5, val_mps = 1, ivl_curr_range = 506, ivl_offset = 471
+exit  decode_decision: p_state_idx = 4, val_mps = 1, ivl_curr_range = 370, ivl_offset = 300, bin = 0
+last_sig_coeff_y_prefix = 1
+enter decode_decision: p_state_idx = 17, val_mps = 1, ivl_curr_range = 370, ivl_offset = 300
+exit  decode_decision: p_state_idx = 13, val_mps = 1, ivl_curr_range = 288, ivl_offset = 10, bin = 0
+sig_coeff_flag = 0
+enter decode_decision: p_state_idx = 37, val_mps = 0, ivl_curr_range = 288, ivl_offset = 10
+exit  decode_decision: p_state_idx = 38, val_mps = 0, ivl_curr_range = 267, ivl_offset = 10, bin = 0
+coeff_abs_level_greater1_flag = 0
+enter decode_bypass: ivl_curr_range = 267, ivl_offset = 10
+exit  decode_bypass: ivl_curr_range = 267, ivl_offset = 20, bin = 0
+coeff_sign_flag = 0
+Start decoding CU: (x, y) = (96, 272), size = 16, depth = 2
+enter decode_decision: p_state_idx = 7, val_mps = 0, ivl_curr_range = 267, ivl_offset = 20
+exit  decode_decision: p_state_idx = 8, val_mps = 0, ivl_curr_range = 334, ivl_offset = 41, bin = 0
+split_cu_flag = 0
+enter decode_decision: p_state_idx = 28, val_mps = 1, ivl_curr_range = 334, ivl_offset = 41
+exit  decode_decision: p_state_idx = 29, val_mps = 1, ivl_curr_range = 293, ivl_offset = 41, bin = 1
+prev_intra_luma_pred_flag = 1
+enter decode_bypass: ivl_curr_range = 293, ivl_offset = 41
+exit  decode_bypass: ivl_curr_range = 293, ivl_offset = 83, bin = 0
+mpm_idx = 0
+enter decode_decision: p_state_idx = 10, val_mps = 0, ivl_curr_range = 293, ivl_offset = 83
+exit  decode_decision: p_state_idx = 11, val_mps = 0, ivl_curr_range = 416, ivl_offset = 167, bin = 0
+intra_chroma_pred_mode = 4
+Start decoding TU: (x, y) = (96, 272), size = 16, depth = 0
+enter decode_decision: p_state_idx = 12, val_mps = 0, ivl_curr_range = 416, ivl_offset = 167
+exit  decode_decision: p_state_idx = 13, val_mps = 0, ivl_curr_range = 305, ivl_offset = 167, bin = 0
+split_transform_flag = 0
+enter decode_decision: p_state_idx = 34, val_mps = 0, ivl_curr_range = 305, ivl_offset = 167
+exit  decode_decision: p_state_idx = 35, val_mps = 0, ivl_curr_range = 281, ivl_offset = 167, bin = 0
+cbf_cb = 0
+enter decode_decision: p_state_idx = 35, val_mps = 0, ivl_curr_range = 281, ivl_offset = 167
+exit  decode_decision: p_state_idx = 36, val_mps = 0, ivl_curr_range = 258, ivl_offset = 167, bin = 0
+cbf_cr = 0
+enter decode_decision: p_state_idx = 21, val_mps = 1, ivl_curr_range = 258, ivl_offset = 167
+exit  decode_decision: p_state_idx = 22, val_mps = 1, ivl_curr_range = 420, ivl_offset = 335, bin = 1
+cbf_luma = 1
+Start decoding residual: c_idx = 0
+enter decode_decision: p_state_idx = 15, val_mps = 1, ivl_curr_range = 420, ivl_offset = 335
+exit  decode_decision: p_state_idx = 12, val_mps = 1, ivl_curr_range = 380, ivl_offset = 41, bin = 0
+last_sig_coeff_x_prefix = 0
+enter decode_decision: p_state_idx = 4, val_mps = 1, ivl_curr_range = 380, ivl_offset = 41
+exit  decode_decision: p_state_idx = 5, val_mps = 1, ivl_curr_range = 476, ivl_offset = 83, bin = 1
+enter decode_decision: p_state_idx = 5, val_mps = 1, ivl_curr_range = 476, ivl_offset = 83
+exit  decode_decision: p_state_idx = 6, val_mps = 1, ivl_curr_range = 291, ivl_offset = 83, bin = 1
+enter decode_decision: p_state_idx = 36, val_mps = 1, ivl_curr_range = 291, ivl_offset = 83
+exit  decode_decision: p_state_idx = 37, val_mps = 1, ivl_curr_range = 269, ivl_offset = 83, bin = 1
+enter decode_decision: p_state_idx = 37, val_mps = 1, ivl_curr_range = 269, ivl_offset = 83
+exit  decode_decision: p_state_idx = 38, val_mps = 1, ivl_curr_range = 496, ivl_offset = 167, bin = 1
+enter decode_decision: p_state_idx = 9, val_mps = 1, ivl_curr_range = 496, ivl_offset = 167
+exit  decode_decision: p_state_idx = 10, val_mps = 1, ivl_curr_range = 346, ivl_offset = 167, bin = 1
+enter decode_decision: p_state_idx = 10, val_mps = 1, ivl_curr_range = 346, ivl_offset = 167
+exit  decode_decision: p_state_idx = 11, val_mps = 1, ivl_curr_range = 484, ivl_offset = 335, bin = 1
+enter decode_decision: p_state_idx = 17, val_mps = 0, ivl_curr_range = 484, ivl_offset = 335
+exit  decode_decision: p_state_idx = 18, val_mps = 0, ivl_curr_range = 385, ivl_offset = 335, bin = 0
+last_sig_coeff_y_prefix = 6
+enter decode_bypass: ivl_curr_range = 385, ivl_offset = 335
+exit  decode_bypass: ivl_curr_range = 385, ivl_offset = 286, bin = 1
+enter decode_bypass: ivl_curr_range = 385, ivl_offset = 286
+exit  decode_bypass: ivl_curr_range = 385, ivl_offset = 187, bin = 1
+last_sig_coeff_y_suffix = 3
+enter decode_decision: p_state_idx = 12, val_mps = 0, ivl_curr_range = 385, ivl_offset = 187
+exit  decode_decision: p_state_idx = 13, val_mps = 0, ivl_curr_range = 274, ivl_offset = 187, bin = 0
+sig_coeff_flag = 0
+enter decode_decision: p_state_idx = 13, val_mps = 0, ivl_curr_range = 274, ivl_offset = 187
+exit  decode_decision: p_state_idx = 14, val_mps = 0, ivl_curr_range = 402, ivl_offset = 375, bin = 0
+sig_coeff_flag = 0
+enter decode_decision: p_state_idx = 14, val_mps = 0, ivl_curr_range = 402, ivl_offset = 375
+exit  decode_decision: p_state_idx = 11, val_mps = 0, ivl_curr_range = 400, ivl_offset = 294, bin = 1
+sig_coeff_flag = 1
+enter decode_decision: p_state_idx = 11, val_mps = 0, ivl_curr_range = 400, ivl_offset = 294
+exit  decode_decision: p_state_idx = 9, val_mps = 0, ivl_curr_range = 468, ivl_offset = 44, bin = 1
+sig_coeff_flag = 1
+enter decode_decision: p_state_idx = 9, val_mps = 0, ivl_curr_range = 468, ivl_offset = 44
+exit  decode_decision: p_state_idx = 10, val_mps = 0, ivl_curr_range = 318, ivl_offset = 44, bin = 0
+sig_coeff_flag = 0
+enter decode_decision: p_state_idx = 11, val_mps = 1, ivl_curr_range = 318, ivl_offset = 44
+exit  decode_decision: p_state_idx = 12, val_mps = 1, ivl_curr_range = 474, ivl_offset = 88, bin = 1
+sig_coeff_flag = 1
+enter decode_decision: p_state_idx = 38, val_mps = 0, ivl_curr_range = 474, ivl_offset = 88
+exit  decode_decision: p_state_idx = 39, val_mps = 0, ivl_curr_range = 441, ivl_offset = 88, bin = 0
+coeff_abs_level_greater1_flag = 0
+enter decode_decision: p_state_idx = 51, val_mps = 0, ivl_curr_range = 441, ivl_offset = 88
+exit  decode_decision: p_state_idx = 52, val_mps = 0, ivl_curr_range = 426, ivl_offset = 88, bin = 0
+coeff_abs_level_greater1_flag = 0
+enter decode_decision: p_state_idx = 33, val_mps = 0, ivl_curr_range = 426, ivl_offset = 88
+exit  decode_decision: p_state_idx = 34, val_mps = 0, ivl_curr_range = 389, ivl_offset = 88, bin = 0
+coeff_abs_level_greater1_flag = 0
+enter decode_decision: p_state_idx = 34, val_mps = 0, ivl_curr_range = 389, ivl_offset = 88
+exit  decode_decision: p_state_idx = 35, val_mps = 0, ivl_curr_range = 354, ivl_offset = 88, bin = 0
+coeff_abs_level_greater1_flag = 0
+enter decode_bypass: ivl_curr_range = 354, ivl_offset = 88
+exit  decode_bypass: ivl_curr_range = 354, ivl_offset = 177, bin = 0
+coeff_sign_flag = 0
+enter decode_bypass: ivl_curr_range = 354, ivl_offset = 177
+exit  decode_bypass: ivl_curr_range = 354, ivl_offset = 1, bin = 1
+coeff_sign_flag = 1
+enter decode_bypass: ivl_curr_range = 354, ivl_offset = 1
+exit  decode_bypass: ivl_curr_range = 354, ivl_offset = 3, bin = 0
+coeff_sign_flag = 0
+enter decode_decision: p_state_idx = 2, val_mps = 0, ivl_curr_range = 354, ivl_offset = 3
+exit  decode_decision: p_state_idx = 3, val_mps = 0, ivl_curr_range = 392, ivl_offset = 7, bin = 0
+coded_sub_block_flag = 0
+enter decode_decision: p_state_idx = 41, val_mps = 1, ivl_curr_range = 392, ivl_offset = 7
+exit  decode_decision: p_state_idx = 42, val_mps = 1, ivl_curr_range = 367, ivl_offset = 7, bin = 1
+coded_sub_block_flag = 1
+enter decode_decision: p_state_idx = 21, val_mps = 0, ivl_curr_range = 367, ivl_offset = 7
+exit  decode_decision: p_state_idx = 22, val_mps = 0, ivl_curr_range = 308, ivl_offset = 7, bin = 0
+sig_coeff_flag = 0
+enter decode_decision: p_state_idx = 22, val_mps = 0, ivl_curr_range = 308, ivl_offset = 7
+exit  decode_decision: p_state_idx = 23, val_mps = 0, ivl_curr_range = 262, ivl_offset = 7, bin = 0
+sig_coeff_flag = 0
+enter decode_decision: p_state_idx = 23, val_mps = 0, ivl_curr_range = 262, ivl_offset = 7
+exit  decode_decision: p_state_idx = 24, val_mps = 0, ivl_curr_range = 438, ivl_offset = 14, bin = 0
+sig_coeff_flag = 0
+enter decode_decision: p_state_idx = 24, val_mps = 0, ivl_curr_range = 438, ivl_offset = 14
+exit  decode_decision: p_state_idx = 25, val_mps = 0, ivl_curr_range = 379, ivl_offset = 14, bin = 0
+sig_coeff_flag = 0
+enter decode_decision: p_state_idx = 25, val_mps = 0, ivl_curr_range = 379, ivl_offset = 14
+exit  decode_decision: p_state_idx = 26, val_mps = 0, ivl_curr_range = 331, ivl_offset = 14, bin = 0
+sig_coeff_flag = 0
+enter decode_decision: p_state_idx = 10, val_mps = 0, ivl_curr_range = 331, ivl_offset = 14
+exit  decode_decision: p_state_idx = 11, val_mps = 0, ivl_curr_range = 454, ivl_offset = 29, bin = 0
+sig_coeff_flag = 0
+enter decode_decision: p_state_idx = 26, val_mps = 0, ivl_curr_range = 454, ivl_offset = 29
+exit  decode_decision: p_state_idx = 27, val_mps = 0, ivl_curr_range = 392, ivl_offset = 29, bin = 0
+sig_coeff_flag = 0
+enter decode_decision: p_state_idx = 27, val_mps = 0, ivl_curr_range = 392, ivl_offset = 29
+exit  decode_decision: p_state_idx = 28, val_mps = 0, ivl_curr_range = 341, ivl_offset = 29, bin = 0
+sig_coeff_flag = 0
+enter decode_decision: p_state_idx = 11, val_mps = 0, ivl_curr_range = 341, ivl_offset = 29
+exit  decode_decision: p_state_idx = 12, val_mps = 0, ivl_curr_range = 484, ivl_offset = 58, bin = 0
+sig_coeff_flag = 0
+enter decode_decision: p_state_idx = 12, val_mps = 1, ivl_curr_range = 484, ivl_offset = 58
+exit  decode_decision: p_state_idx = 13, val_mps = 1, ivl_curr_range = 356, ivl_offset = 58, bin = 1
+sig_coeff_flag = 1
+enter decode_decision: p_state_idx = 28, val_mps = 0, ivl_curr_range = 356, ivl_offset = 58
+exit  decode_decision: p_state_idx = 29, val_mps = 0, ivl_curr_range = 315, ivl_offset = 58, bin = 0
+sig_coeff_flag = 0
+enter decode_decision: p_state_idx = 12, val_mps = 0, ivl_curr_range = 315, ivl_offset = 58
+exit  decode_decision: p_state_idx = 13, val_mps = 0, ivl_curr_range = 476, ivl_offset = 117, bin = 0
+sig_coeff_flag = 0
+enter decode_decision: p_state_idx = 13, val_mps = 1, ivl_curr_range = 476, ivl_offset = 117
+exit  decode_decision: p_state_idx = 14, val_mps = 1, ivl_curr_range = 354, ivl_offset = 117, bin = 1
+sig_coeff_flag = 1
+enter decode_decision: p_state_idx = 13, val_mps = 0, ivl_curr_range = 354, ivl_offset = 117
+exit  decode_decision: p_state_idx = 14, val_mps = 0, ivl_curr_range = 265, ivl_offset = 117, bin = 0
+sig_coeff_flag = 0
+enter decode_decision: p_state_idx = 14, val_mps = 1, ivl_curr_range = 265, ivl_offset = 117
+exit  decode_decision: p_state_idx = 15, val_mps = 1, ivl_curr_range = 392, ivl_offset = 235, bin = 1
+sig_coeff_flag = 1
+enter decode_decision: p_state_idx = 15, val_mps = 1, ivl_curr_range = 392, ivl_offset = 235
+exit  decode_decision: p_state_idx = 16, val_mps = 1, ivl_curr_range = 297, ivl_offset = 235, bin = 1
+sig_coeff_flag = 1
+enter decode_decision: p_state_idx = 39, val_mps = 0, ivl_curr_range = 297, ivl_offset = 235
+exit  decode_decision: p_state_idx = 40, val_mps = 0, ivl_curr_range = 278, ivl_offset = 235, bin = 0
+coeff_abs_level_greater1_flag = 0
+enter decode_decision: p_state_idx = 52, val_mps = 0, ivl_curr_range = 278, ivl_offset = 235
+exit  decode_decision: p_state_idx = 53, val_mps = 0, ivl_curr_range = 268, ivl_offset = 235, bin = 0
+coeff_abs_level_greater1_flag = 0
+enter decode_decision: p_state_idx = 35, val_mps = 0, ivl_curr_range = 268, ivl_offset = 235
+exit  decode_decision: p_state_idx = 36, val_mps = 0, ivl_curr_range = 490, ivl_offset = 470, bin = 0
+coeff_abs_level_greater1_flag = 0
+enter decode_decision: p_state_idx = 36, val_mps = 0, ivl_curr_range = 490, ivl_offset = 470
+exit  decode_decision: p_state_idx = 27, val_mps = 0, ivl_curr_range = 296, ivl_offset = 136, bin = 1
+coeff_abs_level_greater1_flag = 1
+enter decode_decision: p_state_idx = 28, val_mps = 0, ivl_curr_range = 296, ivl_offset = 136
+exit  decode_decision: p_state_idx = 29, val_mps = 0, ivl_curr_range = 263, ivl_offset = 136, bin = 0
+coeff_abs_level_greater2_flag = 0
+enter decode_bypass: ivl_curr_range = 263, ivl_offset = 136
+exit  decode_bypass: ivl_curr_range = 263, ivl_offset = 9, bin = 1
+coeff_sign_flag = 1
+enter decode_bypass: ivl_curr_range = 263, ivl_offset = 9
+exit  decode_bypass: ivl_curr_range = 263, ivl_offset = 19, bin = 0
+coeff_sign_flag = 0
+enter decode_bypass: ivl_curr_range = 263, ivl_offset = 19
+exit  decode_bypass: ivl_curr_range = 263, ivl_offset = 39, bin = 0
+coeff_sign_flag = 0
+enter decode_decision: p_state_idx = 33, val_mps = 0, ivl_curr_range = 263, ivl_offset = 39
+exit  decode_decision: p_state_idx = 34, val_mps = 0, ivl_curr_range = 474, ivl_offset = 78, bin = 0
+sig_coeff_flag = 0
+enter decode_decision: p_state_idx = 34, val_mps = 0, ivl_curr_range = 474, ivl_offset = 78
+exit  decode_decision: p_state_idx = 35, val_mps = 0, ivl_curr_range = 433, ivl_offset = 78, bin = 0
+sig_coeff_flag = 0
+enter decode_decision: p_state_idx = 35, val_mps = 0, ivl_curr_range = 433, ivl_offset = 78
+exit  decode_decision: p_state_idx = 36, val_mps = 0, ivl_curr_range = 400, ivl_offset = 78, bin = 0
+sig_coeff_flag = 0
+enter decode_decision: p_state_idx = 36, val_mps = 0, ivl_curr_range = 400, ivl_offset = 78
+exit  decode_decision: p_state_idx = 37, val_mps = 0, ivl_curr_range = 368, ivl_offset = 78, bin = 0
+sig_coeff_flag = 0
+enter decode_decision: p_state_idx = 37, val_mps = 0, ivl_curr_range = 368, ivl_offset = 78
+exit  decode_decision: p_state_idx = 38, val_mps = 0, ivl_curr_range = 342, ivl_offset = 78, bin = 0
+sig_coeff_flag = 0
+enter decode_decision: p_state_idx = 8, val_mps = 0, ivl_curr_range = 342, ivl_offset = 78
+exit  decode_decision: p_state_idx = 9, val_mps = 0, ivl_curr_range = 452, ivl_offset = 157, bin = 0
+sig_coeff_flag = 0
+enter decode_decision: p_state_idx = 38, val_mps = 0, ivl_curr_range = 452, ivl_offset = 157
+exit  decode_decision: p_state_idx = 39, val_mps = 0, ivl_curr_range = 419, ivl_offset = 157, bin = 0
+sig_coeff_flag = 0
+enter decode_decision: p_state_idx = 39, val_mps = 0, ivl_curr_range = 419, ivl_offset = 157
+exit  decode_decision: p_state_idx = 40, val_mps = 0, ivl_curr_range = 392, ivl_offset = 157, bin = 0
+sig_coeff_flag = 0
+enter decode_decision: p_state_idx = 9, val_mps = 0, ivl_curr_range = 392, ivl_offset = 157
+exit  decode_decision: p_state_idx = 10, val_mps = 0, ivl_curr_range = 262, ivl_offset = 157, bin = 0
+sig_coeff_flag = 0
+enter decode_decision: p_state_idx = 7, val_mps = 1, ivl_curr_range = 262, ivl_offset = 157
+exit  decode_decision: p_state_idx = 8, val_mps = 1, ivl_curr_range = 324, ivl_offset = 314, bin = 1
+sig_coeff_flag = 1
+enter decode_decision: p_state_idx = 40, val_mps = 0, ivl_curr_range = 324, ivl_offset = 314
+exit  decode_decision: p_state_idx = 29, val_mps = 0, ivl_curr_range = 352, ivl_offset = 206, bin = 1
+sig_coeff_flag = 1
+enter decode_decision: p_state_idx = 10, val_mps = 0, ivl_curr_range = 352, ivl_offset = 206
+exit  decode_decision: p_state_idx = 11, val_mps = 0, ivl_curr_range = 496, ivl_offset = 412, bin = 0
+sig_coeff_flag = 0
+enter decode_decision: p_state_idx = 8, val_mps = 1, ivl_curr_range = 496, ivl_offset = 412
+exit  decode_decision: p_state_idx = 6, val_mps = 1, ivl_curr_range = 316, ivl_offset = 149, bin = 0
+sig_coeff_flag = 0
+enter decode_decision: p_state_idx = 11, val_mps = 0, ivl_curr_range = 316, ivl_offset = 149
+exit  decode_decision: p_state_idx = 12, val_mps = 0, ivl_curr_range = 470, ivl_offset = 298, bin = 0
+sig_coeff_flag = 0
+enter decode_decision: p_state_idx = 6, val_mps = 1, ivl_curr_range = 470, ivl_offset = 298
+exit  decode_decision: p_state_idx = 4, val_mps = 1, ivl_curr_range = 350, ivl_offset = 7, bin = 0
+sig_coeff_flag = 0
+enter decode_decision: p_state_idx = 13, val_mps = 1, ivl_curr_range = 350, ivl_offset = 7
+exit  decode_decision: p_state_idx = 14, val_mps = 1, ivl_curr_range = 261, ivl_offset = 7, bin = 1
+sig_coeff_flag = 1
+enter decode_decision: p_state_idx = 14, val_mps = 0, ivl_curr_range = 261, ivl_offset = 7
+exit  decode_decision: p_state_idx = 15, val_mps = 0, ivl_curr_range = 384, ivl_offset = 14, bin = 0
+coeff_abs_level_greater1_flag = 0
+enter decode_decision: p_state_idx = 3, val_mps = 0, ivl_curr_range = 384, ivl_offset = 14
+exit  decode_decision: p_state_idx = 4, val_mps = 0, ivl_curr_range = 412, ivl_offset = 29, bin = 0
+coeff_abs_level_greater1_flag = 0
+enter decode_decision: p_state_idx = 6, val_mps = 0, ivl_curr_range = 412, ivl_offset = 29
+exit  decode_decision: p_state_idx = 7, val_mps = 0, ivl_curr_range = 260, ivl_offset = 29, bin = 0
+coeff_abs_level_greater1_flag = 0
+enter decode_bypass: ivl_curr_range = 260, ivl_offset = 29
+exit  decode_bypass: ivl_curr_range = 260, ivl_offset = 58, bin = 0
+coeff_sign_flag = 0
+enter decode_bypass: ivl_curr_range = 260, ivl_offset = 58
+exit  decode_bypass: ivl_curr_range = 260, ivl_offset = 116, bin = 0
+coeff_sign_flag = 0
+Start decoding CU: (x, y) = (112, 272), size = 16, depth = 2
+enter decode_decision: p_state_idx = 8, val_mps = 0, ivl_curr_range = 260, ivl_offset = 116
+exit  decode_decision: p_state_idx = 9, val_mps = 0, ivl_curr_range = 330, ivl_offset = 232, bin = 0
+split_cu_flag = 0
+enter decode_decision: p_state_idx = 29, val_mps = 1, ivl_curr_range = 330, ivl_offset = 232
+exit  decode_decision: p_state_idx = 30, val_mps = 1, ivl_curr_range = 291, ivl_offset = 232, bin = 1
+prev_intra_luma_pred_flag = 1
+enter decode_bypass: ivl_curr_range = 291, ivl_offset = 232
+exit  decode_bypass: ivl_curr_range = 291, ivl_offset = 174, bin = 1
+enter decode_bypass: ivl_curr_range = 291, ivl_offset = 174
+exit  decode_bypass: ivl_curr_range = 291, ivl_offset = 58, bin = 1
+mpm_idx = 2
+enter decode_decision: p_state_idx = 11, val_mps = 0, ivl_curr_range = 291, ivl_offset = 58
+exit  decode_decision: p_state_idx = 12, val_mps = 0, ivl_curr_range = 420, ivl_offset = 116, bin = 0
+intra_chroma_pred_mode = 4
+Start decoding TU: (x, y) = (112, 272), size = 16, depth = 0
+enter decode_decision: p_state_idx = 13, val_mps = 0, ivl_curr_range = 420, ivl_offset = 116
+exit  decode_decision: p_state_idx = 14, val_mps = 0, ivl_curr_range = 315, ivl_offset = 116, bin = 0
+split_transform_flag = 0
+enter decode_decision: p_state_idx = 36, val_mps = 0, ivl_curr_range = 315, ivl_offset = 116
+exit  decode_decision: p_state_idx = 37, val_mps = 0, ivl_curr_range = 293, ivl_offset = 116, bin = 0
+cbf_cb = 0
+enter decode_decision: p_state_idx = 37, val_mps = 0, ivl_curr_range = 293, ivl_offset = 116
+exit  decode_decision: p_state_idx = 38, val_mps = 0, ivl_curr_range = 272, ivl_offset = 116, bin = 0
+cbf_cr = 0
+enter decode_decision: p_state_idx = 22, val_mps = 1, ivl_curr_range = 272, ivl_offset = 116
+exit  decode_decision: p_state_idx = 23, val_mps = 1, ivl_curr_range = 452, ivl_offset = 233, bin = 1
+cbf_luma = 1
+Start decoding residual: c_idx = 0
+enter decode_decision: p_state_idx = 12, val_mps = 1, ivl_curr_range = 452, ivl_offset = 233
+exit  decode_decision: p_state_idx = 13, val_mps = 1, ivl_curr_range = 324, ivl_offset = 233, bin = 1
+enter decode_decision: p_state_idx = 13, val_mps = 1, ivl_curr_range = 324, ivl_offset = 233
+exit  decode_decision: p_state_idx = 14, val_mps = 1, ivl_curr_range = 470, ivl_offset = 467, bin = 1
+enter decode_decision: p_state_idx = 38, val_mps = 1, ivl_curr_range = 470, ivl_offset = 467
+exit  decode_decision: p_state_idx = 28, val_mps = 1, ivl_curr_range = 264, ivl_offset = 244, bin = 0
+last_sig_coeff_x_prefix = 2
+enter decode_decision: p_state_idx = 6, val_mps = 1, ivl_curr_range = 264, ivl_offset = 244
+exit  decode_decision: p_state_idx = 4, val_mps = 1, ivl_curr_range = 420, ivl_offset = 341, bin = 0
+last_sig_coeff_y_prefix = 0
+enter decode_decision: p_state_idx = 12, val_mps = 0, ivl_curr_range = 420, ivl_offset = 341
+exit  decode_decision: p_state_idx = 9, val_mps = 0, ivl_curr_range = 444, ivl_offset = 128, bin = 1
+sig_coeff_flag = 1
+enter decode_decision: p_state_idx = 9, val_mps = 0, ivl_curr_range = 444, ivl_offset = 128
+exit  decode_decision: p_state_idx = 10, val_mps = 0, ivl_curr_range = 314, ivl_offset = 128, bin = 0
+sig_coeff_flag = 0
+enter decode_decision: p_state_idx = 10, val_mps = 0, ivl_curr_range = 314, ivl_offset = 128
+exit  decode_decision: p_state_idx = 11, val_mps = 0, ivl_curr_range = 458, ivl_offset = 257, bin = 0
+sig_coeff_flag = 0
+enter decode_decision: p_state_idx = 11, val_mps = 0, ivl_curr_range = 458, ivl_offset = 257
+exit  decode_decision: p_state_idx = 12, val_mps = 0, ivl_curr_range = 323, ivl_offset = 257, bin = 0
+sig_coeff_flag = 0
+enter decode_decision: p_state_idx = 14, val_mps = 1, ivl_curr_range = 323, ivl_offset = 257
+exit  decode_decision: p_state_idx = 11, val_mps = 1, ivl_curr_range = 340, ivl_offset = 79, bin = 0
+sig_coeff_flag = 0
+enter decode_decision: p_state_idx = 38, val_mps = 0, ivl_curr_range = 340, ivl_offset = 79
+exit  decode_decision: p_state_idx = 39, val_mps = 0, ivl_curr_range = 316, ivl_offset = 79, bin = 0
+coeff_abs_level_greater1_flag = 0
+enter decode_decision: p_state_idx = 29, val_mps = 0, ivl_curr_range = 316, ivl_offset = 79
+exit  decode_decision: p_state_idx = 30, val_mps = 0, ivl_curr_range = 284, ivl_offset = 79, bin = 0
+coeff_abs_level_greater1_flag = 0
+enter decode_bypass: ivl_curr_range = 284, ivl_offset = 79
+exit  decode_bypass: ivl_curr_range = 284, ivl_offset = 158, bin = 0
+coeff_sign_flag = 0
+enter decode_bypass: ivl_curr_range = 284, ivl_offset = 158
+exit  decode_bypass: ivl_curr_range = 284, ivl_offset = 33, bin = 1
+coeff_sign_flag = 1
+enter decode_terminate: ivl_curr_range = 284, ivl_offset = 33
+exit  decode_terminate: ivl_curr_range = 282, ivl_offset = 33, bin = 0
+end_of_slice_segment_flag = 0
