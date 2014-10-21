@@ -27,7 +27,7 @@ class Ctu(cu.Cu):
         if self.ctx.img.slice_hdr.slice_sao_luma_flag or self.ctx.img.slice_hdr.slice_sao_chroma_flag:
             self.sao.decode()
         
-        cu.Cu.decode(self)
+        cu.Cu.parse(self)
 
         #print(self)
 

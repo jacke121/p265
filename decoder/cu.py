@@ -29,7 +29,7 @@ class Cu(tree.Tree):
         self.MODE_INTRA = 1
         self.MODE_SKIP = 2
 
-    def decode_leaf(self):
+    def parse_leaf(self):
         assert self.is_leaf() == True
 
         if self.ctx.pps.transquant_bypass_enabled_flag:
@@ -47,8 +47,10 @@ class Cu(tree.Tree):
             self.pred_mode = self.MODE_SKIP
         else:
             if self.ctx.img.slice_hdr.is_I_slice():
+                # I slice only use intra prediction
                 self.pred_mode = self.MODE_INTRA
             else:
+                # P/B slice has one bit in bitstream as "pred_mode_flag" to indicate whether the current CU is intra or inter predicted
                 self.pred_mode_flag = self.decode_pred_mode_flag()
                 if self.pred_mode_flag == 0:
                     self.pred_mode = self.MODE_INTER
@@ -302,7 +304,7 @@ class Cu(tree.Tree):
             self.decode_prediction_unit(self.x, self.y+self.size/2, self.size/2, self.size/2)
             self.decode_prediction_unit(self.x+self.size/2, self.y+self.size/2, self.size/2, self.size/2)
 
-    def decode(self):
+    def parse(self):
         log.location.debug("Start decoding CU: (x, y) = (%d, %d), size = %d, depth = %d", self.x, self.y, self.size, self.depth)
 
         right_boundary_within_pic_flag = (self.x + (1 << self.log2size)) <= self.ctx.sps.pic_width_in_luma_samples
@@ -349,9 +351,9 @@ class Cu(tree.Tree):
 
             for child in self.children:
                 if child.within_boundary_flag:
-                    child.decode()
+                    child.parse()
         else:
-            self.decode_leaf()
+            self.parse_leaf()
 
     def decode_split_cu_flag(self):
         x0 = self.x
@@ -456,3 +458,32 @@ class Cu(tree.Tree):
         log.syntax.info("part_mode = %d", value)
         return value
 
+    def decode(self):
+        if self.pcm_flag == 1:
+            self.decode_pcm()
+        elif self.pred_mode == self.MODE_INTRA:
+            self.decode_intra()
+        elif self.pred_mode == self.MODE_INTER:
+            self.decode_inter()
+        else:
+            raise
+
+    def decode_intra(self):
+        self.pu = [None for i in range(6)]
+
+        # Luma
+        if self.intra_split_flag == 0:
+            self.pu[0] = [pu.IntraPu(self, x = self.x, y = self.y, log2size = self.log2size, depth = 0, mode = self.intra_pred_mode_y[self.x][self.y], c_idx = 0)]
+            self.pu[0].decode(self.tu)
+        else:
+            for i in range(4):
+                x_pb = self.x + (self.size >> 1) * (i % 2)
+                y_pb = self.y + (self.size >> 1) * (i / 2)
+                self.pu[i] = pu.IntraPu(self, x = x_pb, y = y_pb, log2size = self.log2size-1, depth = 1, mode = self.intra_pred_mode_y[x_pb][y_pb], c_idx = 0)
+                self.pu[i].decode(self.tu.children[i])
+        
+        # Chroma
+        self.pu[4] = pu.IntraPu(self, x = self.x/2, y = self.y/2, log2size = self.log2size-1, depth = 0, mode = self.intra_pred_mode_c, c_idx = 1)
+        self.pu[5] = pu.IntraPu(self, x = self.x/2, y = self.y/2, log2size = self.log2size-1, depth = 0, mode = self.intra_pred_mode_c, c_idx = 2)
+        self.pu[4].decode(self.tu)
+        self.pu[5].decode(self.tu)
