@@ -39,12 +39,22 @@ class Tree:
         y_flag = y >= self.y and y < (self.y + self.size)
         return x_flag and y_flag
 
-    def traverse(self):
-        yield self
-        for child in self.children:
-            if child is not None:
-                for i in child.traverse():
-                    yield i
+    def traverse(self, strategy = "depth-first"):
+        if strategy == "depth-first":
+            yield self
+            for child in self.children:
+                if child is not None:
+                    for i in child.traverse():
+                        yield i
+        elif strategy == "breath-first":
+            q = [self]
+            while len(q) != 0:
+                node = q.pop()
+                yield node 
+                for child in node.children:
+                    q.insert(0, child)
+        else:
+            raise ValueError("Undefined tree traversing strategy.")
 
     def get_leaves(self):
         leaves = []
@@ -146,7 +156,10 @@ if __name__ == "__main__":
 
     ctb.draw(ax)
     plt.show()
-
+    
+    print "breath-first traversing start:"
+    for i in ctb.traverse(strategy = "breath-first"):
+        print "%s%dx%d(%d)" % (' '*4*i.depth, i.x, i.y, i.size)
     exit()
 
     
