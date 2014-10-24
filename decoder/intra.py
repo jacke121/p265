@@ -36,12 +36,11 @@ class IntraPu:
         raise ValueError("Error: can't find the split_transform_flag in the specified pixel coordinates and depth.")
 
     def decode_leaf(self, x, y, log2size, depth):
-        self.decode_neighbor()
+        self.decode_neighbor(x, y, log2size, depth)
         self.decode_prediction_samples()
         self.scaling_process()
         self.transformation_process()
         self.reconstruction_process()
-
 
     def decode_neighbor(self, x0, y0, log2size, depth):
         size = 1 << log2size
@@ -146,8 +145,38 @@ class IntraPu:
                     pf[size*2-1][-1] = self.neighbor[size*2-1][-1]
                 self.neighbor = pf
 
-    def decode_intra_planar(self):
-        raise
+    def decode_intra_planar(self, log2size):
+        size = 1 << log2size
+        for x in range(0, size):
+            for y in range(0, size):
+                self.pred_samples[x][y] = ((size-1-x)*self.neighbor[-1][y] + \
+                                           (x+1)*self.neighbor[size][-1] + \
+                                           (size-1-y)*self.neighbor[x][-1] + \
+                                           (y+1)*self.neighbor[-1][size] + size) >>  (log2size + 1)
 
-    def decode_intra_dc(self):
+    def decode_intra_dc(self, log2size, c_idx):
+        size = 1 << log2size
+
+        dc_val = size
+        for x in range(0, size):
+            dc_val += self.neighbor[x][-1]
+        for y in range(0, size):
+            dc_val += self.neighbor[-1][y]
+        dc_val = dc_val >> (log2size + 1)
+
+        if c_idx == 0 and size < 32:
+            self.pred_samples[0][0] = (self.neighbor[-1][0] + 2 * dc_val + self.neighbor[0][-1] + 2) >> 2
+            for x in range(1, size):
+                self.pred_samples[x][0] = (self.neighbor[x][-1] + 3 * dc_val + 2) >> 2
+            for y in range(1, size):
+                self.pred_samples[0][y] = (self.neighbor[-1][y] + 3 * dc_val + 2) >> 2
+            for x in range(1, size):
+                for y in range(1, size):
+                    self.pred_samples[x][y] = dc_val
+        else:
+            for x in range(0, size):
+                for y in range(0, size):
+                    self.pred_samples[x][y] = dc_val
+
+    def decode_intra_angular(self):
         raise
