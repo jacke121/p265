@@ -41,6 +41,10 @@ class Pps:
         self.cu_qp_delta_enabled_flag = bs.u(1, "cu_qp_delta_enabled_flag")
         if self.cu_qp_delta_enabled_flag:
             self.diff_cu_qp_delta_depth = bs.ue("diff_cu_qp_delta_depth")
+            assert self.diff_cu_qp_delta_depth in range(0, self.sps.log2_diff_max_min_luma_coding_block_size + 1)
+        else:
+            self.diff_cu_qp_delta_depth = 0
+        self.log2_min_cu_qp_delta_size = self.sps.ctb_log2_size_y - self.diff_cu_qp_delta_depth
 
         self.pps_cb_qp_offset = bs.se("pps_cb_qp_offset")
         self.pps_cr_qp_offset = bs.se("pps_cr_qp_offset")
