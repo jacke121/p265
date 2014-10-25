@@ -34,6 +34,12 @@ class Tree:
     def is_leaf(self):
         return len(self.children) == 0
 
+    def get_root(self):
+        if self.parent is None:
+            return self
+        else:
+            self.parent.get_root()
+
     def contain(self, x, y):
         x_flag = x >= self.x and x < (self.x + self.size)
         y_flag = y >= self.y and y < (self.y + self.size)
