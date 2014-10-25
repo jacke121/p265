@@ -320,12 +320,9 @@ class Cu(tree.Tree):
             else:
                 self.split_cu_flag = 0
         
-        #TODO
-        """
-        if cu_qp_delta_enabled_flag and ...:
-            is_cu_qp_delta_coded = 0
-            cu_qp_delta_val = 0
-        """
+        if self.ctx.pps.cu_qp_delta_enabled_flag and self.log2size >= self.ctx.pps.log2_min_cu_qp_delta_size:
+            self.is_cu_qp_delta_coded = 0
+            self.cu_qp_delta_val = 0
         
         if self.split_cu_flag:
             x0 = self.x
@@ -468,6 +465,68 @@ class Cu(tree.Tree):
             self.decode_inter()
         else:
             raise
+    
+    def decode_qp(self):
+        x_qg = self.x - (self.x & ((1 << self.ctx.pps.log2_min_cu_qp_delta_size) - 1))
+        y_qg = self.y - (self.y & ((1 << self.ctx.pps.log2_min_cu_qp_delta_size) - 1))
+
+        first_qg_in_ctb_row = x_qg == 0 and ((y_qg & ((1 << self.ctx.sps.ctb_log2_size_y) - 1)) == 0)
+
+        x_slice = (self.ctx.img.slice_hdr.slice_addr % self.ctx.sps.pic_width_in_ctbs_y) * self.ctx.sps.ctb_size_y
+        y_slice = (self.ctx.img.slice_hdr.slice_addr / self.ctx.sps.pic_width_in_ctbs_y) * self.ctx.sps.ctb_size_y
+        first_qg_in_slice = x_qg == x_slice and y_qg == y_slice
+
+        if not self.ctx.sps.tiles_enabled_flag:
+            first_qg_in_tile = False
+        elif not (x_qg & ((1 << self.ctx.sps.ctb_log2_size_y) - 1) == 0 and y_qg & ((1 << self.ctx.sps.ctb_log2size_y) - 1)):
+            # QG is not in CTB top-left boundary
+            first_qg_in_tile = False
+        else:
+            #x_ctb = x_qg >> self.ctx.sps.ctb_log2_size_y
+            #y_ctb = y_qg >> self.ctx.sps.ctb_log2_size_y
+            ctb = self.get_root()
+            assert ctb.x == x_qg and ctb.y == y_qg
+            first_qg_in_tile = ctb.is_first_ctb_in_tile()
+
+        if firt_qg_in_slice or first_qg_in_tile or (first_qg_in_ctb_row and self.ctx.pps.entropy_coding_sync_enabled_flag):
+            prev_qp_y = self.ctx.img.slice_hdr.slice_qp_y
+        else:
+            prev_qp_y = self.prev_qp_y
+
+        self.available_a = self.ctx.img.check_availability(self.x, self.y, x_qg-1, y_qg)
+        if available_a == False and self.get_root().addr_ts != ctb_addr_a:
+            qp_y_a = prev_qp_y
+        else:
+            qp_y_a = self.ctx.img.get("qp_y", x_qg-1, y_qg)
+
+        self.available_b = self.ctx.img.check_availability(self.x, self.y, x_qg, y_qg-1)
+        if available_b == False and self.get_root().addr_ts != ctb_addr_b:
+            qp_y_b = prev_qp_y
+        else:
+            qp_y_a = self.ctx.img.get("qp_y", x_qg, y_qg-1)
+
+        pred_qp_y = (qp_y_a + qp_y_b + 1) >> 1
+        self.qp_y = ((pred_qp_y + self.cu_qp_delta_val + 52 + 2 * self.ctx.sps.qp_bd_offset_y) % (52 + self.ctx.sps.qp_bd_offset_y)) - self.ctx.sps.qp_bd_offset_y
+
+        qp_idx_cb = utils.clip3(-self.ctx.sps.qp_bd_offset_c, 57, self.qp_y + self.ctx.pps.pps_cb_qp_offset + self.ctx.img.slice_hdr.slice_cb_qp_offset)
+        qp_idx_cr = utils.clip3(-self.ctx.sps.qp_bd_offset_c, 57, self.qp_y + self.ctx.pps.pps_cr_qp_offset + self.ctx.img.slice_hdr.slice_cr_qp_offset)
+        def get_qp_c(idx):
+            if idx < 30:
+                return idx
+            elif idx <= 34:
+                return idx - 1
+            elif idx <= 36:
+                return idx - 2
+            elif idx <= 38:
+                return idx - 3
+            elif idx <= 40:
+                return idx - 4
+            elif idx <= 42:
+                return idx - 5
+            else:
+                return idx - 6
+        self.qp_cb = get_qp_c(qp_idx_cb)
+        self.qp_cb = get_qp_c(qp_idx_cr)
 
     def decode_intra(self):
         self.pu = [None for i in range(6)]
