@@ -1,4 +1,5 @@
 import utils
+import numpy as np
 
 class IntraPu:
     def __init__(self, cu, c_idx, mode):
@@ -37,10 +38,18 @@ class IntraPu:
 
     def decode_leaf(self, x, y, log2size, depth):
         self.decode_neighbor(x, y, log2size, depth)
-        self.decode_prediction_samples()
+        self.decode_pred_samples()
         self.scaling_process()
         self.transformation_process()
         self.reconstruction_process()
+    
+    def decode_pred_samples(log2size, c_idx):
+        if self.mode == IntraPredMode.INTRA_PLANAR:
+            self.decode_intra_planar(log2size)
+        elif self.mode == IntraPredMode.INTRA_DC:
+            self.decode_intra_dc(log2size, c_idx)
+        else:
+            self.decode_intra_angular(log2size, c_idx)
 
     def decode_neighbor(self, x0, y0, log2size, depth):
         size = 1 << log2size
@@ -147,6 +156,7 @@ class IntraPu:
 
     def decode_intra_planar(self, log2size):
         size = 1 << log2size
+        self.pred_samples = np.zeros((size, size), int)
         for x in range(0, size):
             for y in range(0, size):
                 self.pred_samples[x][y] = ((size-1-x)*self.neighbor[-1][y] + \
@@ -156,6 +166,7 @@ class IntraPu:
 
     def decode_intra_dc(self, log2size, c_idx):
         size = 1 << log2size
+        self.pred_samples = np.zeros((size, size), int)
 
         dc_val = size
         for x in range(0, size):
@@ -178,5 +189,54 @@ class IntraPu:
                 for y in range(0, size):
                     self.pred_samples[x][y] = dc_val
 
-    def decode_intra_angular(self):
-        raise
+    def decode_intra_angular(self, log2size, c_idx):
+        size = 1 << log2size
+        self.pred_samples = np.zeros((size, size), int)
+
+        if self.mode >= 18:
+            ref = {}
+            for x in range(0,size + 1):
+                ref[x] = self.neighbor[-1 + x][-1]
+
+            if pred_angle < 0:
+                if ((size * pred_angle) >> 5) < -1:
+                    for x in range((size * pred_angle) >> 5, -1 + 1):
+                        ref[x] = self.neighbor[-1][-1 + ((x * inv_angle) >> 8)]
+            else:
+                for x in range(size + 1, 2 * size + 1):
+                    ref[x] = self.neighbor[-1 + x][-1]
+
+            for x in range(0, size):
+                for y in range(0, size):
+                    idx = ((y + 1) * pred_angle) >> 5
+                    fact = ((y + 1) * pred_angle) & 31
+                    if fact == 0:
+                        self.pred_smaples[x][y] = ((32 - fact) * ref[x + idx + 1] + fact * ref[x + idx + 2] + 16) >> 5
+                    else:
+                        self.pred_samples[x][y] = ref[x + idx + 1]
+                    if x == 0 and self.mode == 26 and c_idx == 0 and size < 32:
+                        self.pred_samples[x][y] = utils.clip1y(self.neighbor[x][-1] + ((self.neighbor[-1][y] - self.neighbor[-1][-1]) >> 1))
+        else:
+            ref = {}
+            for x in range(0, size + 1):
+                ref[x] = self.neighbor[-1][-1 + x]
+            if pred_angle < 0:
+                if ((size * pred_angle) >> 5) < -1:
+                    for x in range((size * pred_angle) >> 5, -1 + 1):
+                        ref[x] = self.neighbor[-1 + ((x * inv_angle + 128) >> 8)][-1]
+            else:
+                for x in range(size + 1, 2 * size + 1):
+                    ref[x] = self.neighbor[-1][-1 + x]
+
+            for x in range(0, size):
+                for y in range(0, size):
+                    idx = ((x + 1) * pred_angle) >> 5
+                    fact = ((x + 1) * pred_angle) & 31
+
+                    if fact != 0:
+                        self.pred_samples[x][y] = ((32 - fact) * ref[y + idx + 1] + fact * ref[y + idx + 2] + 16) >> 5
+                    else:
+                        self.pred_samples[x][y] = ref[y+ idx + 1]
+
+                    if y ==0 and self.mode == 10 and c_idx == 0 and size < 32:
+                        self.pred_samples[x][y] = utils.clip1y(self.neighbor[-1][y] + (self.neighbor[x][-1] - self.neighbor[-1][-1]) >> 1)
