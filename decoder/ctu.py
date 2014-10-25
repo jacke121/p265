@@ -31,6 +31,19 @@ class Ctu(cu.Cu):
 
         #print(self)
 
+    def is_first_ctb_in_tile(self):
+        if self.ctx.sps.tiles_enabled_flag == 0:
+            return self.x == 0 and self.y == 0
+    
+        for x in range(0, self.ctx.pps.num_tile_columns):
+            if self.ctx.pps.column_boundary[x] == self.x:
+                for y in range(0, self.ctx.pps.num_tile_rows):
+                    if self.ctx.pps.row_boundary[k] == self.y:
+                        return true
+                return false
+    
+        return false;
+
 if __name__ == "__main__":
     class Sps:
         def __init__(self, pic_width_in_ctbs, pic_width_in_min_cbs, ctb_log2_size, min_cb_log2_size):
