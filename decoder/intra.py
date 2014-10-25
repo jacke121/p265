@@ -38,7 +38,7 @@ class IntraPu:
 
     def decode_leaf(self, x, y, log2size, depth):
         self.decode_neighbor(x, y, log2size, depth)
-        self.decode_pred_samples()
+        self.decode_pred_samples(log2size, c_idx)
         self.scaling_process()
         self.transformation_process()
         self.reconstruction_process()
