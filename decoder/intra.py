@@ -1,4 +1,5 @@
 import utils
+import copy
 import numpy as np
 
 class IntraPu:
@@ -39,10 +40,18 @@ class IntraPu:
     def decode_leaf(self, x, y, log2size, depth):
         self.decode_neighbor(x, y, log2size, depth)
         self.decode_pred_samples(log2size, c_idx)
-        self.scaling_process()
-        self.transformation_process()
-        self.reconstruction_process()
-    
+
+        self.d = numpy.zeros((gcsize, size), int)
+        inv_scaling.inverse_scaling(pu=self, x0=x, y0=y, log2size=log2size, depth=depth, c_idx=c_idx, d=self.d)
+
+        self.r = numpy.zeros((size, size), int)
+        inv_transform.inverse_transform(self.d, log2size, self.r)
+
+        self.reconstructed_samples = numpy.zeros((size, size), int)
+        reconstruction.reconstruction(pred_samples=self.pred_samples, residual_samples=self.r, log2size=log2size, c_idx=c_idx, rec_samples=self.reconstructed_samples)
+
+        raise
+
     def decode_pred_samples(log2size, c_idx):
         if self.mode == IntraPredMode.INTRA_PLANAR:
             self.decode_intra_planar(log2size)
