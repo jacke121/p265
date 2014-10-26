@@ -30,6 +30,14 @@ class Cu(tree.Tree):
         self.MODE_INTRA = 1
         self.MODE_SKIP = 2
 
+    def is_intra_mode(self):
+        assert self.is_leaf() == True
+        return self.pred_mode == self.MODE_INTRA
+
+    def is_inter_mode(self):
+        assert self.is_leaf() == True
+        return self.pred_mode == self.MODE_INTER
+
     def parse_leaf(self):
         assert self.is_leaf() == True
 
