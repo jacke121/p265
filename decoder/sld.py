@@ -112,3 +112,42 @@ class ScalingListData:
                         next_coef = (next_coef + self.scaling_list_delta_coef[size_id][matrix_id][i] + 256) % 256
                         self.scaling_list[size_id][matrix_id][i] = next_coef
                         assert self.scaling_list[size_id][matrix_id][i] > 0
+
+        self.decode_scaling_factor()
+
+    def decode_scaling_factor(self):
+        self.scaling_factor = numpy.zeros((4, 6, 32, 32), int)
+        scan_order = scan.get_upright_diagonal_scan_order_array
+        for size_id in [0]: # 4x4
+            for matrix_id in range(0, 6):
+                for i in range(0, 16):
+                    x = scan_order(4)[i][0]
+                    y = scan_order(4)[i][1]
+                    self.scaling_factor[size_id][matrix_id][x][y] = self.scaling_list[size_id][matrix_id][i]
+
+        for size_id in [1]: # 8x8
+            for matrix_id in range(0, 6):
+                for i in range(0, 63):
+                    x = scan_order(8)[i][0]
+                    y = scan_order(8)[i][1]
+                    self.scaling_factor[size_id][matrix_id][x][y] = self.scaling_list[size_id][matrix_id][i]
+
+        for size_id in [2]: # 16x16
+            for matrix_id in range(0, 6):
+                for i in range(0, 63):
+                    x = scan_order(8)[i][0]
+                    y = scan_order(8)[i][1]
+                    for k in [0, 1]:
+                        for j in [0, 1]:
+                            self.scaling_factor[size_id][matrix_id][x*2 + k][y*2 + j] = self.scaling_list[size_id][matrix_id][i]
+                    self.scaling_factor[size_id][matrix_id][0][0] = self.scaling_list_dc_coef_minus8[0][matrix_id] + 8
+
+        for size_id in [3]: # 32x32
+            for matrix_id in [0, 1]:
+                for i in range(0, 63):
+                    x = scan_order(8)[i][0]
+                    y = scan_order(8)[i][1]
+                    for k in [0, 3]:
+                        for j in [0, 3]:
+                            self.scaling_factor[size_id][matrix_id][x*4 + k][y*4 + j] = self.scaling_list[size_id][matrix_id][i]
+                    self.scaling_factor[size_id][matrix_id][0][0] = self.scaling_list_dc_coef_minus8[0][matrix_id] + 8
