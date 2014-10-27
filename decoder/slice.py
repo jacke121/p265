@@ -32,7 +32,7 @@ class SliceSegmentHeader:
     def is_B_slice(self):
         return self.slice_type == self.I_SLICE
 
-    def decode(self):
+    def parse(self):
         bs = self.ctx.bs
 
         log.location.info("Start decoding Slice Header")
@@ -231,7 +231,7 @@ class SliceSegmentData:
 
         self.cabac = self.ctx.cabac
 
-    def decode(self):
+    def parse(self):
         bs = self.bs
 
         if self.ctx.img.slice_hdrs[-1].first_slice_segment_in_pic_flag:
@@ -253,13 +253,13 @@ class SliceSegmentData:
 
         while True:
             self.ctx.img.ctu.decode()
-            self.end_of_slice_segment_flag = self.decode_end_of_slice_segment_flag()
+            self.end_of_slice_segment_flag = self.parse_end_of_slice_segment_flag()
             self.ctx.img.next_ctu(self.end_of_slice_segment_flag) # Switching to next CTB in the current slice segment
             
             switching_tile_flag = self.ctx.pps.tiles_enabled_flag and (self.ctx.pps.tile_id[self.ctx.img.ctu.addr_ts] != self.ctx.pps.tile_id[self.ctx.img.ctu.addr_ts - 1])
             if (not self.end_of_slice_segment_flag) and \
                     (switching_tile_flag or (self.ctx.pps.entropy_coding_sync_enabled_flag and (self.ctx.img.ctu.addr_ts % self.ctx.sps.pic_width_in_ctbs_y))):
-                self.decode_end_of_sub_stream_one_bit()
+                self.parse_end_of_sub_stream_one_bit()
                 self.ctx.bs.byte_alignment()
 
             if self.end_of_slice_segment_flag:
@@ -287,24 +287,24 @@ class SliceSegmentData:
 
                 return self.end_of_picture_flag
 
-    def decode_end_of_slice_segment_flag(self):
+    def parse_end_of_slice_segment_flag(self):
         bit = self.ctx.cabac.decode_terminate()
         log.syntax.info("end_of_slice_segment_flag = %d" % bit)
         return bit
 
-    def decode_end_of_sub_stream_one_bit(self):
+    def parse_end_of_sub_stream_one_bit(self):
         raise
 
 class SliceSegment:
     def __init__(self, ctx):
         self.ctx = ctx
 
-    def decode(self):
+    def parse(self):
         self.slice_hdr = SliceSegmentHeader(self.ctx)
-        self.slice_hdr.decode()
+        self.slice_hdr.parse()
         self.ctx.img.slice_hdrs.append(self.slice_hdr) #copy.deepcopy(self.slice_hdr))
 
         self.slice_data = SliceSegmentData(self.ctx)
-        end_of_picture_flag = self.slice_data.decode()
+        end_of_picture_flag = self.slice_data.parse()
         return end_of_picture_flag
 

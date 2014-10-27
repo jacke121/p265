@@ -73,7 +73,7 @@ class NaluHeader:
     def __init__(self, bs):
         self.bs = bs
 
-    def decode(self):
+    def parse(self):
         log.location.info("Start decoding NALU header")
 
         self.forbidden_zero_bit = self.bs.u(1, "forbidden_zero_bit")
@@ -94,11 +94,11 @@ class Nalu:
 
     def decode_naluh(self):
         naluh = NaluHeader(self.bs)
-        naluh.decode()
+        naluh.parse()
         return naluh
 
     def decode_slice_seg(self):
-        return self.slice_seg.decode()
+        return self.slice_seg.parse()
 
     def decode_vps(self):
         v = vps.Vps(self.ctx)
