@@ -151,22 +151,25 @@ class Cu(tree.Tree):
 
                 available_a = self.ctx.img.check_availability(x_pb, y_pb, x_neighbor_a, y_neighbor_a)
                 available_b = self.ctx.img.check_availability(x_pb, y_pb, x_neighbor_b, y_neighbor_b)
+
+                ctu_a = self.ctx.img.get_ctu(x_neighbor_a, y_neighbor_a) if available_a else None
+                ctu_b = self.ctx.img.get_ctu(x_neighbor_b, y_neighbor_b) if available_b else None
                 
                 if available_a == False:
                     cand_intra_pred_mode_a = 1
-                elif self.ctx.img.get("pred_mode", x_neighbor_a, y_neighbor_a) != self.MODE_INTRA or self.ctx.img.get("pcm_flag", x_neighbor_a, y_neighbor_a) == 1:
+                elif ctu_a.get_pred_mode(x_neighbor_a, y_neighbor_a) != self.MODE_INTRA or ctu_a.get_pcm_flag(x_neighbor_a, y_neighbor_a) == 1:
                     cand_intra_pred_mode_a = 1
                 else:
-                    cand_intra_pred_mode_a = self.ctx.img.get_intra_pred_mode_y(x_neighbor_a, y_neighbor_a)
+                    cand_intra_pred_mode_a = ctu_a.get_intra_pred_mode_y(x_neighbor_a, y_neighbor_a)
 
                 if available_b == False:
                     cand_intra_pred_mode_b = 1
-                elif self.ctx.img.get("pred_mode", x_neighbor_b, y_neighbor_b) != self.MODE_INTRA or self.ctx.img.get("pcm_flag", x_neighbor_b, y_neighbor_b) == 1:
+                elif ctu_b.get_pred_mode(x_neighbor_b, y_neighbor_b) != self.MODE_INTRA or ctu_b.get_pcm_flag(x_neighbor_b, y_neighbor_b) == 1:
                     cand_intra_pred_mode_b = 1
                 elif (y_pb - 1) < ((y_pb >> self.ctx.sps.ctb_log2_size_y) << self.ctx.sps.ctb_log2_size_y):
                     cand_intra_pred_mode_b = 1
                 else:
-                    cand_intra_pred_mode_b = self.ctx.img.get_intra_pred_mode_y(x_neighbor_b, y_neighbor_b)
+                    cand_intra_pred_mode_b = ctu_b.get_intra_pred_mode_y(x_neighbor_b, y_neighbor_b)
                 
                 cand_mode_list = [0] * 3
                 if cand_intra_pred_mode_a == cand_intra_pred_mode_b:
@@ -369,8 +372,11 @@ class Cu(tree.Tree):
         available_left  = self.ctx.img.check_availability(x0, y0, x0-1, y0)
         available_above = self.ctx.img.check_availability(x0, y0, x0, y0-1)
 
-        cond_left = 1 if available_left  and self.ctx.img.get_cqt_depth(x0-1, y0) > depth else 0
-        cond_above= 1 if available_above and self.ctx.img.get_cqt_depth(x0, y0-1) > depth else 0
+        ctu_left = self.ctx.img.get_ctu(x0-1, y0) if available_left else None
+        ctu_above = self.ctx.img.get_ctu(x0, y0-1) if available_above else None
+
+        cond_left = 1 if available_left  and ctu_left.get_depth(x0-1, y0) > depth else 0
+        cond_above= 1 if available_above and ctu_above.get_depth(x0, y0-1) > depth else 0
 
         context_inc = cond_left + cond_above
 
@@ -502,16 +508,18 @@ class Cu(tree.Tree):
             prev_qp_y = self.prev_qp_y
 
         self.available_a = self.ctx.img.check_availability(self.x, self.y, x_qg-1, y_qg)
+        ctu_a = self.ctx.img.get_ctu(x_qg-1, y_qg)
         if available_a == False and self.get_root().addr_ts != ctb_addr_a:
             qp_y_a = prev_qp_y
         else:
-            qp_y_a = self.ctx.img.get("qp_y", x_qg-1, y_qg)
+            qp_y_a = ctu_a.get_qp_y(x_qg-1, y_qg)
 
         self.available_b = self.ctx.img.check_availability(self.x, self.y, x_qg, y_qg-1)
+        ctu_b = self.ctx.img.get_ctu(x_qg, y_qg-1)
         if available_b == False and self.get_root().addr_ts != ctb_addr_b:
             qp_y_b = prev_qp_y
         else:
-            qp_y_a = self.ctx.img.get("qp_y", x_qg, y_qg-1)
+            qp_y_b = ctu_b.get_qp_y(x_qg, y_qg-1)
 
         pred_qp_y = (qp_y_a + qp_y_b + 1) >> 1
         self.qp_y = ((pred_qp_y + self.cu_qp_delta_val + 52 + 2 * self.ctx.sps.qp_bd_offset_y) % (52 + self.ctx.sps.qp_bd_offset_y)) - self.ctx.sps.qp_bd_offset_y
