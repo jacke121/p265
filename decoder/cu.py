@@ -363,6 +363,7 @@ class Cu(tree.Tree):
                     child.parse()
         else:
             self.parse_leaf()
+            #self.decode_leaf()
 
     def decode_split_cu_flag(self):
         x0 = self.x
@@ -470,15 +471,18 @@ class Cu(tree.Tree):
         log.syntax.info("part_mode = %d", value)
         return value
 
-    def decode(self):
+    def decode_leaf(self):
         if self.pcm_flag == 1:
             self.decode_pcm()
-        elif self.pred_mode == self.MODE_INTRA:
-            self.decode_intra()
-        elif self.pred_mode == self.MODE_INTER:
-            self.decode_inter()
         else:
+            self.decode_qp()
             raise
+            if self.pred_mode == self.MODE_INTRA:
+                self.decode_intra()
+            elif self.pred_mode == self.MODE_INTER:
+                self.decode_inter()
+            else:
+                raise
     
     def decode_qp(self):
         x_qg = self.x - (self.x & ((1 << self.ctx.pps.log2_min_cu_qp_delta_size) - 1))
@@ -486,11 +490,11 @@ class Cu(tree.Tree):
 
         first_qg_in_ctb_row = x_qg == 0 and ((y_qg & ((1 << self.ctx.sps.ctb_log2_size_y) - 1)) == 0)
 
-        x_slice = (self.ctx.img.slice_hdr.slice_addr % self.ctx.sps.pic_width_in_ctbs_y) * self.ctx.sps.ctb_size_y
-        y_slice = (self.ctx.img.slice_hdr.slice_addr / self.ctx.sps.pic_width_in_ctbs_y) * self.ctx.sps.ctb_size_y
+        x_slice = (self.get_root().slice_addr % self.ctx.sps.pic_width_in_ctbs_y) * self.ctx.sps.ctb_size_y
+        y_slice = (self.get_root().slice_addr / self.ctx.sps.pic_width_in_ctbs_y) * self.ctx.sps.ctb_size_y
         first_qg_in_slice = x_qg == x_slice and y_qg == y_slice
 
-        if not self.ctx.sps.tiles_enabled_flag:
+        if not self.ctx.pps.tiles_enabled_flag:
             first_qg_in_tile = False
         elif not (x_qg & ((1 << self.ctx.sps.ctb_log2_size_y) - 1) == 0 and y_qg & ((1 << self.ctx.sps.ctb_log2size_y) - 1)):
             # QG is not in CTB top-left boundary
@@ -502,21 +506,29 @@ class Cu(tree.Tree):
             assert ctb.x == x_qg and ctb.y == y_qg
             first_qg_in_tile = ctb.is_first_ctb_in_tile()
 
-        if firt_qg_in_slice or first_qg_in_tile or (first_qg_in_ctb_row and self.ctx.pps.entropy_coding_sync_enabled_flag):
+        if first_qg_in_slice or first_qg_in_tile or (first_qg_in_ctb_row and self.ctx.pps.entropy_coding_sync_enabled_flag):
             prev_qp_y = self.ctx.img.slice_hdr.slice_qp_y
         else:
             prev_qp_y = self.prev_qp_y
 
-        self.available_a = self.ctx.img.check_availability(self.x, self.y, x_qg-1, y_qg)
-        ctu_a = self.ctx.img.get_ctu(x_qg-1, y_qg)
-        if available_a == False and self.get_root().addr_ts != ctb_addr_a:
+        available_a = self.ctx.img.check_availability(self.x, self.y, x_qg-1, y_qg)
+        ctu_a = self.ctx.img.get_ctu(x_qg-1, y_qg) if available_a else None
+        x_tmp = (x_qg-1) >> self.ctx.sps.log2_min_transform_block_size
+        y_tmp = y_qg >> self.ctx.sps.log2_min_transform_block_size
+        min_tb_addr_a = self.ctx.pps.min_tb_addr_zs[x_tmp][y_tmp]
+        derived_ctb_addr_a = min_tb_addr_a >> (2 * (self.ctx.sps.ctb_log2_size_y - self.ctx.sps.log2_min_transform_block_size))
+        if available_a == False or self.get_root().addr_ts != derived_ctb_addr_a:
             qp_y_a = prev_qp_y
         else:
             qp_y_a = ctu_a.get_qp_y(x_qg-1, y_qg)
 
-        self.available_b = self.ctx.img.check_availability(self.x, self.y, x_qg, y_qg-1)
-        ctu_b = self.ctx.img.get_ctu(x_qg, y_qg-1)
-        if available_b == False and self.get_root().addr_ts != ctb_addr_b:
+        available_b = self.ctx.img.check_availability(self.x, self.y, x_qg, y_qg-1)
+        ctu_b = self.ctx.img.get_ctu(x_qg, y_qg-1) if available_b else None
+        x_tmp = x_qg >> self.ctx.sps.log2_min_transform_block_size
+        y_tmp = (y_qg-1) >> self.ctx.sps.log2_min_transform_block_size
+        min_tb_addr_b = self.ctx.pps.min_tb_addr_zs[x_tmp][y_tmp]
+        derived_ctb_addr_b = min_tb_addr_b >> (2 * (self.ctx.sps.ctb_log2_size_y - self.ctx.sps.log2_min_transform_block_size))
+        if available_b == False and self.get_root().addr_ts != derived_ctb_addr_b:
             qp_y_b = prev_qp_y
         else:
             qp_y_b = ctu_b.get_qp_y(x_qg, y_qg-1)
