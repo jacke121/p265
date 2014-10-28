@@ -38,7 +38,7 @@ class Tree:
         if self.parent is None:
             return self
         else:
-            self.parent.get_root()
+            return self.parent.get_root()
 
     def contain(self, x, y):
         x_flag = x >= self.x and x < (self.x + self.size)
@@ -146,8 +146,15 @@ class Tree:
 if __name__ == "__main__":
     ctb = Tree(0, 0, 6)
     ctb.populate(3)
-
+    
     print ctb
+
+    for leave in ctb.get_leaves():
+        print leave.__class__
+        root = leave.get_root()
+        print root.x, root.y, root.size
+        exit()
+
     ctb.dump()
     ctb.dump_leaves()
 
