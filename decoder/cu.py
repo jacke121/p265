@@ -331,9 +331,18 @@ class Cu(tree.Tree):
             else:
                 self.split_cu_flag = 0
         
-        if self.ctx.pps.cu_qp_delta_enabled_flag and self.log2size >= self.ctx.pps.log2_min_cu_qp_delta_size:
-            self.is_cu_qp_delta_coded = 0
-            self.cu_qp_delta_val = 0
+        if self.ctx.pps.cu_qp_delta_enabled_flag == 1:
+            if self.log2size >= self.ctx.pps.log2_min_cu_qp_delta_size:
+                # When CB size is larger than QG size, cu_qp_delta_val is reset to zero
+                # QG size can't be larger than CTB size, so it's safe to associate these two global variables to CTB
+                self.get_root().is_cu_qp_delta_coded = 0
+                self.get_root().cu_qp_delta_val = 0
+            else:
+                # When CB size is smaller than QG size, these two global variables will keep the value which is already calculated
+                pass
+        else:
+            self.get_root().is_cu_qp_delta_coded = 0
+            self.get_root().cu_qp_delta_val = 0
         
         if self.split_cu_flag:
             x0 = self.x
@@ -485,15 +494,25 @@ class Cu(tree.Tree):
                 raise
     
     def decode_qp(self):
-        x_qg = self.x - (self.x & ((1 << self.ctx.pps.log2_min_cu_qp_delta_size) - 1))
-        y_qg = self.y - (self.y & ((1 << self.ctx.pps.log2_min_cu_qp_delta_size) - 1))
+        qg_size = 1 << self.ctx.pps.log2_min_cu_qp_delta_size
 
-        first_qg_in_ctb_row = x_qg == 0 and ((y_qg & ((1 << self.ctx.sps.ctb_log2_size_y) - 1)) == 0)
+        # Location of the QG that covers the current CB
+        # QG/CB size must be less than CTB size, possible QG/CB/CTB size are 64/32/16/8. QG size can be greater/equal/less than CB size.
+        # There is one QP_Y value associated to each QG and CB. 
+        # If QG is smaller than CB, all the QGs within it inherit the same QP_Y from CB. 
+        # If QG size is larger than CB size, the QG inherits QP_Y value of the last CB in encoding order, and the CBs in the QG do not necessarily share the same QPY value. The QPY value of a CB is affected by the value of CuQpDelta when the CB is parsed. The CuQpDelta value changes at most once per QG, in the first CB that contains non-zero coefficients. Thus, if the first CB in the QG contains only zero coefficients and the second CB contains non-zero coefficients, the CuQpDelta value may change for the second CB and both CBs (the first and the second) may have different QPY values.
+        x_qg = self.x - (self.x & (qg_size - 1))
+        y_qg = self.y - (self.y & (qg_size - 1))
 
+        # Check whether this is the first QG in a CTB row
+        first_qg_in_ctb_row = x_qg == 0 and ((y_qg & (qg_size - 1)) == 0)
+        
+        # Check whether this is the first QG in a Slice
         x_slice = (self.get_root().slice_addr % self.ctx.sps.pic_width_in_ctbs_y) * self.ctx.sps.ctb_size_y
         y_slice = (self.get_root().slice_addr / self.ctx.sps.pic_width_in_ctbs_y) * self.ctx.sps.ctb_size_y
         first_qg_in_slice = x_qg == x_slice and y_qg == y_slice
 
+        # Check whether this is the first QG in a Tile
         if not self.ctx.pps.tiles_enabled_flag:
             first_qg_in_tile = False
         elif not (x_qg & ((1 << self.ctx.sps.ctb_log2_size_y) - 1) == 0 and y_qg & ((1 << self.ctx.sps.ctb_log2size_y) - 1)):
@@ -505,12 +524,14 @@ class Cu(tree.Tree):
             ctb = self.get_root()
             assert ctb.x == x_qg and ctb.y == y_qg
             first_qg_in_tile = ctb.is_first_ctb_in_tile()
-
+        
+        # Get the QP of the last coding unit in the previous QG in decoding order
         if first_qg_in_slice or first_qg_in_tile or (first_qg_in_ctb_row and self.ctx.pps.entropy_coding_sync_enabled_flag):
             prev_qp_y = self.ctx.img.slice_hdr.slice_qp_y
         else:
             prev_qp_y = self.prev_qp_y
-
+        
+        # Get QP of left neighbor QG
         available_a = self.ctx.img.check_availability(self.x, self.y, x_qg-1, y_qg)
         ctu_a = self.ctx.img.get_ctu(x_qg-1, y_qg) if available_a else None
         x_tmp = (x_qg-1) >> self.ctx.sps.log2_min_transform_block_size
@@ -521,7 +542,8 @@ class Cu(tree.Tree):
             qp_y_a = prev_qp_y
         else:
             qp_y_a = ctu_a.get_qp_y(x_qg-1, y_qg)
-
+        
+        # Get QP of above neighbor QG
         available_b = self.ctx.img.check_availability(self.x, self.y, x_qg, y_qg-1)
         ctu_b = self.ctx.img.get_ctu(x_qg, y_qg-1) if available_b else None
         x_tmp = x_qg >> self.ctx.sps.log2_min_transform_block_size
@@ -532,10 +554,17 @@ class Cu(tree.Tree):
             qp_y_b = prev_qp_y
         else:
             qp_y_b = ctu_b.get_qp_y(x_qg, y_qg-1)
-
+        
+        # Get prediction QP
         pred_qp_y = (qp_y_a + qp_y_b + 1) >> 1
-        self.qp_y = ((pred_qp_y + self.cu_qp_delta_val + 52 + 2 * self.ctx.sps.qp_bd_offset_y) % (52 + self.ctx.sps.qp_bd_offset_y)) - self.ctx.sps.qp_bd_offset_y
 
+        # Calculate QP for this CU
+        self.qp_y = ((pred_qp_y + self.get_root().cu_qp_delta_val + 52 + 2 * self.ctx.sps.qp_bd_offset_y) % (52 + self.ctx.sps.qp_bd_offset_y)) - self.ctx.sps.qp_bd_offset_y
+        
+        # Save QP of the current CU
+        self.prev_qp_y = self.qp_y
+        
+        # Derive chroma QP for this CU
         qp_idx_cb = utils.clip3(-self.ctx.sps.qp_bd_offset_c, 57, self.qp_y + self.ctx.pps.pps_cb_qp_offset + self.ctx.img.slice_hdr.slice_cb_qp_offset)
         qp_idx_cr = utils.clip3(-self.ctx.sps.qp_bd_offset_c, 57, self.qp_y + self.ctx.pps.pps_cr_qp_offset + self.ctx.img.slice_hdr.slice_cr_qp_offset)
         def get_qp_c(idx):
@@ -554,7 +583,9 @@ class Cu(tree.Tree):
             else:
                 return idx - 6
         self.qp_cb = get_qp_c(qp_idx_cb)
-        self.qp_cb = get_qp_c(qp_idx_cr)
+        self.qp_cr = get_qp_c(qp_idx_cr)
+
+        print "qp_y = %d, qp_cb = %d, qp_cr = %d" % (self.qp_y, self.qp_cb, self.qp_cr)
 
     def decode_intra(self):
         self.pu = [None for i in range(6)]

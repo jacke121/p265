@@ -139,15 +139,15 @@ class Tu(tree.Tree):
         assert self.is_leaf() == True
 
         if self.cbf_luma or self.cbf_cb or self.cbf_cr:
-            if self.ctx.pps.cu_qp_delta_enabled_flag and not self.cu.is_cu_qp_delta_coded:
+            if self.ctx.pps.cu_qp_delta_enabled_flag == 1 and self.cu.get_root().is_cu_qp_delta_coded == 0:
                 self.cu_qp_delta_abs = self.decode_cu_qp_delta_abs()
                 if self.cu_qp_delta_abs:
                     self.cu_qp_delta_sign_flag = self.decode_cu_qp_delta_sign_flag()
                 else:
                     self.cu_qp_delta_sign_flag = 0
-                self.cu.is_cu_qp_delta_coded = 1
-                self.cu.cu_qp_delta_val = self.cu_qp_data_abs * (1 - 2 * self.cu_qp_delta_sign_flag)
-                assert self.cu.cu_qp_delta_val >= -(26 + self.ctx.sps.qp_bd_offset_y/2) and self.cu.cu_qp_delta_val <= +(25 + self.ctx.sps.qp_bd_offset_y/2)
+                self.cu.get_root().is_cu_qp_delta_coded = 1
+                self.cu.get_root().cu_qp_delta_val = self.cu_qp_data_abs * (1 - 2 * self.cu_qp_delta_sign_flag)
+                assert self.cu.get_root().cu_qp_delta_val >= -(26 + self.ctx.sps.qp_bd_offset_y/2) and self.cu.get_root().cu_qp_delta_val <= +(25 + self.ctx.sps.qp_bd_offset_y/2)
             
             self.transform_skip_flag = numpy.zeros(3, bool)
             self.last_sig_coeff_x_prefix = numpy.zeros(3, int)
