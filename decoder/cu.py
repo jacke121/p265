@@ -485,7 +485,7 @@ class Cu(tree.Tree):
             self.decode_pcm()
         else:
             self.decode_qp()
-            raise
+            return # Temproal return
             if self.pred_mode == self.MODE_INTRA:
                 self.decode_intra()
             elif self.pred_mode == self.MODE_INTER:
@@ -529,7 +529,11 @@ class Cu(tree.Tree):
         if first_qg_in_slice or first_qg_in_tile or (first_qg_in_ctb_row and self.ctx.pps.entropy_coding_sync_enabled_flag):
             prev_qp_y = self.ctx.img.slice_hdr.slice_qp_y
         else:
-            prev_qp_y = self.prev_qp_y
+            if self.get_root().x == self.x and self.get_root().y == self.y:
+                # We are moving to a new CTU
+                raise 
+            else:
+                prev_qp_y = self.get_root().prev_qp_y
         
         # Get QP of left neighbor QG
         available_a = self.ctx.img.check_availability(self.x, self.y, x_qg-1, y_qg)
@@ -562,7 +566,8 @@ class Cu(tree.Tree):
         self.qp_y = ((pred_qp_y + self.get_root().cu_qp_delta_val + 52 + 2 * self.ctx.sps.qp_bd_offset_y) % (52 + self.ctx.sps.qp_bd_offset_y)) - self.ctx.sps.qp_bd_offset_y
         
         # Save QP of the current CU
-        self.prev_qp_y = self.qp_y
+        # prev_qp_y is saved in CTU instead of CU
+        self.get_root().prev_qp_y = self.qp_y
         
         # Derive chroma QP for this CU
         qp_idx_cb = utils.clip3(-self.ctx.sps.qp_bd_offset_c, 57, self.qp_y + self.ctx.pps.pps_cb_qp_offset + self.ctx.img.slice_hdr.slice_cb_qp_offset)
@@ -585,7 +590,7 @@ class Cu(tree.Tree):
         self.qp_cb = get_qp_c(qp_idx_cb)
         self.qp_cr = get_qp_c(qp_idx_cr)
 
-        print "qp_y = %d, qp_cb = %d, qp_cr = %d" % (self.qp_y, self.qp_cb, self.qp_cr)
+        log.qp.info("(cu.x, cu.y) = (%d, %d), cu.size = %d, cu.depth = %d, qp_y = %d, qp_cb = %d, qp_cr = %d" % (self.x, self.y, self.size, self.depth, self.qp_y, self.qp_cb, self.qp_cr))
 
     def decode_intra(self):
         self.pu = [None for i in range(6)]
