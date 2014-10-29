@@ -1,3 +1,4 @@
+import utils
 import log
 
 class CabacTables:
@@ -176,23 +177,13 @@ class Cabac:
             for j in range(len(self.init_value_tables[i])):
                 self.context_models[i].append(ContextModel())
 
-    def clip3(self, min, max, val):
-        if val > max:
-            result = max
-        elif val < min:
-            result = min
-        else:
-            result = val
-        
-        return result
-
     def initialization_process(self, ctx_table, ctx_idx, slice_header):
         init_value = self.init_value_tables[ctx_table][ctx_idx]
         slope_idx = init_value >> 4
         offset_idx = init_value & 0xF
         m = slope_idx * 5 - 45
         n = (offset_idx << 3) - 16
-        pre_ctx_state = self.clip3(1, 126, ((m * self.clip3(0, 51, slice_header.slice_qp_y)) >> 4) + n)
+        pre_ctx_state = utils.clip3(1, 126, ((m * utils.clip3(0, 51, slice_header.slice_qp_y)) >> 4) + n)
 
         val_mps = 0 if (pre_ctx_state <= 63) else 1
         p_state_idx = (pre_ctx_state - 64) if val_mps else (63 - pre_ctx_state)

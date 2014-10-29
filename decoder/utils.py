@@ -1,3 +1,13 @@
+def clip3(min, max, val):
+    if val > max:
+        result = max
+    elif val < min:
+        result = min
+    else:
+        result = val
+    
+    return result
+
 '''
 class md_dict(dict):
     def __getitem__(self, item):
