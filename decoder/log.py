@@ -64,10 +64,18 @@ def create_cabac_logger():
     cabac.addHandler(handler)
     return cabac
 
+def create_qp_logger():
+    qp = logging.getLogger("p265.qp")
+    handler = logging.FileHandler(filename="logs/qp.log", mode='w')
+    handler.setFormatter(logging.Formatter(fmt="%(message)s"))
+    qp.addHandler(handler)
+    return qp
+
 main = create_main_logger()
 location = create_location_logger()
 syntax = create_syntax_logger()
 cabac = create_cabac_logger()
+qp = create_qp_logger()
 
 if __name__ == "__main__":
     import os
