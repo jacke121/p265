@@ -50,7 +50,6 @@ class Ctu(cu.Cu):
 
     def get_qp_y(self, x, y):
         assert self.contain(x, y)
-        raise
         for leave in self.get_leaves():
             if leave.contain(x, y):
                 return leave.qp_y
