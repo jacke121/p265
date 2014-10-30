@@ -531,7 +531,7 @@ class Cu(tree.Tree):
         else:
             if self.get_root().x == self.x and self.get_root().y == self.y:
                 # We are moving to a new CTU
-                raise 
+                prev_qp_y = self.ctx.img.ctus[self.ctx.pps.ctb_addr_ts2rs[self.get_root().addr_ts - 1]].prev_qp_y
             else:
                 prev_qp_y = self.get_root().prev_qp_y
         
