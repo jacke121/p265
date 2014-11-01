@@ -126,131 +126,6 @@ class Tu(tree.Tree):
                 if sisters[0].cbf_cr:
                     self.parse_residual_coding(sisters[0].x, sisters[0].y, self.log2size, 2)
 
-    def parse__split_transform_flag(self):
-        if self.ctx.img.slice_hdr.init_type == 0:
-            ctx_offset = 0
-        elif self.ctx.img.slice_hdr.init_type == 1:
-            ctx_offset = 3
-        elif self.ctx.img.slice_hdr.init_type == 2:
-            ctx_offset = 6
-        else:
-            raise ValueError("Unexpected init_type.")
-        
-        ctx_inc = 5 - self.log2size
-        ctx_idx = ctx_offset + ctx_inc
-        bit = self.ctx.cabac.decode_decision("split_transform_flag", ctx_idx)
-        log.syntax.info("split_transform_flag = %d", bit)
-        return bit
-    
-    def parse__cbf_chroma(self, component):
-        ctx_inc = self.depth
-        if self.ctx.img.slice_hdr.init_type == 0:
-            ctx_offset = 0
-        elif self.ctx.img.slice_hdr.init_type == 1:
-            ctx_offset = 4
-        elif self.ctx.img.slice_hdr.init_type == 2:
-            ctx_offset = 8
-        else:
-            raise ValueError("Unexpected init_type.")
-
-        ctx_idx = ctx_offset + ctx_inc
-        bit = self.ctx.cabac.decode_decision("cbf_chroma", ctx_idx)
-        log.syntax.info("cbf_%s = %d", component, bit)
-        return bit
-
-    def parse__cbf_cb(self):
-        return self.parse__cbf_chroma("cb")
-
-    def parse__cbf_cr(self):
-        return self.parse__cbf_chroma("cr")
-
-    def parse__cbf_luma(self):
-        ctx_inc = 1 if self.depth==0 else 0
-        if self.ctx.img.slice_hdr.init_type == 0:
-            ctx_offset = 0
-        elif self.ctx.img.slice_hdr.init_type == 1:
-            ctx_offset = 2
-        elif self.ctx.img.slice_hdr.init_type == 2:
-            ctx_offset = 4
-        else:
-            raise ValueError("Unexpected init_type.")
-
-        ctx_idx = ctx_offset + ctx_inc
-        bit = self.ctx.cabac.decode_decision("cbf_luma", ctx_idx)
-        log.syntax.info("cbf_luma = %d", bit)
-        return bit
-
-    def parse__last_sig_coeff_x_suffix(self, c_idx):
-        return self.parse__last_sig_coeff_xy_suffix("last_sig_coeff_x_suffix", self.last_sig_coeff_x_prefix[c_idx])
-
-    def parse__last_sig_coeff_y_suffix(self, c_idx):
-        return self.parse__last_sig_coeff_xy_suffix("last_sig_coeff_y_suffix", self.last_sig_coeff_y_prefix[c_idx])
-
-    def parse__last_sig_coeff_xy_suffix(self, name, last_sig_coeff_xy_prefix):
-        length = (last_sig_coeff_xy_prefix >> 1) - 1;
-        value = self.ctx.cabac.decode_bypass()
-
-        for i in range(1, length):
-            value = (value << 1) | self.ctx.cabac.decode_bypass()
-
-        log.syntax.info("%s = %d", name, value)
-        return value;
-
-    def parse__sig_coeff_flag(self, xc, yc, log2size, c_idx, scan_idx):
-        if self.ctx.img.slice_hdr.init_type == 0:
-            ctx_offset = 0
-        elif self.ctx.img.slice_hdr.init_type == 1:
-            ctx_offset = 42
-        elif self.ctx.img.slice_hdr.init_type == 2:
-            ctx_offset = 84
-        else:
-            raise ValueError("Unexpected init_type.")
-
-        ctx_idx_map = [0, 1, 4, 5, 2, 3, 4, 5, 6, 6, 8, 8, 7, 7, 8]
-        if log2size == 2:
-            sig_ctx = ctx_idx_map[(yc << 2) + xc]
-        elif (xc + yc) == 0:
-            sig_ctx = 0
-        else:
-            (xs, ys) = (xc >> 2, yc >> 2)
-            prev_csbf = 0
-            if xs < ((1 << (log2size - 2)) - 1):
-                prev_csbf += self.coded_sub_block_flag[c_idx][xs + 1][ys]
-            if ys < ((1 << (log2size - 2)) - 1):
-                prev_csbf += (self.coded_sub_block_flag[c_idx][xs][ys + 1] << 1)
-            (xp, yp) = (xc & 3, yc & 3)
-
-            if prev_csbf == 0:
-                sig_ctx = 2 if ((xp + yp) == 0) else (1 if ((xp + yp) < 3) else 0)
-            elif prev_csbf == 1:
-                sig_ctx = 2 if (yp == 0) else (1 if yp == 1 else 0)
-            elif prev_csbf == 2:
-                sig_ctx = 2 if xp == 0 else (1 if xp == 1 else 0)
-            else:
-                sig_ctx = 2
-
-            if c_idx == 0:
-                if (xs + ys) > 0:
-                    sig_ctx += 3
-                if log2size == 3:
-                    sig_ctx += (9 if scan_idx == 0 else 15)
-                else:
-                    sig_ctx += 21
-            else:
-                if log2size == 3:
-                    sig_ctx += 9
-                else:
-                    sig_ctx += 12
-
-        if c_idx == 0:
-            ctx_inc = sig_ctx
-        else:
-            ctx_inc = 27 + sig_ctx
-        
-        bit = self.ctx.cabac.decode_decision("sig_coeff_flag", ctx_offset + ctx_inc)
-        log.syntax.info("sig_coeff_flag = %d", bit)
-        return bit
-
     def parse_residual_coding(self, x0, y0, log2size, c_idx):
         log.location.debug("Start decoding residual: c_idx = %d", c_idx)
 
@@ -453,6 +328,132 @@ class Tu(tree.Tree):
                     num_sig_coeff += 1
                 else:
                     self.coeff_abs_level_remaining[c_idx][xs][ys][n] = 0
+
+    def parse__split_transform_flag(self):
+        if self.ctx.img.slice_hdr.init_type == 0:
+            ctx_offset = 0
+        elif self.ctx.img.slice_hdr.init_type == 1:
+            ctx_offset = 3
+        elif self.ctx.img.slice_hdr.init_type == 2:
+            ctx_offset = 6
+        else:
+            raise ValueError("Unexpected init_type.")
+        
+        ctx_inc = 5 - self.log2size
+        ctx_idx = ctx_offset + ctx_inc
+        bit = self.ctx.cabac.decode_decision("split_transform_flag", ctx_idx)
+        log.syntax.info("split_transform_flag = %d", bit)
+        return bit
+    
+    def parse__cbf_chroma(self, component):
+        ctx_inc = self.depth
+        if self.ctx.img.slice_hdr.init_type == 0:
+            ctx_offset = 0
+        elif self.ctx.img.slice_hdr.init_type == 1:
+            ctx_offset = 4
+        elif self.ctx.img.slice_hdr.init_type == 2:
+            ctx_offset = 8
+        else:
+            raise ValueError("Unexpected init_type.")
+
+        ctx_idx = ctx_offset + ctx_inc
+        bit = self.ctx.cabac.decode_decision("cbf_chroma", ctx_idx)
+        log.syntax.info("cbf_%s = %d", component, bit)
+        return bit
+
+    def parse__cbf_cb(self):
+        return self.parse__cbf_chroma("cb")
+
+    def parse__cbf_cr(self):
+        return self.parse__cbf_chroma("cr")
+
+    def parse__cbf_luma(self):
+        ctx_inc = 1 if self.depth==0 else 0
+        if self.ctx.img.slice_hdr.init_type == 0:
+            ctx_offset = 0
+        elif self.ctx.img.slice_hdr.init_type == 1:
+            ctx_offset = 2
+        elif self.ctx.img.slice_hdr.init_type == 2:
+            ctx_offset = 4
+        else:
+            raise ValueError("Unexpected init_type.")
+
+        ctx_idx = ctx_offset + ctx_inc
+        bit = self.ctx.cabac.decode_decision("cbf_luma", ctx_idx)
+        log.syntax.info("cbf_luma = %d", bit)
+        return bit
+
+    def parse__last_sig_coeff_x_suffix(self, c_idx):
+        return self.parse__last_sig_coeff_xy_suffix("last_sig_coeff_x_suffix", self.last_sig_coeff_x_prefix[c_idx])
+
+    def parse__last_sig_coeff_y_suffix(self, c_idx):
+        return self.parse__last_sig_coeff_xy_suffix("last_sig_coeff_y_suffix", self.last_sig_coeff_y_prefix[c_idx])
+
+    def parse__last_sig_coeff_xy_suffix(self, name, last_sig_coeff_xy_prefix):
+        length = (last_sig_coeff_xy_prefix >> 1) - 1;
+        value = self.ctx.cabac.decode_bypass()
+
+        for i in range(1, length):
+            value = (value << 1) | self.ctx.cabac.decode_bypass()
+
+        log.syntax.info("%s = %d", name, value)
+        return value;
+
+    def parse__sig_coeff_flag(self, xc, yc, log2size, c_idx, scan_idx):
+        if self.ctx.img.slice_hdr.init_type == 0:
+            ctx_offset = 0
+        elif self.ctx.img.slice_hdr.init_type == 1:
+            ctx_offset = 42
+        elif self.ctx.img.slice_hdr.init_type == 2:
+            ctx_offset = 84
+        else:
+            raise ValueError("Unexpected init_type.")
+
+        ctx_idx_map = [0, 1, 4, 5, 2, 3, 4, 5, 6, 6, 8, 8, 7, 7, 8]
+        if log2size == 2:
+            sig_ctx = ctx_idx_map[(yc << 2) + xc]
+        elif (xc + yc) == 0:
+            sig_ctx = 0
+        else:
+            (xs, ys) = (xc >> 2, yc >> 2)
+            prev_csbf = 0
+            if xs < ((1 << (log2size - 2)) - 1):
+                prev_csbf += self.coded_sub_block_flag[c_idx][xs + 1][ys]
+            if ys < ((1 << (log2size - 2)) - 1):
+                prev_csbf += (self.coded_sub_block_flag[c_idx][xs][ys + 1] << 1)
+            (xp, yp) = (xc & 3, yc & 3)
+
+            if prev_csbf == 0:
+                sig_ctx = 2 if ((xp + yp) == 0) else (1 if ((xp + yp) < 3) else 0)
+            elif prev_csbf == 1:
+                sig_ctx = 2 if (yp == 0) else (1 if yp == 1 else 0)
+            elif prev_csbf == 2:
+                sig_ctx = 2 if xp == 0 else (1 if xp == 1 else 0)
+            else:
+                sig_ctx = 2
+
+            if c_idx == 0:
+                if (xs + ys) > 0:
+                    sig_ctx += 3
+                if log2size == 3:
+                    sig_ctx += (9 if scan_idx == 0 else 15)
+                else:
+                    sig_ctx += 21
+            else:
+                if log2size == 3:
+                    sig_ctx += 9
+                else:
+                    sig_ctx += 12
+
+        if c_idx == 0:
+            ctx_inc = sig_ctx
+        else:
+            ctx_inc = 27 + sig_ctx
+        
+        bit = self.ctx.cabac.decode_decision("sig_coeff_flag", ctx_offset + ctx_inc)
+        log.syntax.info("sig_coeff_flag = %d", bit)
+        return bit
+
     
     def parse__coded_sub_block_flag(self, c_idx, xs, ys, log2size):
         if self.ctx.img.slice_hdr.init_type == 0:
