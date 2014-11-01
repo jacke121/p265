@@ -112,7 +112,7 @@ class Cu(tree.Tree):
                     self.tu.idx = 0
                     self.tu.ctx = self.ctx
                     self.tu.cu = self
-                    self.tu.decode()
+                    self.tu.parse()
 
     def decode_intra_pred_mode(self):
         if self.part_mode == IntraPartMode.PART_NxN:
@@ -485,6 +485,7 @@ class Cu(tree.Tree):
             self.decode_pcm()
         else:
             self.decode_qp()
+            return
             if self.pred_mode == self.MODE_INTRA:
                 self.decode_intra()
             elif self.pred_mode == self.MODE_INTER:

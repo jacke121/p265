@@ -8,7 +8,7 @@ class Tu(tree.Tree):
     def __init__(self, x, y, log2size, depth=0, parent=None):
         tree.Tree.__init__(self, x, y, log2size, depth, parent)
 
-    def decode(self):
+    def parse(self):
         log.location.debug("Start decoding TU: (x, y) = (%d, %d), size = %d, depth = %d", self.x, self.y, self.size, self.depth)
 
         #if self.x==184 and self.y==48 and self.size==4 and self.depth==2:
@@ -75,12 +75,57 @@ class Tu(tree.Tree):
                 self.add_child(i)
 
             for child in self.children:
-                child.decode()
+                child.parse()
         else:
             if self.cu.pred_mode == self.cu.MODE_INTRA or self.depth != 0 or self.cbf_cb or self.cbf_cr:
                 self.cbf_luma = self.decode_cbf_luma()
-            self.decode_leaf()
+            self.parse_leaf()
     
+    def parse_leaf(self):
+        assert self.is_leaf() == True
+
+        if self.cbf_luma or self.cbf_cb or self.cbf_cr:
+            if self.ctx.pps.cu_qp_delta_enabled_flag == 1 and self.cu.get_root().is_cu_qp_delta_coded == 0:
+                self.cu_qp_delta_abs = self.decode_cu_qp_delta_abs()
+                if self.cu_qp_delta_abs:
+                    self.cu_qp_delta_sign_flag = self.decode_cu_qp_delta_sign_flag()
+                else:
+                    self.cu_qp_delta_sign_flag = 0
+                self.cu.get_root().is_cu_qp_delta_coded = 1
+                self.cu.get_root().cu_qp_delta_val = self.cu_qp_data_abs * (1 - 2 * self.cu_qp_delta_sign_flag)
+                assert self.cu.get_root().cu_qp_delta_val >= -(26 + self.ctx.sps.qp_bd_offset_y/2) and self.cu.get_root().cu_qp_delta_val <= +(25 + self.ctx.sps.qp_bd_offset_y/2)
+            
+            self.transform_skip_flag = numpy.zeros(3, bool)
+            self.last_sig_coeff_x_prefix = numpy.zeros(3, int)
+            self.last_sig_coeff_y_prefix = numpy.zeros(3, int)
+            self.last_sig_coeff_x_suffix = numpy.zeros(3, int)
+            self.last_sig_coeff_y_suffix = numpy.zeros(3, int)
+            self.last_significant_coeff_x = numpy.zeros(3, int)
+            self.last_significant_coeff_y = numpy.zeros(3, int)
+            self.coded_sub_block_flag = [0] * 3
+            self.sig_coeff_flag = [0] * 3
+            self.coeff_abs_level_greater1_flag = [0] * 3
+            self.coeff_abs_level_greater2_flag = [0] * 3
+            self.coeff_sign_flag = [0] * 3
+            self.coeff_abs_level_remaining = [0] * 3
+            self.trans_coeff_level = [0] * 3
+
+            if self.cbf_luma:
+                self.decode_residual_coding(self.x, self.y, self.log2size, 0)
+            
+            if self.log2size > 2:
+                if self.cbf_cb:
+                    self.decode_residual_coding(self.x, self.y, self.log2size-1, 1)
+                if self.cbf_cr:
+                    self.decode_residual_coding(self.x, self.y, self.log2size-1, 2)
+            elif self.idx == 3:
+                #raise "I am here!"
+                sisters  = self.get_sisters()
+                if sisters[0].cbf_cb:
+                    self.decode_residual_coding(sisters[0].x, sisters[0].y, self.log2size, 1)
+                if sisters[0].cbf_cr:
+                    self.decode_residual_coding(sisters[0].x, sisters[0].y, self.log2size, 2)
+
     def decode_split_transform_flag(self):
         if self.ctx.img.slice_hdr.init_type == 0:
             ctx_offset = 0
@@ -134,51 +179,6 @@ class Tu(tree.Tree):
         bit = self.ctx.cabac.decode_decision("cbf_luma", ctx_idx)
         log.syntax.info("cbf_luma = %d", bit)
         return bit
-
-    def decode_leaf(self):
-        assert self.is_leaf() == True
-
-        if self.cbf_luma or self.cbf_cb or self.cbf_cr:
-            if self.ctx.pps.cu_qp_delta_enabled_flag == 1 and self.cu.get_root().is_cu_qp_delta_coded == 0:
-                self.cu_qp_delta_abs = self.decode_cu_qp_delta_abs()
-                if self.cu_qp_delta_abs:
-                    self.cu_qp_delta_sign_flag = self.decode_cu_qp_delta_sign_flag()
-                else:
-                    self.cu_qp_delta_sign_flag = 0
-                self.cu.get_root().is_cu_qp_delta_coded = 1
-                self.cu.get_root().cu_qp_delta_val = self.cu_qp_data_abs * (1 - 2 * self.cu_qp_delta_sign_flag)
-                assert self.cu.get_root().cu_qp_delta_val >= -(26 + self.ctx.sps.qp_bd_offset_y/2) and self.cu.get_root().cu_qp_delta_val <= +(25 + self.ctx.sps.qp_bd_offset_y/2)
-            
-            self.transform_skip_flag = numpy.zeros(3, bool)
-            self.last_sig_coeff_x_prefix = numpy.zeros(3, int)
-            self.last_sig_coeff_y_prefix = numpy.zeros(3, int)
-            self.last_sig_coeff_x_suffix = numpy.zeros(3, int)
-            self.last_sig_coeff_y_suffix = numpy.zeros(3, int)
-            self.last_significant_coeff_x = numpy.zeros(3, int)
-            self.last_significant_coeff_y = numpy.zeros(3, int)
-            self.coded_sub_block_flag = [0] * 3
-            self.sig_coeff_flag = [0] * 3
-            self.coeff_abs_level_greater1_flag = [0] * 3
-            self.coeff_abs_level_greater2_flag = [0] * 3
-            self.coeff_sign_flag = [0] * 3
-            self.coeff_abs_level_remaining = [0] * 3
-            self.trans_coeff_level = [0] * 3
-
-            if self.cbf_luma:
-                self.decode_residual_coding(self.x, self.y, self.log2size, 0)
-            
-            if self.log2size > 2:
-                if self.cbf_cb:
-                    self.decode_residual_coding(self.x, self.y, self.log2size-1, 1)
-                if self.cbf_cr:
-                    self.decode_residual_coding(self.x, self.y, self.log2size-1, 2)
-            elif self.idx == 3:
-                #raise "I am here!"
-                sisters  = self.get_sisters()
-                if sisters[0].cbf_cb:
-                    self.decode_residual_coding(sisters[0].x, sisters[0].y, self.log2size, 1)
-                if sisters[0].cbf_cr:
-                    self.decode_residual_coding(sisters[0].x, sisters[0].y, self.log2size, 2)
 
     def decode_last_sig_coeff_x_suffix(self, c_idx):
         return self.decode_last_sig_coeff_xy_suffix("last_sig_coeff_x_suffix", self.last_sig_coeff_x_prefix[c_idx])
