@@ -3,6 +3,7 @@ import copy
 import numpy
 import scaling
 import transform
+import reconstruction
 import log
 
 class IntraPredMode:
@@ -55,12 +56,10 @@ class IntraPu:
         scaling.inverse_scaling(pu=self, x0=x, y0=y, log2size=log2size, depth=depth, c_idx=c_idx, d=self.d)
 
         self.r = numpy.zeros((size, size), int)
-        transform.inverse_transform(self.d, log2size, self.r)
+        transform.inverse_transform(self.d, log2size, self.r, 1 if size==4 and c_idx==0 else 0)
 
         self.reconstructed_samples = numpy.zeros((size, size), int)
-        reconstruction.reconstruction(pred_samples=self.pred_samples, residual_samples=self.r, log2size=log2size, c_idx=c_idx, rec_samples=self.reconstructed_samples)
-
-        raise
+        reconstruction.reconstruction(pred_samples=self.pred_samples, residual_samples=self.r, log2size=log2size, c_idx=c_idx, rec_samples=self.reconstructed_samples, bit_depth_y=self.cu.ctx.sps.bit_depth_y, bit_depth_c=self.cu.ctx.sps.bit_depth_c)
 
     def decode_pred_samples(self, log2size, c_idx):
         if self.mode == IntraPredMode.INTRA_PLANAR:
@@ -102,7 +101,7 @@ class IntraPu:
                 x_current, y_current = x_current << 1, y_current << 1
             
             available = self.cu.ctx.img.check_availability(x_current, y_current, x_neighbor, y_neighbor)
-            if available == False or (self.cu.ctx.img.get("pred_mode", x_neighbor, y_neighbor) != self.cu.MODE_INTRA and self.cu.ctx.pps.constrained_intra_pred_flag == 1):
+            if available == False or (self.cu.get_root().get_pred_mode(x_neighbor, y_neighbor) != self.cu.MODE_INTRA and self.cu.ctx.pps.constrained_intra_pred_flag == 1):
                 pass
             else:
                 self.neighbor[x][y] = self.cu.ctx.img.get_sample(x_neighbor, y_neighbor)
