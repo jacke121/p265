@@ -663,3 +663,31 @@ class Tu(tree.Tree):
 
     def parse__last_sig_coeff_y_prefix(self, log2size, c_idx):
         return self.parse__last_sig_coeff_xy_prefix(log2size, c_idx, 'y')
+
+    def get_trans_coeff_level(self, x, y, c_idx):
+        assert self.is_root()
+        assert self.contain(x, y)
+        for leave in self.get_leaves():
+            if leave.contain(x, y):
+                if c_idx == 0:
+                    return leave.trans_coeff_level[c_idx][x - leave.x][y - leave.y]
+                else: 
+                    if self.log2size > 2:
+                        return leave.trans_coeff_level[c_idx][x - leave.x][y - leave.y]
+                    else:
+                        raise "Attention!"
+                        if leave.idx == 3:
+                            return leave.trans_coeff_level[c_idx][x - leave.x][y - leave.y]
+                        else:
+                            leave.get_sisters()[3].trans_coeff_level[c_idx][x - leave.x][y - leave.y]
+        return None
+
+    def get_trans_coeff_level_y(self, x, y):
+        self.get_trans_coeff_level(x, y, 0)
+
+    def get_trans_coeff_level_cb(self, x, y):
+        self.get_trans_coeff_level(x, y, 1)
+
+    def get_trans_coeff_level_cr(self, x, y):
+        self.get_trans_coeff_level(x, y, 2)
+
