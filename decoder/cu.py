@@ -608,8 +608,6 @@ class Cu(tree.Tree):
                 self.pu[i] = intra.IntraPu(self, c_idx = 0, mode = self.intra_pred_mode_y[x_pb][y_pb])
                 self.pu[i].decode(x = x_pb, y = y_pb, log2size = self.log2size-1, depth = 1)
         
-        raise
-
         # Chroma
         self.pu[4] = intra.IntraPu(self, c_idx = 1, mode = self.intra_pred_mode_c)
         self.pu[5] = intra.IntraPu(self, c_idx = 2, mode = self.intra_pred_mode_c)
