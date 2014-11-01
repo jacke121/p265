@@ -114,20 +114,25 @@ class Tu(tree.Tree):
                 self.parse_residual_coding(self.x, self.y, self.log2size, 0)
             
             if self.log2size > 2:
+                # For luma TU with size larger than 4x4, two chroma half-size TUs are associated
                 if self.cbf_cb:
                     self.parse_residual_coding(self.x, self.y, self.log2size-1, 1)
                 if self.cbf_cr:
                     self.parse_residual_coding(self.x, self.y, self.log2size-1, 2)
-            elif self.idx == 3:
-                #raise "I am here!"
-                sisters  = self.get_sisters()
-                if sisters[0].cbf_cb:
-                    self.parse_residual_coding(sisters[0].x, sisters[0].y, self.log2size, 1)
-                if sisters[0].cbf_cr:
-                    self.parse_residual_coding(sisters[0].x, sisters[0].y, self.log2size, 2)
+            else:
+                # This is the branch for luma TU size 4x4
+                # Since chroma TU size 2x2 is not allowed, every 4 luma 4x4 TUs will share two 4x4 chroma TUs
+                if self.idx == 3:
+                    sisters  = self.get_sisters()
+                    if sisters[0].cbf_cb:
+                        self.parse_residual_coding(sisters[0].x, sisters[0].y, self.log2size, 1)
+                    if sisters[0].cbf_cr:
+                        self.parse_residual_coding(sisters[0].x, sisters[0].y, self.log2size, 2)
 
     def parse_residual_coding(self, x0, y0, log2size, c_idx):
         log.location.debug("Start decoding residual: c_idx = %d", c_idx)
+
+        size = 1 << log2size
 
         if self.ctx.pps.transform_skip_enabled_flag and (not self.cu.cu_transquant_bypass_flag) and (log2size==2):
             self.transform_skip_flag[c_idx] = self.parse__transform_skip_flag(c_idx)
@@ -197,12 +202,12 @@ class Tu(tree.Tree):
                 break
         
         self.coded_sub_block_flag[c_idx] = numpy.zeros((size_subblock, size_subblock), bool)
-        self.sig_coeff_flag[c_idx] = numpy.zeros((size_subblock, size_subblock, self.size, self.size), bool)
-        self.coeff_abs_level_greater1_flag[c_idx] = numpy.zeros((size_subblock, size_subblock, self.size * self.size), bool)
-        self.coeff_abs_level_greater2_flag[c_idx] = numpy.zeros((size_subblock, size_subblock, self.size * self.size), bool)
-        self.coeff_sign_flag[c_idx] = numpy.zeros((size_subblock, size_subblock, self.size * self.size), bool)
-        self.coeff_abs_level_remaining[c_idx] = numpy.zeros((size_subblock, size_subblock, self.size * self.size), int)
-        self.trans_coeff_level[c_idx] = numpy.zeros((size_subblock, size_subblock, self.size, self.size), int)
+        self.sig_coeff_flag[c_idx] = numpy.zeros((size_subblock, size_subblock, size, size), bool)
+        self.coeff_abs_level_greater1_flag[c_idx] = numpy.zeros((size_subblock, size_subblock, size * size), bool)
+        self.coeff_abs_level_greater2_flag[c_idx] = numpy.zeros((size_subblock, size_subblock, size * size), bool)
+        self.coeff_sign_flag[c_idx] = numpy.zeros((size_subblock, size_subblock, size * size), bool)
+        self.coeff_abs_level_remaining[c_idx] = numpy.zeros((size_subblock, size_subblock, size * size), int)
+        self.trans_coeff_level[c_idx] = numpy.zeros((size, size), int)
        
         greater1_context = {}
 
@@ -214,7 +219,7 @@ class Tu(tree.Tree):
         greater1_context["coeff_abs_level_greater1_flag_of_previous_invocation_in_current_4x4_subblock"] = 0
 
         greater1_context["first_invocation_in_tu_flag"] = 1
-
+        
         # Loop each 4x4 subblock reversely from the last subblock contain significant coefficients
         # 'i' is the index of the subblock in corresponding scan order determined by scan_idx
         for i in reversed(range(last_sub_block + 1)):
@@ -319,11 +324,11 @@ class Tu(tree.Tree):
                     else:
                         self.coeff_abs_level_remaining[c_idx][xs][ys][n] = 0
 
-                    self.trans_coeff_level[c_idx][xs][ys][xc][yc] = (self.coeff_abs_level_remaining[c_idx][xs][ys][n] + base_level) * (1 - (2 * self.coeff_sign_flag[c_idx][xs][ys][n]))
+                    self.trans_coeff_level[c_idx][xc][yc] = (self.coeff_abs_level_remaining[c_idx][xs][ys][n] + base_level) * (1 - (2 * self.coeff_sign_flag[c_idx][xs][ys][n]))
                     if self.ctx.pps.sign_data_hiding_enabled_flag and sign_hidden:
                         sum_abs_level += self.coeff_abs_level_remaining[c_idx][xs][ys][n] + base_level
                         if n == first_sig_scan_pos and ((sum_abs_level % 2) == 1):
-                            self.trans_coeff_level[c_idx][xs][ys][xc][yc]  = -self.trans_coeff_level[c_idx][xs][ys][xc][yc]
+                            self.trans_coeff_level[c_idx][xc][yc]  = -self.trans_coeff_level[c_idx][xc][yc]
 
                     num_sig_coeff += 1
                 else:
