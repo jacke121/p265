@@ -485,7 +485,6 @@ class Cu(tree.Tree):
             self.decode_pcm()
         else:
             self.decode_qp()
-            return # Temproal return
             if self.pred_mode == self.MODE_INTRA:
                 self.decode_intra()
             elif self.pred_mode == self.MODE_INTER:
@@ -597,15 +596,19 @@ class Cu(tree.Tree):
 
         # Luma
         if self.intra_split_flag == 0:
-            self.pu[0] = [intra.IntraPu(self, c_idx = 0, mode = self.intra_pred_mode_y[self.x][self.y])]
+            log.intra.info("(pu.x, pu.y) = (%d, %d), pu.size = %d, mode = %d, depth = %d" % (self.x, self.y, self.size, self.intra_pred_mode_y[self.x][self.y], 0))
+            self.pu[0] = intra.IntraPu(self, c_idx = 0, mode = self.intra_pred_mode_y[self.x][self.y])
             self.pu[0].decode(x = self.x, y = self.y, log2size = self.log2size, depth = 0)
         else:
             for i in range(4):
                 x_pb = self.x + (self.size >> 1) * (i % 2)
                 y_pb = self.y + (self.size >> 1) * (i / 2)
+                log.intra.info("(pu.x, pu.y) = (%d, %d), pu.size = %d, mode = %d, depth = %d" % (x_pb, y_pb, self.size>>1, self.intra_pred_mode_y[x_pb][y_pb], 1))
                 self.pu[i] = intra.IntraPu(self, c_idx = 0, mode = self.intra_pred_mode_y[x_pb][y_pb])
                 self.pu[i].decode(x = x_pb, y = y_pb, log2size = self.log2size-1, depth = 1)
         
+        raise
+
         # Chroma
         self.pu[4] = intra.IntraPu(self, c_idx = 1, mode = self.intra_pred_mode_c)
         self.pu[5] = intra.IntraPu(self, c_idx = 2, mode = self.intra_pred_mode_c)
