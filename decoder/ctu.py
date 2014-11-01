@@ -21,11 +21,11 @@ class Ctu(cu.Cu):
 
         self.sao = sao.Sao(self.ctx)
 
-    def decode(self):
+    def parse(self):
         log.location.info("Start decoding CTU: (x, y) = (%d, %d), size = %d, addr_rs = %d", self.x, self.y, self.size, self.addr_rs)
 
         if self.ctx.img.slice_hdr.slice_sao_luma_flag or self.ctx.img.slice_hdr.slice_sao_chroma_flag:
-            self.sao.decode()
+            self.sao.parse()
         
         cu.Cu.parse(self)
         #print(self)

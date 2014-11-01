@@ -109,7 +109,7 @@ class SliceSegmentHeader:
                     if st_rps[self.curr_rps_idx].used_by_curr_pic_s1[i]:
                         self.num_poc_total_curr += 1
                 
-                self.decode_long_term_ref_pics_syntax_elements()
+                self.parse_long_term_ref_pics_syntax_elements()
 
                 for i in range(self.num_long_term_sps + self.num_long_term_pics):
                     if self.used_by_curr_pic_lt_flag[i]:
@@ -190,7 +190,7 @@ class SliceSegmentHeader:
 
         bs.byte_alignment()
 
-    def decode_long_term_ref_pics_syntax_elements(self):
+    def parse_long_term_ref_pics_syntax_elements(self):
         if self.sps.long_term_ref_pics_present_flag:
             if self.sps.num_long_term_ref_pics_sps > 0:
                 self.num_long_term_sps = bs.ue("num_long_term_sps")
@@ -252,7 +252,7 @@ class SliceSegmentData:
         self.ctx.img.ctu.slice_addr = self.ctx.img.slice_hdr.slice_segment_address 
 
         while True:
-            self.ctx.img.ctu.decode()
+            self.ctx.img.ctu.parse()
             self.end_of_slice_segment_flag = self.parse_end_of_slice_segment_flag()
             self.ctx.img.next_ctu(self.end_of_slice_segment_flag) # Switching to next CTB in the current slice segment
             
