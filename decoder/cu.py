@@ -372,7 +372,7 @@ class Cu(tree.Tree):
                     child.parse()
         else:
             self.parse_leaf()
-            #self.decode_leaf()
+            self.decode_leaf()
 
     def decode_split_cu_flag(self):
         x0 = self.x
@@ -590,7 +590,7 @@ class Cu(tree.Tree):
         self.qp_cb = get_qp_c(qp_idx_cb)
         self.qp_cr = get_qp_c(qp_idx_cr)
 
-        log.qp.info("(cu.x, cu.y) = (%d, %d), cu.size = %d, cu.depth = %d, qp_y = %d, qp_cb = %d, qp_cr = %d" % (self.x, self.y, self.size, self.depth, self.qp_y, self.qp_cb, self.qp_cr))
+        log.qp.info("(cu.x, cu.y) = (%d, %d), cu.size = %d, cu.depth = %d, qp_y = %d, qp_cb = %d, qp_cr = %d" % (self.x, self.y, self.size, self.depth, self.qp_y + self.ctx.sps.qp_bd_offset_y, self.qp_cb + self.ctx.sps.qp_bd_offset_c, self.qp_cr + self.ctx.sps.qp_bd_offset_c))
 
     def decode_intra(self):
         self.pu = [None for i in range(6)]

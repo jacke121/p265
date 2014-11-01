@@ -17,3 +17,4 @@ check: log
 	diff logs/frame1_ctu29.log test/golden/frame1_ctu29.log
 	diff logs/frame2_ctu0.log test/golden/frame2_ctu0.log
 	diff logs/frame2_ctu29.log test/golden/frame2_ctu29.log
+	diff logs/qp.log test/golden/qp.log
