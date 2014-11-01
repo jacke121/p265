@@ -26,7 +26,7 @@ class Tu(tree.Tree):
                 self.log2size > self.ctx.sps.log2_min_transform_block_size and \
                 self.depth < self.cu.max_transform_depth and \
                 not (self.cu.intra_split_flag == 1 and self.depth == 0):
-            self.split_transform_flag = self.decode_split_transform_flag()
+            self.split_transform_flag = self.parse__split_transform_flag()
         else:
             if self.log2size > self.ctx.sps.log2_max_transform_block_size or \
                     (self.cu.intra_split_flag == 1 and self.depth == 0) or \
@@ -37,12 +37,12 @@ class Tu(tree.Tree):
         
         if self.log2size > 2:
             if self.depth == 0 or self.parent.cbf_cb == 1:
-                self.cbf_cb = self.decode_cbf_cb()
+                self.cbf_cb = self.parse__cbf_cb()
             else:
                 self.cbf_cb = 0
 
             if self.depth == 0 or self.parent.cbf_cr == 1:
-                self.cbf_cr = self.decode_cbf_cr()
+                self.cbf_cr = self.parse__cbf_cr()
             else:
                 self.cbf_cr = 0
         else:
@@ -78,7 +78,7 @@ class Tu(tree.Tree):
                 child.parse()
         else:
             if self.cu.pred_mode == self.cu.MODE_INTRA or self.depth != 0 or self.cbf_cb or self.cbf_cr:
-                self.cbf_luma = self.decode_cbf_luma()
+                self.cbf_luma = self.parse__cbf_luma()
             self.parse_leaf()
     
     def parse_leaf(self):
@@ -86,9 +86,9 @@ class Tu(tree.Tree):
 
         if self.cbf_luma or self.cbf_cb or self.cbf_cr:
             if self.ctx.pps.cu_qp_delta_enabled_flag == 1 and self.cu.get_root().is_cu_qp_delta_coded == 0:
-                self.cu_qp_delta_abs = self.decode_cu_qp_delta_abs()
+                self.cu_qp_delta_abs = self.parse__cu_qp_delta_abs()
                 if self.cu_qp_delta_abs:
-                    self.cu_qp_delta_sign_flag = self.decode_cu_qp_delta_sign_flag()
+                    self.cu_qp_delta_sign_flag = self.parse__cu_qp_delta_sign_flag()
                 else:
                     self.cu_qp_delta_sign_flag = 0
                 self.cu.get_root().is_cu_qp_delta_coded = 1
@@ -111,22 +111,22 @@ class Tu(tree.Tree):
             self.trans_coeff_level = [0] * 3
 
             if self.cbf_luma:
-                self.decode_residual_coding(self.x, self.y, self.log2size, 0)
+                self.parse_residual_coding(self.x, self.y, self.log2size, 0)
             
             if self.log2size > 2:
                 if self.cbf_cb:
-                    self.decode_residual_coding(self.x, self.y, self.log2size-1, 1)
+                    self.parse_residual_coding(self.x, self.y, self.log2size-1, 1)
                 if self.cbf_cr:
-                    self.decode_residual_coding(self.x, self.y, self.log2size-1, 2)
+                    self.parse_residual_coding(self.x, self.y, self.log2size-1, 2)
             elif self.idx == 3:
                 #raise "I am here!"
                 sisters  = self.get_sisters()
                 if sisters[0].cbf_cb:
-                    self.decode_residual_coding(sisters[0].x, sisters[0].y, self.log2size, 1)
+                    self.parse_residual_coding(sisters[0].x, sisters[0].y, self.log2size, 1)
                 if sisters[0].cbf_cr:
-                    self.decode_residual_coding(sisters[0].x, sisters[0].y, self.log2size, 2)
+                    self.parse_residual_coding(sisters[0].x, sisters[0].y, self.log2size, 2)
 
-    def decode_split_transform_flag(self):
+    def parse__split_transform_flag(self):
         if self.ctx.img.slice_hdr.init_type == 0:
             ctx_offset = 0
         elif self.ctx.img.slice_hdr.init_type == 1:
@@ -142,7 +142,7 @@ class Tu(tree.Tree):
         log.syntax.info("split_transform_flag = %d", bit)
         return bit
     
-    def decode_cbf_chroma(self, component):
+    def parse__cbf_chroma(self, component):
         ctx_inc = self.depth
         if self.ctx.img.slice_hdr.init_type == 0:
             ctx_offset = 0
@@ -158,13 +158,13 @@ class Tu(tree.Tree):
         log.syntax.info("cbf_%s = %d", component, bit)
         return bit
 
-    def decode_cbf_cb(self):
-        return self.decode_cbf_chroma("cb")
+    def parse__cbf_cb(self):
+        return self.parse__cbf_chroma("cb")
 
-    def decode_cbf_cr(self):
-        return self.decode_cbf_chroma("cr")
+    def parse__cbf_cr(self):
+        return self.parse__cbf_chroma("cr")
 
-    def decode_cbf_luma(self):
+    def parse__cbf_luma(self):
         ctx_inc = 1 if self.depth==0 else 0
         if self.ctx.img.slice_hdr.init_type == 0:
             ctx_offset = 0
@@ -180,13 +180,13 @@ class Tu(tree.Tree):
         log.syntax.info("cbf_luma = %d", bit)
         return bit
 
-    def decode_last_sig_coeff_x_suffix(self, c_idx):
-        return self.decode_last_sig_coeff_xy_suffix("last_sig_coeff_x_suffix", self.last_sig_coeff_x_prefix[c_idx])
+    def parse__last_sig_coeff_x_suffix(self, c_idx):
+        return self.parse__last_sig_coeff_xy_suffix("last_sig_coeff_x_suffix", self.last_sig_coeff_x_prefix[c_idx])
 
-    def decode_last_sig_coeff_y_suffix(self, c_idx):
-        return self.decode_last_sig_coeff_xy_suffix("last_sig_coeff_y_suffix", self.last_sig_coeff_y_prefix[c_idx])
+    def parse__last_sig_coeff_y_suffix(self, c_idx):
+        return self.parse__last_sig_coeff_xy_suffix("last_sig_coeff_y_suffix", self.last_sig_coeff_y_prefix[c_idx])
 
-    def decode_last_sig_coeff_xy_suffix(self, name, last_sig_coeff_xy_prefix):
+    def parse__last_sig_coeff_xy_suffix(self, name, last_sig_coeff_xy_prefix):
         length = (last_sig_coeff_xy_prefix >> 1) - 1;
         value = self.ctx.cabac.decode_bypass()
 
@@ -196,7 +196,7 @@ class Tu(tree.Tree):
         log.syntax.info("%s = %d", name, value)
         return value;
 
-    def decode_sig_coeff_flag(self, xc, yc, log2size, c_idx, scan_idx):
+    def parse__sig_coeff_flag(self, xc, yc, log2size, c_idx, scan_idx):
         if self.ctx.img.slice_hdr.init_type == 0:
             ctx_offset = 0
         elif self.ctx.img.slice_hdr.init_type == 1:
@@ -251,26 +251,26 @@ class Tu(tree.Tree):
         log.syntax.info("sig_coeff_flag = %d", bit)
         return bit
 
-    def decode_residual_coding(self, x0, y0, log2size, c_idx):
+    def parse_residual_coding(self, x0, y0, log2size, c_idx):
         log.location.debug("Start decoding residual: c_idx = %d", c_idx)
 
         if self.ctx.pps.transform_skip_enabled_flag and (not self.cu.cu_transquant_bypass_flag) and (log2size==2):
-            self.transform_skip_flag[c_idx] = self.decode_transform_skip_flag(c_idx)
+            self.transform_skip_flag[c_idx] = self.parse__transform_skip_flag(c_idx)
 
-        self.last_sig_coeff_x_prefix[c_idx] = self.decode_last_sig_coeff_x_prefix(log2size, c_idx)
-        self.last_sig_coeff_y_prefix[c_idx] = self.decode_last_sig_coeff_y_prefix(log2size, c_idx)
+        self.last_sig_coeff_x_prefix[c_idx] = self.parse__last_sig_coeff_x_prefix(log2size, c_idx)
+        self.last_sig_coeff_y_prefix[c_idx] = self.parse__last_sig_coeff_y_prefix(log2size, c_idx)
         assert self.last_sig_coeff_x_prefix[c_idx] in range(0, log2size<<1)
         assert self.last_sig_coeff_y_prefix[c_idx] in range(0, log2size<<1)
         
         if self.last_sig_coeff_x_prefix[c_idx] > 3:
-            self.last_sig_coeff_x_suffix[c_idx] = self.decode_last_sig_coeff_x_suffix(c_idx)
+            self.last_sig_coeff_x_suffix[c_idx] = self.parse__last_sig_coeff_x_suffix(c_idx)
             assert self.last_sig_coeff_x_suffix[c_idx] in range(0, 1<<((self.last_sig_coeff_x_prefix[c_idx]>>1)-1))
             self.last_significant_coeff_x[c_idx] = (1<<((self.last_sig_coeff_x_prefix[c_idx]>>1)-1)) * (2+(self.last_sig_coeff_x_prefix[c_idx]&1)) + self.last_sig_coeff_x_suffix[c_idx]
         else:
             self.last_significant_coeff_x[c_idx] = self.last_sig_coeff_x_prefix[c_idx]
 
         if self.last_sig_coeff_y_prefix[c_idx] > 3:
-            self.last_sig_coeff_y_suffix[c_idx] = self.decode_last_sig_coeff_y_suffix(c_idx)
+            self.last_sig_coeff_y_suffix[c_idx] = self.parse__last_sig_coeff_y_suffix(c_idx)
             assert self.last_sig_coeff_y_suffix[c_idx] in range(0, 1<<((self.last_sig_coeff_y_prefix[c_idx]>>1)-1))
             self.last_significant_coeff_y[c_idx] = (1<<((self.last_sig_coeff_y_prefix[c_idx]>>1)-1)) * (2+(self.last_sig_coeff_y_prefix[c_idx]&1)) + self.last_sig_coeff_y_suffix[c_idx]
         else:
@@ -350,7 +350,7 @@ class Tu(tree.Tree):
             
             # For the sub blocks between [1, last_sub_block-1] inclusive, there is a flag to indicate whether the coefficients in these subblocks are all zero.
             if i < last_sub_block and i > 0:
-                self.coded_sub_block_flag[c_idx][xs][ys] = self.decode_coded_sub_block_flag(c_idx, xs, ys, log2size) 
+                self.coded_sub_block_flag[c_idx][xs][ys] = self.parse__coded_sub_block_flag(c_idx, xs, ys, log2size) 
                 infer_sb_dc_sig_coeff_flag = 1
             else:
                 # For the 1st subblock, it is very likely to contain significant coefficients 
@@ -367,7 +367,7 @@ class Tu(tree.Tree):
                 xc = (xs << 2) + scan_order_4x4[n][0]
                 yc = (ys << 2) + scan_order_4x4[n][1]
                 if self.coded_sub_block_flag[c_idx][xs][ys] and (n > 0 or (not infer_sb_dc_sig_coeff_flag)):
-                    self.sig_coeff_flag[c_idx][xs][ys][xc][yc] = self.decode_sig_coeff_flag(xc, yc, log2size, c_idx, scan_idx)
+                    self.sig_coeff_flag[c_idx][xs][ys][xc][yc] = self.parse__sig_coeff_flag(xc, yc, log2size, c_idx, scan_idx)
                     if self.sig_coeff_flag[c_idx][xs][ys][xc][yc]:
                         infer_sb_dc_sig_coeff_flag = 0
                 else:
@@ -398,7 +398,7 @@ class Tu(tree.Tree):
                 yc = (ys << 2) + scan_order_4x4[n][1]
                 if self.sig_coeff_flag[c_idx][xs][ys][xc][yc]:
                     if num_greater1_flag < 8:
-                        self.coeff_abs_level_greater1_flag[c_idx][xs][ys][n] = self.decode_coeff_abs_level_greater1_flag(c_idx, i, n, num_greater1_flag==0, greater1_context)
+                        self.coeff_abs_level_greater1_flag[c_idx][xs][ys][n] = self.parse__coeff_abs_level_greater1_flag(c_idx, i, n, num_greater1_flag==0, greater1_context)
                         greater1_context["first_invocation_in_tu_flag"] = 0
                         num_greater1_flag += 1
                         if self.coeff_abs_level_greater1_flag[c_idx][xs][ys][n] and (last_greater1_scan_pos == -1):
@@ -417,7 +417,7 @@ class Tu(tree.Tree):
 
             sign_hidden = (last_sig_scan_pos - first_sig_scan_pos > 3) and (not self.cu.cu_transquant_bypass_flag)
             if last_greater1_scan_pos != -1:
-                self.coeff_abs_level_greater2_flag[c_idx][xs][ys][last_greater1_scan_pos] = self.decode_coeff_abs_level_greater2_flag(c_idx, greater1_context)
+                self.coeff_abs_level_greater2_flag[c_idx][xs][ys][last_greater1_scan_pos] = self.parse__coeff_abs_level_greater2_flag(c_idx, greater1_context)
             for n in range(16):
                 if n != last_greater1_scan_pos:
                     self.coeff_abs_level_greater2_flag[c_idx][xs][ys][n] = 0
@@ -426,7 +426,7 @@ class Tu(tree.Tree):
                 xc = (xs << 2) + scan_order_4x4[n][0]
                 yc = (ys << 2) + scan_order_4x4[n][1]
                 if self.sig_coeff_flag[c_idx][xs][ys][xc][yc] and ((not self.ctx.pps.sign_data_hiding_enabled_flag) or (not sign_hidden) or (n != first_sig_scan_pos)):
-                    self.coeff_sign_flag[c_idx][xs][ys][n] = self.decode_coeff_sign_flag()
+                    self.coeff_sign_flag[c_idx][xs][ys][n] = self.parse__coeff_sign_flag()
                 else:
                     self.coeff_sign_flag[c_idx][xs][ys][n] = 0
 
@@ -440,7 +440,7 @@ class Tu(tree.Tree):
                 if self.sig_coeff_flag[c_idx][xs][ys][xc][yc]:
                     base_level = 1 + self.coeff_abs_level_greater1_flag[c_idx][xs][ys][n] + self.coeff_abs_level_greater2_flag[c_idx][xs][ys][n]
                     if base_level == ((3 if n == last_greater1_scan_pos else 2) if num_sig_coeff < 8 else 1):
-                        self.coeff_abs_level_remaining[c_idx][xs][ys][n] = self.decode_coeff_abs_level_remaining(base_level)
+                        self.coeff_abs_level_remaining[c_idx][xs][ys][n] = self.parse__coeff_abs_level_remaining(base_level)
                     else:
                         self.coeff_abs_level_remaining[c_idx][xs][ys][n] = 0
 
@@ -454,7 +454,7 @@ class Tu(tree.Tree):
                 else:
                     self.coeff_abs_level_remaining[c_idx][xs][ys][n] = 0
     
-    def decode_coded_sub_block_flag(self, c_idx, xs, ys, log2size):
+    def parse__coded_sub_block_flag(self, c_idx, xs, ys, log2size):
         if self.ctx.img.slice_hdr.init_type == 0:
             ctx_offset = 0
         elif self.ctx.img.slice_hdr.init_type == 1:
@@ -481,7 +481,7 @@ class Tu(tree.Tree):
         log.syntax.info("coded_sub_block_flag = %d", bit)
         return bit
 
-    def decode_coeff_abs_level_remaining(self, base_level):
+    def parse__coeff_abs_level_remaining(self, base_level):
         rice_param = min(self.last_rice_param + (1 if self.last_abs_level > (3 * (1 << self.last_rice_param)) else 0), 4)
 
         prefix = 0
@@ -508,12 +508,12 @@ class Tu(tree.Tree):
         log.syntax.info("coeff_abs_level_remaining = %d", value)
         return value;
 
-    def decode_coeff_sign_flag(self):
+    def parse__coeff_sign_flag(self):
         bit = self.ctx.cabac.decode_bypass()
         log.syntax.info("coeff_sign_flag = %d", bit)
         return bit
 
-    def decode_coeff_abs_level_greater1_flag(self, c_idx, i, n, first_invocation_in_4x4_subblock_flag, greater1_context):
+    def parse__coeff_abs_level_greater1_flag(self, c_idx, i, n, first_invocation_in_4x4_subblock_flag, greater1_context):
         if self.ctx.img.slice_hdr.init_type == 0:
             ctx_offset = 0
         elif self.ctx.img.slice_hdr.init_type == 1:
@@ -570,7 +570,7 @@ class Tu(tree.Tree):
         log.syntax.info("coeff_abs_level_greater1_flag = %d", bit)
         return bit
 
-    def decode_coeff_abs_level_greater2_flag(self, c_idx, greater1_context):
+    def parse__coeff_abs_level_greater2_flag(self, c_idx, greater1_context):
         ctx_set = greater1_context["ctx_set_of_previous_invocation_in_current_4x4_subblock"]
         ctx_inc = ctx_set
 
@@ -593,7 +593,7 @@ class Tu(tree.Tree):
         log.syntax.info("coeff_abs_level_greater2_flag = %d", bit)
         return bit
 
-    def decode_transform_skip_flag(self, c_idx):
+    def parse__transform_skip_flag(self, c_idx):
         ctx_inc = 0
 
         if c_idx == 0:
@@ -621,7 +621,7 @@ class Tu(tree.Tree):
         log.syntax.info("transform_skip_flag = %d", bit)
         return bit
 
-    def decode_last_sig_coeff_xy_prefix(self, log2size, c_idx, xy):
+    def parse__last_sig_coeff_xy_prefix(self, log2size, c_idx, xy):
         if self.ctx.img.slice_hdr.init_type == 0:
             ctx_offset = 0
         elif self.ctx.img.slice_hdr.init_type == 1:
@@ -647,8 +647,8 @@ class Tu(tree.Tree):
         log.syntax.info("last_sig_coeff_%s_prefix = %d", xy, value)
         return value
      
-    def decode_last_sig_coeff_x_prefix(self, log2size, c_idx):
-        return self.decode_last_sig_coeff_xy_prefix(log2size, c_idx, 'x')
+    def parse__last_sig_coeff_x_prefix(self, log2size, c_idx):
+        return self.parse__last_sig_coeff_xy_prefix(log2size, c_idx, 'x')
 
-    def decode_last_sig_coeff_y_prefix(self, log2size, c_idx):
-        return self.decode_last_sig_coeff_xy_prefix(log2size, c_idx, 'y')
+    def parse__last_sig_coeff_y_prefix(self, log2size, c_idx):
+        return self.parse__last_sig_coeff_xy_prefix(log2size, c_idx, 'y')
