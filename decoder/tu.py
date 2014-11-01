@@ -691,3 +691,10 @@ class Tu(tree.Tree):
     def get_trans_coeff_level_cr(self, x, y):
         self.get_trans_coeff_level(x, y, 2)
 
+    def get_split_transform_flag(self, x, y, depth):
+        assert self.is_root()
+        assert self.contain(x, y)
+        for i in self.traverse(strategy = "breath-first"):
+            if i.contain(x, y) and i.depth == depth:
+                return i.split_transform_flag
+        raise ValueError("Error: can't find the split_transform_flag in the specified pixel coordinates and depth.")
