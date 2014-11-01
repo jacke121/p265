@@ -71,11 +71,19 @@ def create_qp_logger():
     qp.addHandler(handler)
     return qp
 
+def create_intra_logger():
+    qp = logging.getLogger("p265.intra")
+    handler = logging.FileHandler(filename="logs/intra.log", mode='w')
+    handler.setFormatter(logging.Formatter(fmt="%(message)s"))
+    qp.addHandler(handler)
+    return qp
+
 main = create_main_logger()
 location = create_location_logger()
 syntax = create_syntax_logger()
 cabac = create_cabac_logger()
 qp = create_qp_logger()
+intra = create_intra_logger()
 
 if __name__ == "__main__":
     import os
