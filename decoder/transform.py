@@ -1,4 +1,6 @@
 import numpy
+import math
+import utils
 
 trans_matrix_type1 = [[29, 55, 74, 84], [74, 74, 0, -74], [84, -29, -74, 55], [55, -84, 74, -29]]
 
@@ -80,13 +82,13 @@ def inverse_transform_1d(x, log2size, tr_type):
     else:
         for i in range(0, size):
             for j in range(0, size):
-                y[i] += trans_matrix_type0[i][j * math.pow(2, 5 - log2size)] * x[j]
+                y[i] += trans_matrix_type0[i][j * int(math.pow(2, 5 - log2size))] * x[j]
 
     return y
 
-def inverse_transform(d, log2size, r):
+def inverse_transform(d, log2size, r, tr_type):
     size = 1 << log2size
-
+    
     e = numpy.zeros((size, size), int)
     for col in range(0, size):
         e[:, col] = inverse_transform_1d(d[:, col], log2size, tr_type)
