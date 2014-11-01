@@ -84,6 +84,11 @@ class Tu(tree.Tree):
     def parse_leaf(self):
         assert self.is_leaf() == True
 
+        self.trans_coeff_level = [0] * 3
+        self.trans_coeff_level[0] = numpy.zeros((self.size, self.size), int)
+        self.trans_coeff_level[1] = numpy.zeros((self.size if self.log2size <= 2 else (self.size >> 1), self.size if self.log2size <= 2 else (self.size >> 1)), int)
+        self.trans_coeff_level[2] = numpy.zeros((self.size if self.log2size <= 2 else (self.size >> 1), self.size if self.log2size <= 2 else (self.size >> 1)), int)
+
         if self.cbf_luma or self.cbf_cb or self.cbf_cr:
             if self.ctx.pps.cu_qp_delta_enabled_flag == 1 and self.cu.get_root().is_cu_qp_delta_coded == 0:
                 self.cu_qp_delta_abs = self.parse__cu_qp_delta_abs()
@@ -102,13 +107,13 @@ class Tu(tree.Tree):
             self.last_sig_coeff_y_suffix = numpy.zeros(3, int)
             self.last_significant_coeff_x = numpy.zeros(3, int)
             self.last_significant_coeff_y = numpy.zeros(3, int)
+
             self.coded_sub_block_flag = [0] * 3
             self.sig_coeff_flag = [0] * 3
             self.coeff_abs_level_greater1_flag = [0] * 3
             self.coeff_abs_level_greater2_flag = [0] * 3
             self.coeff_sign_flag = [0] * 3
             self.coeff_abs_level_remaining = [0] * 3
-            self.trans_coeff_level = [0] * 3
 
             if self.cbf_luma:
                 self.parse_residual_coding(self.x, self.y, self.log2size, 0)
@@ -207,7 +212,6 @@ class Tu(tree.Tree):
         self.coeff_abs_level_greater2_flag[c_idx] = numpy.zeros((size_subblock, size_subblock, size * size), bool)
         self.coeff_sign_flag[c_idx] = numpy.zeros((size_subblock, size_subblock, size * size), bool)
         self.coeff_abs_level_remaining[c_idx] = numpy.zeros((size_subblock, size_subblock, size * size), int)
-        self.trans_coeff_level[c_idx] = numpy.zeros((size, size), int)
        
         greater1_context = {}
 
@@ -333,6 +337,7 @@ class Tu(tree.Tree):
                     num_sig_coeff += 1
                 else:
                     self.coeff_abs_level_remaining[c_idx][xs][ys][n] = 0
+                    self.trans_coeff_level[c_idx][xc][yc] = 0
 
     def parse__split_transform_flag(self):
         if self.ctx.img.slice_hdr.init_type == 0:
