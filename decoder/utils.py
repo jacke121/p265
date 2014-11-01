@@ -8,6 +8,12 @@ def clip3(min, max, val):
     
     return result
 
+def clip1_y(x, bit_depth):
+    return clip3(0, (1 << bit_depth) - 1, x)
+
+def clip1_c(x, bit_depth):
+    return clip1_y(x, bit_depth)
+
 '''
 class md_dict(dict):
     def __getitem__(self, item):
