@@ -1,6 +1,11 @@
 import utils
 import copy
-import numpy as np
+import numpy
+
+class IntraPredMode:
+    INTRA_PLANAR = 0
+    INTRA_DC = 1
+    INTRA_ANGULAR = 2
 
 class IntraPu:
     def __init__(self, cu, c_idx, mode):
@@ -29,7 +34,7 @@ class IntraPu:
             self.decode(x_luma, y_luma + offset, log2size - 1, depth + 1)
             self.decode(x_luma + offset, y_luma + offset, log2size - 1, depth + 1)
         else:
-            self.decode_leaf(x, y, log2size, depth)
+            self.decode_leaf(x, y, log2size, depth, self.c_idx)
     
     def get_split_transform_flag(self, x, y, depth):
         for i in self.cu.tu.traverse(strategy = "breath-first"):
@@ -37,11 +42,13 @@ class IntraPu:
                 return i.split_transform_flag
         raise ValueError("Error: can't find the split_transform_flag in the specified pixel coordinates and depth.")
 
-    def decode_leaf(self, x, y, log2size, depth):
+    def decode_leaf(self, x, y, log2size, depth, c_idx):
+        size = 1 << log2size
+
         self.decode_neighbor(x, y, log2size, depth)
         self.decode_pred_samples(log2size, c_idx)
 
-        self.d = numpy.zeros((gcsize, size), int)
+        self.d = numpy.zeros((size, size), int)
         inv_scaling.inverse_scaling(pu=self, x0=x, y0=y, log2size=log2size, depth=depth, c_idx=c_idx, d=self.d)
 
         self.r = numpy.zeros((size, size), int)
@@ -52,7 +59,7 @@ class IntraPu:
 
         raise
 
-    def decode_pred_samples(log2size, c_idx):
+    def decode_pred_samples(self, log2size, c_idx):
         if self.mode == IntraPredMode.INTRA_PLANAR:
             self.decode_intra_planar(log2size)
         elif self.mode == IntraPredMode.INTRA_DC:
@@ -62,30 +69,30 @@ class IntraPu:
 
     def decode_neighbor(self, x0, y0, log2size, depth):
         size = 1 << log2size
-
+        
+        # Neighbor interators
         def x_neighbor_iterator(size):
             x = -1
             for y in reversed(range(-1, size*2, 1)):
                 yield (x, y)
-
         def y_neighbor_iterator(size):
             y = -1
             for x in range(0, size*2, 1):
                 yield (x, y)
-
         def xy_neighbor_iterator(size):
             for (x, y) in x_neighbor_iterator(size):
                 yield (x, y)
 
             for (x, y) in y_neighbor_iterator(size):
                 yield (x, y)
-
+        
+        # Initialize neighbor pixels as -1
         self.neighbor = utils.md_dict()
-        for (x, y) in self.neighbor_iterator(size):
+        for (x, y) in xy_neighbor_iterator(size):
             self.neighbor[x][y] = -1
 
         x_current, y_current = x0, y0
-        for (x, y) in self.neighbor_iterator(size):
+        for (x, y) in xy_neighbor_iterator(size):
             x_neighbor, y_neighbor = x_current + x, y_current + y
             if self.c_idx > 0:
                 x_neighbor, y_neighbor = x_neighbor << 1, y_neighbor << 1
@@ -96,16 +103,17 @@ class IntraPu:
                 pass
             else:
                 self.neighbor[x][y] = self.cu.ctx.img.get_sample(x_neighbor, y_neighbor)
-
+        
+        # Substitution process
         substitute_enable = 0
         no_available_neighbors = 1
-        for (x, y) in self.neighbor_iterator(size):
+        for (x, y) in xy_neighbor_iterator(size):
             if self.neighbor[x][y] == -1:
                 substitute_enable = 1
             else:
                 no_available_neighbors = 0
         if substitute_enable == 1:
-            bit_depth = self.cu.ctx.img.slice_hdr.bit_depth_y if self.c_idx == 0 else self.cu.ctx.img.slice_hdr.bit_depth_c
+            bit_depth = self.cu.ctx.sps.bit_depth_y if self.c_idx == 0 else self.cu.ctx.sps.bit_depth_c
             if no_available_neighbors == 1:
                 for (x, y) in xy_neighbor_iterator(size):
                     self.neighbor[x][y] = 1 << (bit_depth - 1)
@@ -121,6 +129,7 @@ class IntraPu:
                         if self.neighbor[x][y] == -1:
                             self.neighbor[x][y] = self.neighbor[x - 1][y]
 
+        # Filtering process
         if self.mode == IntraPredMode.INTRA_DC or size == 4:
             filter_flag = 0
         else:
@@ -165,7 +174,7 @@ class IntraPu:
 
     def decode_intra_planar(self, log2size):
         size = 1 << log2size
-        self.pred_samples = np.zeros((size, size), int)
+        self.pred_samples = numpy.zeros((size, size), int)
         for x in range(0, size):
             for y in range(0, size):
                 self.pred_samples[x][y] = ((size-1-x)*self.neighbor[-1][y] + \
@@ -175,7 +184,7 @@ class IntraPu:
 
     def decode_intra_dc(self, log2size, c_idx):
         size = 1 << log2size
-        self.pred_samples = np.zeros((size, size), int)
+        self.pred_samples = numpy.zeros((size, size), int)
 
         dc_val = size
         for x in range(0, size):
@@ -200,7 +209,7 @@ class IntraPu:
 
     def decode_intra_angular(self, log2size, c_idx):
         size = 1 << log2size
-        self.pred_samples = np.zeros((size, size), int)
+        self.pred_samples = numpy.zeros((size, size), int)
 
         if self.mode >= 18:
             ref = {}
