@@ -25,7 +25,7 @@ def inverse_scaling(pu, x0, y0, log2size, depth, c_idx, d):
                 if pu.cu.ctx.sps.scaling_list_enabled_flag == 0:
                     m[x][y] = 16
                 else:
-                    size_id = gclog2size - 2
+                    size_id = log2size - 2
                     if size_id  == 3:
                         matrix_id = 0 if pu.cu.is_intra_mode() else 1
                     else:
