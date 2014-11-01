@@ -307,16 +307,6 @@ class Cu(tree.Tree):
             self.parse_prediction_unit(self.x, self.y+self.size/2, self.size/2, self.size/2)
             self.parse_prediction_unit(self.x+self.size/2, self.y+self.size/2, self.size/2, self.size/2)
    
-    def get_intra_pred_mode_y(self, x, y):
-        assert self.is_leaf() == True
-        assert self.contain(x, y) == True
-
-        x = (x / self.intra_pb_size) * self.intra_pb_size
-        y = (y / self.intra_pb_size) * self.intra_pb_size
-
-        assert self.intra_pred_mode_y[x][y] in range(0, 34 + 1)
-        return self.intra_pred_mode_y[x][y]
-
     def parse__prev_intra_luma_pred_flag(self, y0, x0):
         ctx_inc = 0
 
@@ -404,17 +394,6 @@ class Cu(tree.Tree):
         self.split_cu_flag = self.ctx.cabac.decode_bin("split_cu_flag", context_idx, 0)
         log.syntax.info("split_cu_flag = %d" % self.split_cu_flag)
     
-    def check_part_mode(self, part_mode):
-        if self.pred_mode == self.MODE_INTRA:
-            assert part_mode in (0, 1)
-        else:
-            if self.log2size > self.ctx.sps.min_cb_log2_size_y and self.ctx.sps.amp_enabled_flag == 1:
-                assert part_mode in (0,1,2,4,5,6,7)
-            elif (self.log2size > self.ctx.sps.min_cb_log2_size_y and self.ctx.sps.amp_enabled_flag == 0) or self.log2size == 3:
-                assert part_mode in (0,1,2)
-            else:
-                assert part_mode in (0,1,2,3)
-
     def parse__part_mode(self):
         if self.ctx.img.slice_hdr.init_type == 0:
             ctx_offset = 0
@@ -475,10 +454,31 @@ class Cu(tree.Tree):
         if value == -1:
             raise ValueError("Unexpected partition mode = %d" % value)
 
-        self.check_part_mode(value)
+        def check_part_mode(self, part_mode):
+            if self.pred_mode == self.MODE_INTRA:
+                assert part_mode in (0, 1)
+            else:
+                if self.log2size > self.ctx.sps.min_cb_log2_size_y and self.ctx.sps.amp_enabled_flag == 1:
+                    assert part_mode in (0,1,2,4,5,6,7)
+                elif (self.log2size > self.ctx.sps.min_cb_log2_size_y and self.ctx.sps.amp_enabled_flag == 0) or self.log2size == 3:
+                    assert part_mode in (0,1,2)
+                else:
+                    assert part_mode in (0,1,2,3)
+
+        check_part_mode(self, value)
 
         log.syntax.info("part_mode = %d", value)
         return value
+
+    def get_intra_pred_mode_y(self, x, y):
+        assert self.is_leaf() == True
+        assert self.contain(x, y) == True
+
+        x = (x / self.intra_pb_size) * self.intra_pb_size
+        y = (y / self.intra_pb_size) * self.intra_pb_size
+
+        assert self.intra_pred_mode_y[x][y] in range(0, 34 + 1)
+        return self.intra_pred_mode_y[x][y]
 
     def decode_leaf(self):
         if self.pcm_flag == 1:
