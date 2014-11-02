@@ -29,6 +29,14 @@ class Ctu(cu.Cu):
         
         cu.Cu.parse(self)
         #print(self)
+    
+    def get_leaf_cu(self, x, y):
+        assert self.is_root()
+        assert self.contain(x, y)
+        for leave in self.get_leaves():
+            if leave.contain(x, y):
+                return leave
+        return None
 
     def get_depth(self, x, y):
         assert self.contain(x, y)
