@@ -669,6 +669,7 @@ class Tu(tree.Tree):
         assert self.contain(x, y)
         for leave in self.get_leaves():
             if leave.contain(x, y):
+                #print "size = %d, x = %d, y = %d, leave.x = %d, leave.y = %d, c_idx = %d" % (leave.size, x, y, leave.x, leave.y, c_idx)
                 if c_idx == 0:
                     return leave.trans_coeff_level[c_idx][x - leave.x][y - leave.y]
                 else: 
@@ -679,7 +680,7 @@ class Tu(tree.Tree):
                         if leave.idx == 3:
                             return leave.trans_coeff_level[c_idx][x - leave.x][y - leave.y]
                         else:
-                            leave.get_sisters()[3].trans_coeff_level[c_idx][x - leave.x][y - leave.y]
+                            return leave.get_sisters()[3].trans_coeff_level[c_idx][x - leave.x][y - leave.y]
         return None
 
     def get_trans_coeff_level_y(self, x, y):
