@@ -12,10 +12,19 @@ class IntraPredMode:
     INTRA_ANGULAR = 2
 
 class IntraPu:
-    def __init__(self, cu, c_idx, mode):
+    def __init__(self, cu, c_idx, mode, log2size, x, y):
         self.cu = cu
         self.c_idx = c_idx
         self.mode = mode
+
+        self.origin_x = x
+        self.origin_y = y
+
+        size = 1 << log2size
+        self.predicted_samples = numpy.zeros((size, size), int)
+        self.scaled_samples = numpy.zeros((size, size), int)
+        self.transformed_samples = numpy.zeros((size, size), int)
+        self.reconstructed_samples = numpy.zeros((size, size), int)
 
     def decode(self, x, y, log2size, depth):
         split_transform_flag = self.cu.tu.get_split_transform_flag(x, y, depth)
@@ -38,82 +47,87 @@ class IntraPu:
             self.decode(x_luma, y_luma + offset, log2size - 1, depth + 1)
             self.decode(x_luma + offset, y_luma + offset, log2size - 1, depth + 1)
         else:
-            self.decode_leaf(x, y, log2size, depth, self.c_idx)
+            self.decode_leaf(x, y, log2size, depth)
     
-    def decode_leaf(self, x, y, log2size, depth, c_idx):
+    def decode_leaf(self, x0, y0, log2size, depth):
         size = 1 << log2size
 
-        self.decode_neighbor(x, y, log2size, depth)
-        self.decode_pred_samples(log2size, c_idx)
+        self.decode_pred_samples(x0, y0, log2size, depth)
+        scaling.inverse_scaling(pu=self, x0=x0, y0=y0, log2size=log2size)
+        transform.inverse_transform(pu=self, x0=x0, y0=y0, log2size=log2size)
+        reconstruction.reconstruction(pu=self, x0=x0, y0=y0, log2size=log2size)
 
-        self.d = numpy.zeros((size, size), int)
-        scaling.inverse_scaling(pu=self, x0=x, y0=y, log2size=log2size, depth=depth, c_idx=c_idx, d=self.d)
+    def decode_pred_samples(self, x0, y0, log2size, depth):
+        neighbors = self.decode_neighbor(x0, y0, log2size, depth)
 
-        self.r = numpy.zeros((size, size), int)
-        transform.inverse_transform(self.d, log2size, self.r, 1 if size==4 and c_idx==0 else 0)
-
-        self.reconstructed_samples = numpy.zeros((size, size), int)
-        reconstruction.reconstruction(pred_samples=self.pred_samples, residual_samples=self.r, log2size=log2size, c_idx=c_idx, rec_samples=self.reconstructed_samples, bit_depth_y=self.cu.ctx.sps.bit_depth_y, bit_depth_c=self.cu.ctx.sps.bit_depth_c)
-
-    def decode_pred_samples(self, log2size, c_idx):
         if self.mode == IntraPredMode.INTRA_PLANAR:
-            self.decode_intra_planar(log2size)
+            self.decode_intra_planar(neighbors, x0, y0, log2size)
         elif self.mode == IntraPredMode.INTRA_DC:
-            self.decode_intra_dc(log2size, c_idx)
+            self.decode_intra_dc(neighbors, x0, y0, log2size)
         else:
-            self.decode_intra_angular(log2size, c_idx)
+            self.decode_intra_angular(neighbors, x0, y0, log2size)
 
-    def decode_intra_planar(self, log2size):
+    def decode_intra_planar(self, neighbors, x0, y0, log2size):
         size = 1 << log2size
-        self.pred_samples = numpy.zeros((size, size), int)
+
+        start_x = x0 - self.origin_x
+        start_y = y0 - self.origin_y
+        samples = self.predicted_samples[start_x:(start_x+size), start_y:(start_y+size)]
+
         for x in range(0, size):
             for y in range(0, size):
-                self.pred_samples[x][y] = ((size-1-x)*self.neighbor[-1][y] + \
-                                           (x+1)*self.neighbor[size][-1] + \
-                                           (size-1-y)*self.neighbor[x][-1] + \
-                                           (y+1)*self.neighbor[-1][size] + size) >>  (log2size + 1)
+                samples[x][y] = ((size-1-x)*neighbors[-1][y] + \
+                                           (x+1)*neighbors[size][-1] + \
+                                           (size-1-y)*neighbors[x][-1] + \
+                                           (y+1)*neighbors[-1][size] + size) >>  (log2size + 1)
 
-    def decode_intra_dc(self, log2size, c_idx):
+    def decode_intra_dc(self, neighbors, x0, y0, log2size):
         size = 1 << log2size
-        self.pred_samples = numpy.zeros((size, size), int)
+
+        start_x = x0 - self.origin_x
+        start_y = y0 - self.origin_y
+        samples = self.predicted_samples[start_x:(start_x+size), start_y:(start_y+size)]
 
         dc_val = size
         for x in range(0, size):
-            dc_val += self.neighbor[x][-1]
+            dc_val += neighbors[x][-1]
         for y in range(0, size):
-            dc_val += self.neighbor[-1][y]
+            dc_val += neighbors[-1][y]
         dc_val = dc_val >> (log2size + 1)
 
-        if c_idx == 0 and size < 32:
-            self.pred_samples[0][0] = (self.neighbor[-1][0] + 2 * dc_val + self.neighbor[0][-1] + 2) >> 2
+        if self.c_idx == 0 and size < 32:
+            samples[0][0] = (neighbors[-1][0] + 2 * dc_val + neighbors[0][-1] + 2) >> 2
             for x in range(1, size):
-                self.pred_samples[x][0] = (self.neighbor[x][-1] + 3 * dc_val + 2) >> 2
+                samples[x][0] = (neighbors[x][-1] + 3 * dc_val + 2) >> 2
             for y in range(1, size):
-                self.pred_samples[0][y] = (self.neighbor[-1][y] + 3 * dc_val + 2) >> 2
+                samples[0][y] = (neighbors[-1][y] + 3 * dc_val + 2) >> 2
             for x in range(1, size):
                 for y in range(1, size):
-                    self.pred_samples[x][y] = dc_val
+                    samples[x][y] = dc_val
         else:
             for x in range(0, size):
                 for y in range(0, size):
-                    self.pred_samples[x][y] = dc_val
+                    samples[x][y] = dc_val
 
-    def decode_intra_angular(self, log2size, c_idx):
+    def decode_intra_angular(self, neighbors, x0, y0, log2size):
         size = 1 << log2size
-        self.pred_samples = numpy.zeros((size, size), int)
+
+        start_x = x0 - self.origin_x
+        start_y = y0 - self.origin_y
+        samples = self.predicted_samples[start_x:(start_x+size), start_y:(start_y+size)]
 
         if self.mode >= 18:
             ref = {}
             for x in range(0,size + 1):
-                ref[x] = self.neighbor[-1 + x][-1]
+                ref[x] = neighbors[-1 + x][-1]
 
             if pred_angle < 0:
                 if ((size * pred_angle) >> 5) < -1:
                     for x in range((size * pred_angle) >> 5, -1 + 1):
-                        ref[x] = self.neighbor[-1][-1 + ((x * inv_angle) >> 8)]
+                        ref[x] = neighbors[-1][-1 + ((x * inv_angle) >> 8)]
             else:
                 for x in range(size + 1, 2 * size + 1):
-                    ref[x] = self.neighbor[-1 + x][-1]
+                    ref[x] = neighbors[-1 + x][-1]
 
             for x in range(0, size):
                 for y in range(0, size):
@@ -122,20 +136,20 @@ class IntraPu:
                     if fact == 0:
                         self.pred_smaples[x][y] = ((32 - fact) * ref[x + idx + 1] + fact * ref[x + idx + 2] + 16) >> 5
                     else:
-                        self.pred_samples[x][y] = ref[x + idx + 1]
-                    if x == 0 and self.mode == 26 and c_idx == 0 and size < 32:
-                        self.pred_samples[x][y] = utils.clip1y(self.neighbor[x][-1] + ((self.neighbor[-1][y] - self.neighbor[-1][-1]) >> 1))
+                        samples[x][y] = ref[x + idx + 1]
+                    if x == 0 and self.mode == 26 and self.c_idx == 0 and size < 32:
+                        samples[x][y] = utils.clip1y(neighbors[x][-1] + ((neighbors[-1][y] - neighbors[-1][-1]) >> 1))
         else:
             ref = {}
             for x in range(0, size + 1):
-                ref[x] = self.neighbor[-1][-1 + x]
+                ref[x] = neighbors[-1][-1 + x]
             if pred_angle < 0:
                 if ((size * pred_angle) >> 5) < -1:
                     for x in range((size * pred_angle) >> 5, -1 + 1):
-                        ref[x] = self.neighbor[-1 + ((x * inv_angle + 128) >> 8)][-1]
+                        ref[x] = neighbors[-1 + ((x * inv_angle + 128) >> 8)][-1]
             else:
                 for x in range(size + 1, 2 * size + 1):
-                    ref[x] = self.neighbor[-1][-1 + x]
+                    ref[x] = neighbors[-1][-1 + x]
 
             for x in range(0, size):
                 for y in range(0, size):
@@ -143,12 +157,12 @@ class IntraPu:
                     fact = ((x + 1) * pred_angle) & 31
 
                     if fact != 0:
-                        self.pred_samples[x][y] = ((32 - fact) * ref[y + idx + 1] + fact * ref[y + idx + 2] + 16) >> 5
+                        samples[x][y] = ((32 - fact) * ref[y + idx + 1] + fact * ref[y + idx + 2] + 16) >> 5
                     else:
-                        self.pred_samples[x][y] = ref[y+ idx + 1]
+                        samples[x][y] = ref[y+ idx + 1]
 
-                    if y ==0 and self.mode == 10 and c_idx == 0 and size < 32:
-                        self.pred_samples[x][y] = utils.clip1y(self.neighbor[-1][y] + (self.neighbor[x][-1] - self.neighbor[-1][-1]) >> 1)
+                    if y ==0 and self.mode == 10 and self.c_idx == 0 and size < 32:
+                        samples[x][y] = utils.clip1y(neighbors[-1][y] + (neighbors[x][-1] - neighbors[-1][-1]) >> 1)
 
     def decode_neighbor(self, x0, y0, log2size, depth):
         size = 1 << log2size
@@ -170,9 +184,9 @@ class IntraPu:
                 yield (x, y)
         
         # Initialize neighbor pixels as -1
-        self.neighbor = utils.md_dict()
+        neighbors = utils.md_dict()
         for (x, y) in xy_neighbor_iterator(size):
-            self.neighbor[x][y] = -1
+            neighbors[x][y] = -1
 
         x_current, y_current = x0, y0
         for (x, y) in xy_neighbor_iterator(size):
@@ -185,13 +199,14 @@ class IntraPu:
             if available == False or (self.cu.get_root().get_pred_mode(x_neighbor, y_neighbor) != self.cu.MODE_INTRA and self.cu.ctx.pps.constrained_intra_pred_flag == 1):
                 pass
             else:
-                self.neighbor[x][y] = self.cu.ctx.img.get_sample(x_neighbor, y_neighbor)
+                neighbor_ctu = self.cu.ctx.img.get_ctu(x_neighbor, y_neighbor)
+                neighbors[x][y] = neighbor_ctu.get_reconstructed_sample(x_neighbor, y_neighbor)
         
         # Substitution process
         substitute_enable = 0
         no_available_neighbors = 1
         for (x, y) in xy_neighbor_iterator(size):
-            if self.neighbor[x][y] == -1:
+            if neighbors[x][y] == -1:
                 substitute_enable = 1
             else:
                 no_available_neighbors = 0
@@ -199,18 +214,18 @@ class IntraPu:
             bit_depth = self.cu.ctx.sps.bit_depth_y if self.c_idx == 0 else self.cu.ctx.sps.bit_depth_c
             if no_available_neighbors == 1:
                 for (x, y) in xy_neighbor_iterator(size):
-                    self.neighbor[x][y] = 1 << (bit_depth - 1)
+                    neighbors[x][y] = 1 << (bit_depth - 1)
             else:
-                if self.neighbor[-1][size*2 - 1] == -1:
+                if neighbors[-1][size*2 - 1] == -1:
                     for (x, y) in xy_neighbor_iterator(size):
-                        if self.neighbor[x][y] != -1:
-                            self.neighbor[-1][size*2 - 1] = self.neighbor[x][y]
+                        if neighbors[x][y] != -1:
+                            neighbors[-1][size*2 - 1] = neighbors[x][y]
                     for (x, y) in y_neighbor_iterator(size):
-                        if self.neighbor[x][y] == -1:
-                            self.neighbor[x][y] = self.neighbor[x][y + 1]
+                        if neighbors[x][y] == -1:
+                            neighbors[x][y] = neighbors[x][y + 1]
                     for (x, y) in x_neighbor_iterator(size):
-                        if self.neighbor[x][y] == -1:
-                            self.neighbor[x][y] = self.neighbor[x - 1][y]
+                        if neighbors[x][y] == -1:
+                            neighbors[x][y] = neighbors[x - 1][y]
 
         # Filtering process
         if self.mode == IntraPredMode.INTRA_DC or size == 4:
@@ -232,26 +247,28 @@ class IntraPu:
             if filter_flag == 1:
                 pf = utils.md_dict()
                 if self.cu.ctx.sps.strong_intra_smoothing_enabled_flag == 1 and size == 32 and \
-                        abs(self.neighbor[-1][-1] + self.neighbor[size*2-1][-1] - 2*self.neighbor[size-1][-1]) < (1 << (bit_depth_y - 5)) and \
-                        abs(self.neighbor[-1][-1] + self.neighbor[-1][size*2-1] - 2*self.neighbor[-1][size-1]) < (1 << (bit_depth_y - 5)):
+                        abs(neighbors[-1][-1] + neighbors[size*2-1][-1] - 2*neighbors[size-1][-1]) < (1 << (bit_depth_y - 5)) and \
+                        abs(neighbors[-1][-1] + neighbors[-1][size*2-1] - 2*neighbors[-1][size-1]) < (1 << (bit_depth_y - 5)):
                     bi_int_flag = 1
                 else:
                     bi_int_flag = 0
                 if bi_int_flag == 1:
-                    pf[-1][-1] = self.neighbor[-1][-1]
+                    pf[-1][-1] = neighbors[-1][-1]
                     for y in range(0, 62+1):
-                        pf[-1][y] = ((63-y)*self.neighbor[-1][-1] + (y+1)*self.neighbor[-1][63] + 32) >> 6
-                    pf[-1][63] = self.neighbor[-1][63]
+                        pf[-1][y] = ((63-y)*neighbors[-1][-1] + (y+1)*neighbors[-1][63] + 32) >> 6
+                    pf[-1][63] = neighbors[-1][63]
                     for x in range(0, 62+1):
-                        pf[x][-1] = ((63-x)*self.neighbor[-1][-1] + (x+1)*self.neighbor[63][-1] + 32) >> 6
-                    pf[63][-1] = self.neighbor[63][-1]
+                        pf[x][-1] = ((63-x)*neighbors[-1][-1] + (x+1)*neighbors[63][-1] + 32) >> 6
+                    pf[63][-1] = neighbors[63][-1]
                 else:
-                    pf[-1][-1] = (self.neighbor[-1][0] + 2*self.neighbor[-1][-1] + self.neighbor[0][-1] + 2) >> 2
+                    pf[-1][-1] = (neighbors[-1][0] + 2*neighbors[-1][-1] + neighbors[0][-1] + 2) >> 2
                     for y in range(0, size*2-2+1):
-                        pf[-1][y] = (self.neighbor[-1][y+1] + 2*self.neighbor[-1][y] + self.neighbor[-1][y-1] + 2) >> 2
-                    pf[-1][size*2-1] = self.neighbor[-1][size*2-1]
+                        pf[-1][y] = (neighbors[-1][y+1] + 2*neighbors[-1][y] + neighbors[-1][y-1] + 2) >> 2
+                    pf[-1][size*2-1] = neighbors[-1][size*2-1]
                     for x in range(0, size*2-2+1):
-                        pf[x][-1] = (self.neighbor[x-1][-1] + 2*self.neighbor[x][-1] + self.neighbor[x+1][-1] + 2) >> 2
-                    pf[size*2-1][-1] = self.neighbor[size*2-1][-1]
-                self.neighbor = pf
+                        pf[x][-1] = (neighbors[x-1][-1] + 2*neighbors[x][-1] + neighbors[x+1][-1] + 2) >> 2
+                    pf[size*2-1][-1] = neighbors[size*2-1][-1]
+                neighbors = pf
+        
+        return neighbors
 

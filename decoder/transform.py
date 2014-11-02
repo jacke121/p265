@@ -86,9 +86,16 @@ def inverse_transform_1d(x, log2size, tr_type):
 
     return y
 
-def inverse_transform(d, log2size, r, tr_type):
+def inverse_transform(pu, x0, y0, log2size):
     size = 1 << log2size
-    
+
+    start_x = x0 - pu.origin_x
+    start_y = y0 - pu.origin_y
+    d = pu.scaled_samples[start_x:(start_x+size), start_y:(start_y+size)]
+    r = pu.transformed_samples[start_x:(start_x+size), start_y:(start_y+size)]
+
+    tr_type = 1 if size==4 and pu.c_idx==0 else 0
+
     e = numpy.zeros((size, size), int)
     for col in range(0, size):
         e[:, col] = inverse_transform_1d(d[:, col], log2size, tr_type)
@@ -100,5 +107,3 @@ def inverse_transform(d, log2size, r, tr_type):
 
     for row in range(0, size):
         r[row, :] = inverse_transform_1d(g[:, col], log2size, tr_type)
-
-    return r

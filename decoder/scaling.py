@@ -1,8 +1,14 @@
 import numpy
 import utils
 
-def inverse_scaling(pu, x0, y0, log2size, depth, c_idx, d):
+def inverse_scaling(pu, x0, y0, log2size):
     size = 1 << log2size
+
+    start_x = x0 - pu.origin_x
+    start_y = y0 - pu.origin_y
+    d = pu.scaled_samples[start_x:(start_x+size), start_y:(start_y+size)]
+
+    c_idx = pu.c_idx
 
     if c_idx == 0: 
         qp = pu.cu.qp_y + pu.cu.ctx.sps.qp_bd_offset_y
@@ -39,5 +45,3 @@ def inverse_scaling(pu, x0, y0, log2size, depth, c_idx, d):
                 
                 d[x][y] = (pu.cu.tu.get_trans_coeff_level(x0+x, y0+y, c_idx) * m[x][y] * (level_scale[qp%6] << (qp/6))) + (1 << (bd_shift - 1))
                 d[x][y] = utils.clip3(-32768, 32767, d[x][y] >> bd_shift)
-
-        return d
