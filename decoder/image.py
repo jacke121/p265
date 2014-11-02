@@ -48,6 +48,9 @@ class Image:
         else:
             min_block_addr_neighbor = self.ctx.pps.min_tb_addr_zs[x_neighbor >> log2_min_transform_block_size][y_neighbor >> log2_min_transform_block_size]
 
+        if min_block_addr_neighbor > min_block_addr_current:
+            return False
+
         ctb_addr_rs_current = self.get_ctu_addr_rs(x_current, y_current)
         ctb_addr_rs_neighbor= self.get_ctu_addr_rs(x_neighbor, y_neighbor)
         
@@ -62,9 +65,7 @@ class Image:
             in_different_tiles_flag = self.ctx.pps.tile_id_rs[ctb_addr_rs_current] != self.ctx.pps.tile_id_rs[ctb_addr_rs_neighbor]
             in_different_slices_flag = self.ctu.slice_addr != self.ctx.img.ctus[ctb_addr_rs_neighbor].slice_addr
 
-        if min_block_addr_neighbor > min_block_addr_current:
-            return False
-        elif in_different_slices_flag:
+        if in_different_slices_flag:
             return False
         elif in_different_tiles_flag:
             return False
