@@ -11,6 +11,8 @@ class MainFormatter(logging.Formatter):
             return "[syntax_element] %s" % record.getMessage()
         elif record.name == "p265.cabac":
             return "[cabac] %s" % record.getMessage()
+        elif record.name == "p265.intra":
+            return "[intra] %s" % record.getMessage()
 
 class MainStreamFilter(logging.Filter):
     def filter(self, record):
